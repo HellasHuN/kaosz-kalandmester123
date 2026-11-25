@@ -1,6 +1,8 @@
+import { devotionError, devotionSkill } from "./elhivatottsag.js";
+import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
 import { useImperativeHandle, useRef, useState } from "react";
 import { codexTheorySkills, jpKoltsegek } from "./jpKoltsegek.js";
-import { cancelTraining, committedJp, completeTraining, relatedAttribute, serializeSkills, skillRows, trainingQuote } from "./jartassagFejlesztes.js";
+import { cancelTraining, changeDevotionInPlay, committedJp, completeTraining, relatedAttribute, serializeSkills, skillRows, trainingQuote } from "./jartassagFejlesztes.js";
 import { firstInvalidSkillChange, learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { maxHealth } from "./eletero.js";
 import { packageGrants } from "./kepzesiCsomagok.js";
@@ -186,7 +188,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                 </th>
                 <td>{attribute ?? "—"}</td>
                 <td className="skill-reference-centered">
-                  {editing && !unknownWeaponBranches && !row.training && row.level > minimum ? (
+                  {editing && name !== devotionSkill && !unknownWeaponBranches && !row.training && row.level > minimum ? (
                     <select aria-label={`${name} szintcsökkentése`} value={row.level} onChange={(event) => {
                       const level = Number(event.target.value);
                       update(name, (previous) => ({ ...previous, level, prices: previous.prices.slice(0, level) }));
@@ -211,7 +213,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                       const note = event.target.value;
                       update(name, (previous) => ({ ...previous, note }));
                     }} />
-                  {!unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
+                  {name !== devotionSkill && !unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
                     onClick={() => setDraft((previous) => {
                       const next = { ...previous };
                       if (row.sunk) next[name] = { ...blank, sunk: row.sunk };
@@ -239,6 +241,12 @@ export default function Jartassagok({ character, onSave, ref }) {
       </div>
       <p className="skill-reference-budget" aria-live="polite">Elkölthető Jp <strong>{remaining}</strong></p>
       {editing && <>
+        <ElhivatottsagValaszto level={rows[devotionSkill]?.level ?? 0} maximum={10}
+          onChange={(level, approved) => {
+            const error = devotionError(original, level, approved);
+            if (error) { window.alert(error); return; }
+            update(devotionSkill, (row) => changeDevotionInPlay(original, row, level, approved));
+          }} />
         {quote && <form className="skill-reference-training" key={candidate} onSubmit={startTraining}>
           <strong>{candidate} · {quote.level}. szint · {quote.cost} Jp</strong>
           {prerequisite && <p role="status">{prerequisite}</p>}

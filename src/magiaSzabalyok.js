@@ -1,5 +1,6 @@
 import { codexTheorySkills } from "./jpKoltsegek.js";
 import { effectiveAttribute } from "./karakterFoeertekek.js";
+import { spells } from "./varazslatAdatok.js";
 import { roundPercentageResult } from "./kerekites.js";
 
 export const forms = {
@@ -167,13 +168,48 @@ export function spellCost(spell, form, { units, target } = {}) {
   };
 }
 
+const spellsById = new Map(spells.map((spell) => [spell.id, spell]));
+
+function reservedEp(entry) {
+  if (Number.isFinite(entry.ep) && entry.ep >= 0) return entry.ep;
+  const spell = spellsById.get(entry.spellId);
+  return spell && entry.ep == null ? spellCost(spell, "sacred", entry).ep : null;
+}
+
+export function unresolvedSacredReservations(magic) {
+  return magic.acquisitions.filter((entry) => entry.form === "sacred" && reservedEp(entry) == null);
+}
+
+export function approveLegacyReservation(magic, entry, ep, approved) {
+  if (approved !== true || !Number.isFinite(ep) || ep < 0 ||
+      !unresolvedSacredReservations(magic).includes(entry)) return magic;
+  return { ...magic, acquisitions: magic.acquisitions.map((item) => item === entry ? { ...item, ep, epApproved: true } : item) };
+}
+
+export function availableMagicEp(character, magic, ownReservation) {
+  if (magic.activeEp == null) return null;
+  let available = Math.min(magic.activeEp, magicLimits(character).activeEp);
+  for (const entry of magic.acquisitions) {
+    if (entry.form !== "sacred" || entry === ownReservation) continue;
+    const ep = reservedEp(entry);
+    if (ep == null) return null;
+    available -= ep;
+  }
+  return available;
+}
+
 export function spellReadiness(character, magic, spell, form, context = {}) {
   const access = spellAccess(character, magic, spell, form);
   if (!access.allowed) return { state: "denied", reasons: access.reasons };
   if (access.needsAcquisition && !access.recorded) return { state: "pending", reasons: ["A megszerzés még nincs rögzítve."] };
   const cost = spellCost(spell, form, context);
   const limits = magicLimits(character);
-  const available = magic.activeEp == null ? null : Math.min(magic.activeEp, limits.activeEp);
+  const reservation = form === "sacred" && access.needsAcquisition &&
+    magic.acquisitions.find((entry) => entry.spellId === spell.id && entry.form === form);
+  if (reservation?.epApproved === true && cost.ep == null && !context.units && !context.target) {
+    cost.ep = reservedEp(reservation);
+  }
+  const available = availableMagicEp(character, magic, reservation);
   const checksRelease = form === "academic" || form === "sacred";
   if (spell.ep?.kind === "flight" && context.target && !context.target.self && context.target.kg > 200) {
     return { state: "blocked", reasons: ["Másik célpont legfeljebb 200 kg lehet."] };
@@ -186,8 +222,9 @@ export function spellReadiness(character, magic, spell, form, context = {}) {
     const limit = freeEnergyStatus(character, magic, cost.ep);
     if (limit) return limit;
   }
-  if (form === "sacred" && access.needsAcquisition && cost.ep != null) {
-    const reserved = magic.acquisitions.find((entry) => entry.spellId === spell.id && entry.form === form)?.ep;
+  if (reservation && cost.ep != null) {
+    const reserved = reservedEp(reservation);
+    if (reserved == null) return { state: "review", reasons: ["A kikérésben lefoglalt Ep nem állapítható meg."] };
     if (cost.ep !== reserved) return { state: "blocked", reasons: ["Az Ep-igény eltér a kikért varázslatban rögzített összegtől."] };
   }
   if (cost.ep != null && ((available != null && cost.ep > available) ||
@@ -204,9 +241,10 @@ export function freeEnergyStatus(character, magic, ep) {
   if (ep == null) return { state: "review", reasons: ["A konkrét Ep-igényt a Mesélő állapítja meg."] };
   const limits = magicLimits(character);
   if (ep > limits.activeEp) return { state: "blocked", reasons: ["A hatás Ep-igénye meghaladja a Varázserő maximumát."] };
-  if (magic.activeEp != null && ep > magic.activeEp) return { state: "blocked", reasons: ["A hatáshoz jelenleg kevés az aktív Ep."] };
+  const available = availableMagicEp(character, magic);
+  if (available == null) return { state: "review", reasons: ["A szabad Ep-keret nem állapítható meg."] };
+  if (ep > available) return { state: "blocked", reasons: ["A hatáshoz jelenleg kevés a szabad Ep."] };
   if (ep > limits.release) return { state: "overflow", reasons: ["A hatás meghaladja az Esszenciafelszabadítás keretét. A túlcsordulásról a Mesélő dönt."] };
-  if (magic.activeEp == null) return { state: "review", reasons: ["Az aktuális Varázserő nincs rögzítve."] };
   return null;
 }
 
@@ -238,9 +276,19 @@ export function sacredRequestLimit(character, magic, ep) {
   if (magic.activeEp == null) return "Az aktuális Varázserő nincs rögzítve.";
   const limits = magicLimits(character);
   if (ep > limits.release) return "Kevés az egyszerre felszabadítható Ep.";
-  const reserved = magic.acquisitions.filter((item) => item.form === "sacred")
-    .reduce((sum, item) => sum + item.ep, 0);
-  if (ep + reserved > Math.min(magic.activeEp, limits.activeEp)) return "Kevés a szabad Ep az aktuális Varázserőből.";
+  const available = availableMagicEp(character, magic);
+  if (available == null) return "A szabad Ep-keret nem állapítható meg.";
+  if (ep > available) return "Kevés a szabad Ep az aktuális Varázserőből.";
   return "";
 }
 
+
+export function finishSacredSpell(character, magic, spell, context, cast) {
+  const entry = magic.acquisitions.find((item) => item.form === "sacred" && item.spellId === spell.id);
+  if (!entry || reservedEp(entry) == null || (cast && spellReadiness(character, magic, spell, "sacred", context).state !== "ready")) return magic;
+  return {
+    ...magic,
+    activeEp: cast ? magic.activeEp - reservedEp(entry) : magic.activeEp,
+    acquisitions: magic.acquisitions.filter((item) => item !== entry),
+  };
+}

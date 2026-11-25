@@ -1,8 +1,9 @@
 import { useImperativeHandle, useRef, useState } from "react";
 import { codices, spells } from "./varazslatAdatok.js";
 import {
-  formRequirements, forms, hasCodexPermission, magicLimits, readMagic, recordAcquisition,
-  freeEnergyStatus, freeMagicTrial, sacredRequestLimit, spellAccess, spellCost, spellReadiness, wildEnergyStatus,
+  approveLegacyReservation, availableMagicEp, finishSacredSpell, formRequirements, forms, hasCodexPermission, magicLimits, readMagic, recordAcquisition,
+  freeEnergyStatus, freeMagicTrial, sacredRequestLimit, spellAccess, spellCost, spellReadiness,
+  unresolvedSacredReservations, wildEnergyStatus,
 } from "./magiaSzabalyok.js";
 
 const states = {
@@ -35,12 +36,18 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
     units: Number(units), conditionsConfirmed,
     target: target ? { self: target === "self", kg: Number(kg) } : undefined,
   };
+  const unresolved = form === "sacred" && unresolvedSacredReservations(magic).includes(entry);
   const cost = spellCost(spell, form, context);
   const result = spellReadiness(character, magic, spell, form, context);
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
 
   function toggleAcquisition() {
     if (access.recorded) {
+      if (form === "sacred") {
+        onChange(finishSacredSpell(character, magic, spell, context, false));
+        setNotice("");
+        return;
+      }
       onChange({
         ...magic,
         acquisitions: magic.acquisitions.filter((entry) => entry.spellId !== spell.id || entry.form !== form),
@@ -136,9 +143,15 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
       )}
       {gm && editing && access.needsAcquisition && (access.allowed || access.recorded) && (
         <>
-          <button type="button" onClick={toggleAcquisition}>
-            {access.recorded ? "Rögzítés törlése" : `Rögzítés: ${forms[form].acquisition}`}
+          <button type="button" onClick={toggleAcquisition} disabled={unresolved}>
+            {access.recorded ? (form === "sacred" ? "Kikérés törlése" : "Rögzítés törlése") : `Rögzítés: ${forms[form].acquisition}`}
           </button>
+          {form === "sacred" && access.recorded && (
+            <button type="button" disabled={result.state !== "ready"}
+              onClick={() => onChange(finishSacredSpell(character, magic, spell, context, true))}>
+              Elmondás és Ep-felhasználás rögzítése
+            </button>
+          )}
           {notice && <p role="status">{notice}</p>}
         </>
       )}
@@ -158,6 +171,8 @@ export default function Magia({ character, onSave, ref }) {
   const magic = draft ?? saved;
   const editing = draft !== null;
   const limits = magicLimits(character);
+  const freeEp = availableMagicEp(character, magic);
+  const unresolved = unresolvedSacredReservations(magic);
   const search = query.trim().toLocaleLowerCase("hu");
   const catalogForms = Object.keys(forms).filter((form) => form !== "practical");
   const skills = character.skills ?? {};
@@ -195,7 +210,14 @@ export default function Magia({ character, onSave, ref }) {
   function save() {
     if (!editing || !validResources) return false;
     if (panel.current.querySelector('form[data-unsaved="true"]')) {
-      window.alert("Add hozzá a kitöltött hatást, vagy ürítsd ki a mezőit a véglegesítés előtt.");
+      window.alert("Véglegesítés előtt rögzítsd a kitöltött hatást vagy Ep-jóváhagyást, illetve ürítsd ki az űrlapot.");
+      return false;
+    }
+    const previousFreeEp = availableMagicEp(character, saved);
+    if (draft.activeEp != null && draft.activeEp < (saved.activeEp ?? 0) &&
+        (unresolved.length > 0 || (freeEp != null && freeEp < Math.min(0, previousFreeEp ?? 0)))) {
+      window.alert(unresolved.length ? "Az Ep csökkentéséhez előbb ellenőrizd a régi kikéréseket."
+        : "A szakrális kikérések meghaladják az aktuális Ep-keretet.");
       return false;
     }
     if (JSON.stringify(draft) !== JSON.stringify(saved)) onSave(character, draft);
@@ -278,6 +300,7 @@ export default function Magia({ character, onSave, ref }) {
   }
 
   function sacredStatus(spell, access) {
+    if (access.recorded && unresolved.some((entry) => entry.spellId === spell.id)) return "KM-ellenőrzés szükséges";
     if (access.recorded) return access.allowed ? "Kikérve" : "Kikérve · a hozzáférés jelenleg korlátozott.";
     if (!access.allowed) return "Nem kérhető.";
     if (!access.needsAcquisition) return "Külön kikérés nélkül.";
@@ -290,7 +313,7 @@ export default function Magia({ character, onSave, ref }) {
       <label className="magic-checkbox">
         <input type="checkbox" checked={gm} onChange={(event) => {
           if (panel.current.querySelector('form[data-unsaved="true"]') &&
-              !window.confirm("A még hozzá nem adott hatás adatai elvesznek. Folytatod?")) return;
+              !window.confirm("A még nem rögzített űrlap adatai elvesznek. Folytatod?")) return;
           setGm(event.target.checked);
           setCodex("");
           setQuery("");
@@ -313,6 +336,31 @@ export default function Magia({ character, onSave, ref }) {
         </label>
       ))}
       </div>
+      {unresolved.length > 0 && (
+        <section aria-label="Ellenőrzendő szakrális kikérések">
+          <h3>KM-ellenőrzés szükséges</h3>
+          <ul>{unresolved.map((entry) => (
+            <li key={magic.acquisitions.indexOf(entry)}>
+              {spells.find((spell) => spell.id === entry.spellId)?.name ?? entry.spellId}
+              {gm && editing && (
+                <form onChange={markEffectDraft} onSubmit={(event) => {
+                  event.preventDefault();
+                  const fields = new FormData(event.currentTarget);
+                  const value = fields.get("ep");
+                  if (!value?.trim()) return;
+                  setDraft(approveLegacyReservation(magic, entry, Number(value), fields.has("approved")));
+                }}>
+                  <label>Pontos Ep-költség <input name="ep" type="number" min="0" step="any" required /></label>
+                  <label><input name="approved" type="checkbox" required /> A KM ellenőrizte a pontos költséget</label>
+                  <button type="submit">Ep-foglalás jóváhagyása</button>
+                </form>
+              )}
+            </li>
+          ))}</ul>
+        </section>
+      )}
+      <p>Szabad Ep a kikérések után: {freeEp == null ? "ellenőrzendő" : Math.max(0, freeEp)}
+        {freeEp < 0 && " · A kikérések meghaladják az aktuális keretet."}</p>
       <p>Egy varázslatra felszabadítható: {limits.release} Ep · Alapzóna: {limits.zoneM} m</p>
       {!validResources && <p role="alert">Az aktuális értékeknek a megadott határokon belül kell lenniük.</p>}
       {gm && editing && (
