@@ -1,4 +1,8 @@
-import { readCharacters, writeCharacters } from "./karakterMentes.js";
+import TestMode from "./teszt/TestMode.jsx";
+import TestSettings from "./teszt/TestSettings.jsx";
+import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
+import "./teszt/testMode.css";
+import { planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { ancestryValidation, creationGenderOptions, fixedParentRace, getBreedingStatus } from "./szarmazas.js";
 import { speedByRace } from "./gyorsasag.js";
@@ -182,6 +186,11 @@ function App() {
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
   const [page, setPage] = useState("fomenu");
+  const [testMode, setTestMode] = useState(null);
+  const [adventure, setAdventure] = useState(() => readAdventure({
+    getItem: (key) => window.localStorage.getItem(key),
+  }));
+  const [adventureWriteFailed, setAdventureWriteFailed] = useState(false);
   const [name, setName] = useState("");
   const [religion, setReligion] = useState("");
   const [gender, setGender] = useState("");
@@ -670,6 +679,44 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
     setPage(nextPage);
     window.scrollTo(0, 0);
+  }
+
+  function selectTestMode(mode) {
+    setTestMode(mode);
+    navigate("test-adventure", null);
+  }
+
+  function updateAdventure(next) {
+    setAdventure(next);
+    setAdventureWriteFailed(!writeAdventure({ setItem: (key, raw) => window.localStorage.setItem(key, raw) }, next));
+  }
+
+  function exportCharacters() {
+    const raw = saveBlocked && previousSave.current != null ? previousSave.current : JSON.stringify(savedCharacters, null, 2);
+    const url = URL.createObjectURL(new Blob([raw], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "kaosz-karakterek.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function importCharacters(raw) {
+    if (saveBlocked) return "A meglévő helyi mentés megőrzése érdekében az importálás most nem elérhető.";
+    const result = planCharacterImport(raw, savedCharacters, Object.keys(races));
+    if (result.error) return result.error;
+    if (result.added && window.confirm(`${result.added} új karakter hozzáadása?`)) {
+      setSavedCharacters(previous => planCharacterImport(raw, previous, Object.keys(races)).characters);
+      return `Hozzáadva: ${result.added}. Már meglévő azonosító miatt kihagyva: ${result.conflicts}.`;
+    }
+    return result.added ? "Az importálást megszakítottad." : "A fájl nem tartalmaz új karaktert.";
+  }
+
+  function openTestCharacter(character) {
+    if (!savedCharacters.some(({ id }) => String(id) === String(character.id))) {
+      setSavedCharacters(previous => previous.some(({ id }) => String(id) === String(character.id)) ? previous : [...previous, character]);
+    }
+    navigate("karakterlap", character);
   }
 
   function setPlayStatus(character, nextStatus) {
@@ -1395,27 +1442,46 @@ setAncestry((previous) => ({
   const unclassifiedCharacters = savedCharacters.filter((character) => character.playStatus == null);
 
   return (
-    <div className="app">
+    <div className="app test-app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
         {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
           <section className="home-content" aria-labelledby="home-title">
-            <h1 id="home-title">Káosz Kalandmester</h1>
+            <p className="test-release">TESZT 1.0</p>
+            <h1 id="home-title">Káosz szerepjáték</h1>
             <nav className="home-actions" aria-label="Főmenü">
               <button type="button" onClick={() => navigate("alkotas", null)}>Karakteralkotás</button>
-              <button type="button" onClick={() => navigate("visszatoltes", null)}>Karakter visszatöltése</button>
               <button type="button" onClick={() => navigate("karakterek")}>Karakter betöltése</button>
+              <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland kezdete</button>
+              <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>
             </nav>
           </section>
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
-            <button type="button" onClick={() => navigate("fomenu", null)}>Vissza a főmenübe</button>
+            {page !== "test-settings" && <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
+            {testMode && page !== "test-adventure" &&
+              <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
+            {!testMode && page === "karakterek" &&
+              <button type="button" onClick={() => navigate("visszatoltes", null)}>Félkész karakterek</button>}
             {page === "karakterlap" && (
               <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
             )}
           </nav>
         )}
+        {page === "test-settings" && <TestSettings mode={testMode} onMode={selectTestMode}
+          onHome={() => {
+            if (window.confirm("Visszatérsz a főmenübe?")) {
+              setTestMode(null);
+              navigate("fomenu", null);
+            }
+          }} onExport={exportCharacters} onImport={importCharacters} />}
+        {page === "test-adventure" && <>
+          {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
+          <TestMode key={testMode} mode={testMode} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
+            ? playingCharacters : [...playingCharacters, sampleCharacter]}
+            adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
+        </>}
         {page === "alkotas" && (
         <div className="creation-workspace"><div className="welcome">
           <h2>Karakteralkotás</h2>

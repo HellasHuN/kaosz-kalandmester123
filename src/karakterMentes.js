@@ -103,3 +103,11 @@ export function writeCharacters(storage, characters, previousRaw) {
     return false;
   }
 }
+
+export function planCharacterImport(raw, current, allowedRaces) {
+  const imported = parseCharacters(raw, allowedRaces);
+  if (imported.blocked) return { error: "A fájl érvénytelen vagy ismétlődő karaktereket tartalmaz." };
+  const existingIds = new Set(current.map(({ id }) => String(id)));
+  const added = imported.characters.filter(({ id }) => !existingIds.has(String(id)));
+  return { characters: [...current, ...added], added: added.length, conflicts: imported.characters.length - added.length };
+}

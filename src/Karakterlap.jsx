@@ -47,10 +47,10 @@ function Karakterlap({
   return (
     <div className={activePage === 1 ? "parchment-page" : activePage === 2 ? "skills-reference-page" : undefined}>
     {activePage === 1 && <header className="parchment-banner">
-      <h1>KÁOSZ KALANDMESTER</h1>
+      <h1>KÁOSZ SZEREPJÁTÉK</h1>
       <p>Karakterlap • 1. oldal</p>
     </header>}
-    {activePage === 2 && <header className="skills-reference-banner"><h1>KÁOSZ KALANDMESTER</h1></header>}
+    {activePage === 2 && <header className="skills-reference-banner"><h1>KÁOSZ SZEREPJÁTÉK</h1></header>}
     <div className="character-sheet-toolbar">
     <nav className="karakterlap-nav" aria-label="Karakterlap oldalai">
   {[activePage === 2 ? "Karakterlap I." : "Karakter", activePage <= 2 ? "Jártasságok" : "Képzettségek", "Felszerelés", "Mágia"].map((label, index) => (

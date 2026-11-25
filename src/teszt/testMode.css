@@ -1,0 +1,82 @@
+.test-app {
+  --test-brass: #e9c981;
+  --test-parchment: #f4e6cc;
+}
+
+.test-release {
+  color: var(--test-brass);
+  font-weight: 700;
+  letter-spacing: .19em;
+}
+
+.test-panel {
+  width: min(100%, 50rem);
+  box-sizing: border-box;
+  margin: 1rem auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid #ad8b50;
+  border-radius: .75rem;
+  color: var(--test-parchment);
+  background: linear-gradient(145deg, #342425, #1d1a1a 75%);
+}
+
+.test-panel :is(label, form) {
+  display: grid;
+  gap: .5rem;
+  margin-block: 1rem;
+}
+
+.test-panel :is(textarea, select, button) {
+  max-width: 100%;
+  min-height: 44px;
+  font: inherit;
+}
+
+.test-panel textarea {
+  resize: vertical;
+  padding: .5rem;
+}
+
+.test-panel button {
+  padding: .55rem .9rem;
+  border: 1px solid #9f7c45;
+  border-radius: .35rem;
+  color: var(--test-parchment);
+  background: #513335;
+}
+
+.test-panel button[aria-pressed="true"] {
+  background: var(--test-brass);
+  color: #211818;
+}
+
+.test-panel :focus-visible {
+  outline: 2px solid var(--test-brass);
+  outline-offset: 2px;
+}
+
+.test-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.test-messages {
+  list-style: none;
+  padding: 0;
+}
+
+.test-messages li {
+  border-left: 2px solid #ad8b50;
+  padding-left: .75rem;
+  overflow-wrap: anywhere;
+}
+
+.test-messages time {
+  font-size: .85em;
+}
+
+@media (max-width: 34rem) {
+  .test-actions > button { width: 100%; }
+  .test-app .workspace-nav { flex-wrap: wrap; }
+}
