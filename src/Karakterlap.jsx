@@ -1,3 +1,4 @@
+import { ancestryTheme } from "./teszt/ancestryTheme.js";
 import React from "react";
 import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
@@ -45,7 +46,8 @@ function Karakterlap({
   }
 
   return (
-    <div className={activePage === 1 ? "parchment-page" : activePage === 2 ? "skills-reference-page" : undefined}>
+    <div className={`themed-sheet ${activePage === 1 ? "parchment-page" : activePage === 2 ? "skills-reference-page" : ""}`}
+      style={ancestryTheme(character.race, character.subrace)}>
     {activePage === 1 && <header className="parchment-banner">
       <h1>KÁOSZ SZEREPJÁTÉK</h1>
       <p>Karakterlap • 1. oldal</p>

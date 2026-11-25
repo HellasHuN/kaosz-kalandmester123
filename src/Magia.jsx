@@ -1,8 +1,9 @@
 import { logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
+import { academicTheoryRank } from "./teszt/academic.js";
 import { codices, spells } from "./varazslatAdatok.js";
 import {
-  approveLegacyReservation, availableMagicEp, finishSacredSpell, formRequirements, forms, hasCodexPermission, magicLimits, readMagic, recordAcquisition,
+  academicMagicTrial, approveLegacyReservation, availableMagicEp, finishSacredSpell, formRequirements, forms, hasCodexPermission, magicLimits, readMagic, recordAcquisition,
   freeEnergyStatus, freeMagicTrial, sacredRequestLimit, spellAccess, spellCost, spellReadiness,
   unresolvedSacredReservations, wildEnergyStatus,
 } from "./magiaSzabalyok.js";
@@ -17,6 +18,10 @@ function FreeMagicTrial({ character, difficulty }) {
   const { level, target } = freeMagicTrial(character, difficulty);
   return <span>Smaragd Tábla · {level}. jártasságszint · Célszám: {target ?? "Mesélői elbírálás"}.</span>;
 }
+
+const academicCodices = codices.filter(value => !["Praktikus mágia", "Kódexfüggetlen"].includes(value));
+const academicBranches = [...new Set(spells.filter(spell => spell.codex !== "Praktikus mágia").map(spell => spell.type))].sort((a, b) =>
+  a.localeCompare(b, "hu"));
 
 function costLabel(ep) {
   if (!ep) return "—";
@@ -40,6 +45,8 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   const unresolved = form === "sacred" && unresolvedSacredReservations(magic).includes(entry);
   const cost = spellCost(spell, form, context);
   const result = spellReadiness(character, magic, spell, form, context);
+  const trial = form === "academic" ? academicMagicTrial(character, magic, spell, cost.difficulty) : null;
+  const exception = Object.hasOwn(magic.academicExceptions ?? {}, spell.id) ? magic.academicExceptions[spell.id] : null;
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
 
   function toggleAcquisition() {
@@ -75,7 +82,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
         {spell.fp != null && <><dt>Fizikumpont-igény</dt><dd>{spell.fp} Fp</dd></>}
         <dt>Erő</dt><dd>{spell.power ?? "—"}</dd>
         <dt>Hatótávolság</dt><dd>{spell.range ?? "—"}</dd>
-        <dt>{form === "free" ? "A minta komponensei" : "Komponensek"}</dt><dd>{spell.components ?? "—"}</dd>
+        <dt>{form === "free" ? "A minta komponensei" : "Komponensek"}</dt><dd>{trial?.componentFree ? "Komponensmentes · TESZT háziszabály" : (spell.components ?? "—")}</dd>
         <dt>Elmondási idő</dt><dd>{spell.castTime ?? "—"}</dd>
         <dt>Hatóidő</dt><dd>{spell.duration ?? "—"}</dd>
         <dt>Forrás</dt><dd>
@@ -84,6 +91,18 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
           {spell.errata && <> · <a href="https://anyflip.com/npfrw/wdjj/basic" target="_blank" rel="noreferrer">Errata</a></>}
         </dd>
       </dl>
+      {trial?.target != null && <p>Smaragd célszám: {trial.target}%{trial.bonus ? ` · Szakosodás: +${trial.bonus} százalékpont` : ""}</p>}
+      {access.fromScroll && <p>Birtokolt mondóka-pergamen. Az olvashatóságot és a használati feltételeket a KM ellenőrzi.</p>}
+      {gm && editing && form === "academic" && magic.academicSpecialization && (
+        <fieldset><legend>Egyedi akadémikus engedély · TESZT háziszabály</legend>
+          {[["allowed", "Másik kódexből tanulható"], ["bonus", "+20 százalékpont"], ["componentFree", "Komponensmentesség"]].map(([key, label]) =>
+            <label key={key}><input type="checkbox" checked={exception?.[key] === true} onChange={event => {
+              const checked = event.target.checked;
+              onChange(previous => ({ ...previous, academicExceptions: { ...previous.academicExceptions,
+                [spell.id]: { ...previous.academicExceptions?.[spell.id], [key]: checked } } }));
+            }} /> {label}</label>)}
+        </fieldset>
+      )}
       {spell.note && <p>{spell.note}</p>}
       {spell.requiredSkill && <p>Szükséges jártasság: {spell.requiredSkill}.</p>}
       {!gm && form === "wild" && (
@@ -181,6 +200,8 @@ export default function Magia({ character, onSave, ref }) {
   const search = query.trim().toLocaleLowerCase("hu");
   const catalogForms = Object.keys(forms).filter((form) => form !== "practical");
   const skills = character.skills ?? {};
+  const theoryRank = academicTheoryRank(skills);
+  const specialization = magic.academicSpecialization;
   const hasAcademicSkill = skills["Mágiahasználat (akadémikus)"] > 0;
   const hasSacredSkill = skills["Elhivatottság*"] > 0;
   const hasFreeSkill = skills["Mágiahasználat (szabad)"] > 0;
@@ -189,7 +210,7 @@ export default function Magia({ character, onSave, ref }) {
   function spellRows(catalog, availableForms) {
     return catalog.flatMap((spell) => availableForms.map((form) => ({
       spell, form, access: spellAccess(character, magic, spell, form),
-    })).filter(({ form, access }) => gm || access.allowed || (form === "sacred" && access.recorded)));
+    })).filter(({ form, access }) => gm || (access.allowed && (form !== "practical" || access.recorded || access.fromScroll)) || (form === "sacred" && access.recorded)));
   }
   const filteredCodexSpells = spells.filter((spell) => spell.codex !== "Praktikus mágia" &&
     (!codex || codex === spell.codex));
@@ -214,6 +235,10 @@ export default function Magia({ character, onSave, ref }) {
 
   function save() {
     if (!editing || !validResources) return false;
+    if (specialization && !specialization.branch) {
+      window.alert("Az akadémikus szakosodáshoz válassz mágikus ágat.");
+      return false;
+    }
     if (panel.current.querySelector('form[data-unsaved="true"]')) {
       window.alert("Véglegesítés előtt rögzítsd a kitöltött hatást vagy Ep-jóváhagyást, illetve ürítsd ki az űrlapot.");
       return false;
@@ -380,8 +405,27 @@ export default function Magia({ character, onSave, ref }) {
         {freeEp < 0 && " · A kikérések meghaladják az aktuális keretet."}</p>
       <p>Egy varázslatra felszabadítható: {limits.release} Ep · Alapzóna: {limits.zoneM} m</p>
       {!validResources && <p role="alert">Az aktuális értékeknek a megadott határokon belül kell lenniük.</p>}
+      {hasAcademicSkill && <p>Általános Mágiaelmélet: {theoryRank}. szint{specialization?.branch ? ` · ${specialization.branch}` : ""}</p>}
       {gm && editing && (
         <>
+          {hasAcademicSkill && <fieldset>
+            <legend>Akadémikus szakosodás · TESZT háziszabály</legend>
+            <label>Alapkódex <select value={specialization?.codex ?? ""} onChange={event => {
+              const codex = event.target.value;
+              setDraft(previous => ({ ...previous, academicSpecialization: codex
+                ? { codex, branch: previous.academicSpecialization?.branch ?? "" } : null }));
+            }}>
+              <option value="">Általános akadémikus</option>
+              {academicCodices.map(value => <option key={value}>{value}</option>)}
+            </select></label>
+            {specialization && <label>Mágikus ág <select value={specialization.branch} onChange={event => {
+              const branch = event.target.value;
+              setDraft(previous => ({ ...previous, academicSpecialization: { ...previous.academicSpecialization, branch } }));
+            }}>
+              <option value="">Válassz ágat</option>
+              {academicBranches.map(value => <option key={value}>{value}</option>)}
+            </select></label>}
+          </fieldset>}
           <label>Istenség vagy papság
             <input value={magic.patron} onChange={(event) => {
               const patron = event.target.value;

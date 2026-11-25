@@ -1,3 +1,5 @@
+import Overrides from "./Overrides.jsx";
+import { SecretTrials } from "./TrialTools.jsx";
 import { Bestiary, MapTool } from "./FieldTools.jsx";
 import SegmentTimeline from "./SegmentTimeline.jsx";
 import { useState } from "react";
@@ -48,6 +50,8 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}>Harci szegmensek</button>
       {km && <button type="button" aria-pressed={tab === "map"} onClick={() => setTab("map")}>Világtérkép</button>}
       {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}>Bestiárium</button>}
+      {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => setTab("trials")}>Titkos próbák</button>}
+      {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}>Felülbírálások</button>}
       {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}>KM-jegyzetek</button>}
     </nav>
     {((tab === "notes" && !km) || tab === "overview") && <>
@@ -63,11 +67,15 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       </select></label>
       {tab === "overview" && selected && <button type="button" onClick={() => onOpenCharacter(selected)}>Karakterlap megnyitása</button>}
     </>}
+    {km && tab === "overrides" && <Overrides characters={characters} entries={adventure.overrides ?? []}
+      onChange={overrides => onChange({ ...adventure, overrides })} />}
+    {km && tab === "trials" && <SecretTrials characters={characters} history={adventure.trials ?? []}
+      onRecord={record => onChange({ ...adventure, trials: [...(adventure.trials ?? []), record] })} />}
     {km && tab === "map" && <MapTool markers={adventure.markers ?? []}
       onChange={markers => onChange({ ...adventure, markers })} />}
     {km && tab === "bestiary" && <Bestiary entries={adventure.bestiary ?? []}
       onChange={bestiary => onChange({ ...adventure, bestiary })} />}
-    {tab === "segments" && <SegmentTimeline km={km} entries={adventure.segments ?? []} current={adventure.currentSegment}
+    {tab === "segments" && <SegmentTimeline km={km} characters={characters} entries={adventure.segments ?? []} current={adventure.currentSegment}
       onChange={(segments, currentSegment) => onChange({ ...adventure, segments, currentSegment })} />}
     {km && tab === "notes" && <label>KM-jegyzet<textarea rows={7} value={adventure.notes}
       onChange={event => onChange({ ...adventure, notes: event.target.value })} /></label>}

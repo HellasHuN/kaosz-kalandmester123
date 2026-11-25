@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { generateNpc, npcRoles } from "./npcDraft.js";
 
 const samplePlaces = [
   { id: "fogadó", name: "Ködbe veszett fogadó", x: 36, y: 54, layer: "Helyszínek" },
@@ -56,7 +57,7 @@ export function MapTool({ markers, onChange }) {
 const fields = {
   name: "Név", type: "Faj vagy típus", description: "Leírás", appearance: "Külső",
   habitat: "Élőhely", behavior: "Viselkedés", attributes: "Főértékek", skills: "Jártasságok",
-  combat: "Harci értékek és életerő", powers: "Képességek", equipment: "Felszerelés",
+  combat: "Harci értékek és életerő", magic: "Mágia", powers: "Képességek", equipment: "Felszerelés",
   reference: "Forrás vagy megjegyzés",
 };
 
@@ -70,6 +71,23 @@ export function Bestiary({ entries, onChange }) {
     <p>A saját lények adatai helyben tárolódnak.</p>
     <label>Keresés név, faj vagy élőhely szerint<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
     <button type="button" onClick={() => setEditing({ id: crypto.randomUUID() })}>Saját lény hozzáadása</button>
+    <details>
+      <summary>NPC- és lénygenerátor</summary>
+      <p>Egyedi, szerkeszthető vázlat. Az erősség a generálás beállítása.</p>
+      <form onSubmit={event => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const draft = generateNpc({ id: crypto.randomUUID(), type: data.get("type"),
+          role: data.get("role"), strength: Number(data.get("strength")), habitat: data.get("habitat").trim() });
+        if (draft) setEditing(draft);
+      }}>
+        <label>Generált lény faja vagy típusa <input name="type" required maxLength={120} /></label>
+        <label>Szerepkör <select name="role">{npcRoles.map(role => <option key={role}>{role}</option>)}</select></label>
+        <label>Erősség <input type="number" name="strength" min="1" max="10" defaultValue="4" required /></label>
+        <label>Élőhely <input name="habitat" maxLength={120} /></label>
+        <button type="submit">Új vázlat generálása</button>
+      </form>
+    </details>
     {editing && <form key={editing.id} onSubmit={event => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);

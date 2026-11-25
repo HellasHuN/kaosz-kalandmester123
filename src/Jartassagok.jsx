@@ -1,7 +1,8 @@
+import { legacyTheoryNames } from "./teszt/academic.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
 import { useImperativeHandle, useRef, useState } from "react";
-import { codexTheorySkills, jpKoltsegek } from "./jpKoltsegek.js";
+import { jpKoltsegek } from "./jpKoltsegek.js";
 import { cancelTraining, changeDevotionInPlay, committedJp, completeTraining, firstInvalidTrainingChange, relatedAttribute, serializeSkills, skillRows, trainingQuote } from "./jartassagFejlesztes.js";
 import { devotionPrerequisiteMessage, firstInvalidSkillChange, learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { maxHealth } from "./eletero.js";
@@ -10,8 +11,7 @@ import { artSkillName, clarifySpecialization, genericSpecializations, hasWeaponF
   specializationNames, specializationRefinementOptions } from "./jartassagSzakosodasok.js";
 import "./Jartassagok.css";
 
-const codexNames = new Set(Object.values(codexTheorySkills));
-const ordinarySkills = Object.keys(jpKoltsegek).filter((name) => name !== "Mágiaelmélet" && !codexNames.has(name) &&
+const ordinarySkills = Object.keys(jpKoltsegek).filter((name) => !legacyTheoryNames.has(name) &&
   !genericSpecializations.has(name));
 const icons = { Fizikum: 0, Rátermettség: 1, Ügyesség: 3, Reflex: 4, Tudat: 9, Intelligencia: 8, Lelkierő: 14, Esszencia: 11, Varázserő: 11 };
 const blank = { level: 0, prices: [], note: "", estimated: false, training: null };
@@ -40,7 +40,7 @@ export default function Jartassagok({ character, onSave, ref }) {
   const methods = candidate ? learningMethods(candidate, specializationLearningRank(candidate, acquired[candidate] ?? 0, skillCharacter),
     rows[candidate]?.foundation) : [];
   const search = query.trim().toLocaleLowerCase("hu");
-  const choices = [...ordinarySkills, ...codexNames, ...specializationNames].filter((name) =>
+  const choices = [...ordinarySkills, ...specializationNames].filter((name) =>
     !rows[name]?.level && !rows[name]?.training && trainingQuote(skillCharacter, name, 0) &&
     hasWeaponFoundation(skillCharacter, specialization(name)) &&
     !(rows.Művészet?.level && name === artSkillName(character.racialSpecializations?.artGenre) &&
@@ -191,7 +191,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                 </th>
                 <td>{attribute ?? "—"}</td>
                 <td className="skill-reference-centered">
-                  {editing && name !== devotionSkill && !unknownWeaponBranches && !row.training && row.level > minimum ? (
+                  {editing && name !== devotionSkill && !legacyTheoryNames.has(name) && !unknownWeaponBranches && !row.training && row.level > minimum ? (
                     <select aria-label={`${name} szintcsökkentése`} value={row.level} onChange={(event) => {
                       const level = Number(event.target.value);
                       update(name, (previous) => ({ ...previous, level, prices: previous.prices.slice(0, level) }));
@@ -218,7 +218,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                       const note = event.target.value;
                       update(name, (previous) => ({ ...previous, note }));
                     }} />
-                  {name !== devotionSkill && !unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
+                  {name !== devotionSkill && !legacyTheoryNames.has(name) && !unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
                     onClick={() => setDraft((previous) => {
                       const next = { ...previous };
                       if (row.sunk) next[name] = { ...blank, sunk: row.sunk };

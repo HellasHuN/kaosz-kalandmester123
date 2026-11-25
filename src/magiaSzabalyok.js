@@ -1,4 +1,5 @@
-import { codexTheorySkills } from "./jpKoltsegek.js";
+import { academicAccess, academicTheoryRank } from "./teszt/academic.js";
+import { ownsScroll } from "./teszt/scrolls.js";
 import { effectiveAttribute } from "./karakterFoeertekek.js";
 import { spells } from "./varazslatAdatok.js";
 import { roundPercentageResult } from "./kerekites.js";
@@ -6,7 +7,7 @@ import { roundPercentageResult } from "./kerekites.js";
 export const forms = {
   academic: {
     label: "Akadémikus", acquisition: "megtanult formula",
-    description: "A kódexhez a hozzá tartozó Mágiaelmélet ad hozzáférést. A varázslathoz akadémikus Mágiahasználat és megtanult formula szükséges. Az egyszerre felhasználható Ep-t az Esszenciafelszabadítás korlátozza.",
+    description: "Az általános Mágiaelmélet adja az elméleti alapot. Az opcionális akadémikus szakosodás TESZT 1.0 háziszabály. A varázslathoz akadémikus Mágiahasználat és megtanult formula szükséges. Az egyszerre felhasználható Ep-t az Esszenciafelszabadítás korlátozza.",
   },
   free: {
     label: "Szabad", acquisition: "Mesélő által elbírálandó minta",
@@ -68,6 +69,13 @@ export function freeMagicTrial(character, difficulty) {
   return { level, target: emeraldTargets[level - 1]?.[difficulty - 1] ?? null };
 }
 
+export function academicMagicTrial(character, magic, spell, difficulty) {
+  const level = character.skills?.[magicUseSkills.academic] ?? 0;
+  const base = emeraldTargets[level - 1]?.[difficulty - 1];
+  const benefits = academicAccess(magic, spell);
+  return { ...benefits, level, target: base == null ? null : Math.min(100, base + benefits.bonus) };
+}
+
 function normalizeCodexName(value) {
   return value.normalize("NFC").trim().toLocaleLowerCase("hu")
     .replace(/\s+/gu, " ").replace(/\s+kódex(?=\s*\)|$)/u, "");
@@ -75,16 +83,6 @@ function normalizeCodexName(value) {
 
 export function hasCodexPermission(permissions, codex) {
   return permissions.some((name) => normalizeCodexName(name) === normalizeCodexName(codex));
-}
-
-function codexTheoryStatus(character, codex) {
-  const canonical = Object.keys(codexTheorySkills).find((name) =>
-    normalizeCodexName(name) === normalizeCodexName(codex));
-  const expectedKey = codexTheorySkills[canonical];
-  const skills = character.skills ?? {};
-  const savedKey = expectedKey && (Object.hasOwn(skills, expectedKey) ? expectedKey : Object.keys(skills)
-    .find((name) => normalizeCodexName(name) === normalizeCodexName(expectedKey)));
-  return { expectedKey, level: savedKey ? skills[savedKey] : 0 };
 }
 
 export function formRequirements(character, magic, form) {
@@ -123,16 +121,15 @@ export function spellAccess(character, magic, spell, form) {
     reasons.push("A tétel más mágiaformához tartozik.");
   }
   const skills = character.skills ?? {};
-  const theory = codexTheoryStatus(character, spell.codex);
+  const theory = academicTheoryRank(skills);
+  const fromScroll = form === "practical" && spell.codex === "Praktikus mágia" && ownsScroll(character.equipment, spell);
   const spellLevel = form === "academic" && Number.isInteger(spell.difficulty) ? spell.difficulty : 0;
   if (spellLevel > (skills[magicUseSkills[form]] ?? 0)) {
     reasons.push(`${magicUseSkills[form]}: ${skills[magicUseSkills[form]] ?? 0}. szint, szükséges: ${spellLevel}.`);
   }
-  if (form !== "sacred" && form !== "wild" && form !== "free" && theory.expectedKey) {
-    const requiredLevel = Math.max(1, spellLevel);
-    if (theory.level < requiredLevel) {
-      reasons.push(`${theory.expectedKey}: ${theory.level}. szint, szükséges: ${requiredLevel}.`);
-    }
+  if (form === "academic") {
+    if (theory < Math.max(1, spellLevel)) reasons.push(`Mágiaelmélet: ${theory}. szint, szükséges: ${Math.max(1, spellLevel)}.`);
+    if (!academicAccess(magic, spell).allowed) reasons.push("Másik kódexhez vagy ághoz külön KM-engedély szükséges.");
   }
   if (form === "sacred" && !spell.evilPrayer && !hasCodexPermission(magic.sacredCodices, spell.codex)) {
     reasons.push("A papság számára ez a kódex nincs engedélyezve.");
@@ -146,8 +143,8 @@ export function spellAccess(character, magic, spell, form) {
     reasons.push("A Mesélő a karakter számára ennél a mágiaformánál kizárta a tételt.");
   }
   const recorded = magic.acquisitions.some((entry) => entry.spellId === spell.id && entry.form === form);
-  const needsAcquisition = !spell.evilPrayer && (form === "academic" || form === "practical" || form === "sacred");
-  return { allowed: reasons.length === 0, reasons, recorded, needsAcquisition };
+  const needsAcquisition = !fromScroll && !spell.evilPrayer && (form === "academic" || form === "practical" || form === "sacred");
+  return { allowed: reasons.length === 0, reasons, recorded, needsAcquisition, fromScroll };
 }
 
 export function spellCost(spell, form, { units, target } = {}) {

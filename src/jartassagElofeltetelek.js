@@ -1,3 +1,4 @@
+import { academicTheoryRank, academicUse, generalTheory } from "./teszt/academic.js";
 import { devotionSkill } from "./elhivatottsag.js";
 // A 97. oldal szerint minden szükséges jártasságnak el kell érnie a cél szintjét.
 export const verifiedPrerequisites = {
@@ -106,6 +107,7 @@ export function missingSkillPrerequisites(skills, name, level, character) {
   if (name === "Mechanika" && character?.race === "Gnóm" && level <= 6) return [];
   if (name === "Mértan" && character?.race === "Gnóm" && level <= 3) return [];
   const missing = (verifiedPrerequisites[baseSkillName(name)]?.skills ?? []).filter((skill) => (skills?.[skill] ?? 0) < level);
+  if (name === academicUse && academicTheoryRank(skills) < level) missing.push(generalTheory);
   if (character?.race === "Gilf" && name === freeMagicUse && (skills?.[gilfFreeTheory] ?? 0) < level) {
     missing.push(gilfFreeTheory);
   }

@@ -1,3 +1,5 @@
+import { spells } from "./varazslatAdatok.js";
+import { scrollId } from "./teszt/scrolls.js";
 export const felszerelesTipusok = {
   weapon: "Fegyver",
   armor: "Vért",
@@ -173,5 +175,8 @@ const gear = [
   ["gear-zabla-es-kantar", "Zabla és kantár", "1–20 ezüst"],
 ].map(([id, name, price]) => ({ id, name, kind: "gear", price }));
 
-export const felszereles = [...weapons, ...armor, ...shields, ...gear]
+const scrolls = spells.filter(spell => spell.codex === "Praktikus mágia").map(spell => ({
+  id: scrollId(spell), name: `Mondóka-pergamen (TESZT): ${spell.name}`, kind: "gear",
+}));
+export const felszereles = [...weapons, ...armor, ...shields, ...gear, ...scrolls]
   .sort((first, second) => first.name.localeCompare(second.name, "hu"));

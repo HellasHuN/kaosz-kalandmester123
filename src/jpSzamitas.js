@@ -1,3 +1,4 @@
+import { blindCombatAttribute } from "./teszt/blindCombat.js";
 import { codexTheorySkills, jpKoltsegek } from "./jpKoltsegek.js";
 import { jartassagKovetelmenyek } from "./jartassagKovetelmenyek.js";
 import { roundPercentageResult } from "./kerekites.js";
@@ -57,7 +58,7 @@ export function levelCost(character, name, level, learningModifier = 0, groupSki
     skill === name || skill === item?.foundation || skill === baseSkillName(name)) ? -talentDiscount : 0);
   if (requirement) {
     const [attribute, ...thresholds] = requirement;
-    const [index, direction] = attributes[attribute];
+    const [index, direction] = attributes[baseSkillName(name) === "Vakharc" ? blindCombatAttribute(level) : attribute];
     const value = effectiveAttribute(character, index, direction);
     if (Number.isFinite(value)) {
       modifier += attributeModifier(value, thresholds[Math.floor((level - 1) / 3)]);

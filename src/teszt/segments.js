@@ -11,3 +11,11 @@ export function addSegment(entries, { id, name, segment, visible }) {
 export function segmentGroups(entries) {
   return Map.groupBy(entries, entry => entry.segment);
 }
+
+// Alapkönyv, 140. és 143–144. o., Folyamatos kezdeményezés.
+export function calculateSegment({ previous, speed, action, roll }) {
+  if (![previous, speed, action, roll].every(Number.isSafeInteger) ||
+      previous < 0 || speed < 0 || action < 0 || roll < 1 || roll > 6) return null;
+  const segment = previous + speed + action + roll;
+  return Number.isSafeInteger(segment) ? segment : null;
+}

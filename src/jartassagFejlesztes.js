@@ -1,4 +1,5 @@
-﻿import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
+import { legacyTheoryNames } from "./teszt/academic.js";
+import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { traitSkillModifier } from "./karakterTulajdonsagok.js";
@@ -10,7 +11,7 @@ import { gilfFreeTheory } from "./gilfMagia.js";
 import { baseSkillName, racialWeaponTraining, specialization, specializationLearningRank } from "./jartassagSzakosodasok.js";
 
 export function relatedAttribute(name) {
-  return skillRequirement(name)?.[0];
+  return name === "Vakharc" ? "Érzékszerv / Intuíció" : skillRequirement(name)?.[0];
 }
 
 export function trainingQuote(character, name, current, method = "mentor") {
@@ -20,7 +21,7 @@ export function trainingQuote(character, name, current, method = "mentor") {
   const prior = specializationLearningRank(name, current, character);
   const relearn = foundation === "practice" && current === 1;
   const level = relearn ? 1 : prior + 1;
-  if (name === "Mágiaelmélet" || name === devotionSkill || (name === gilfFreeTheory && character.race !== "Gilf") ||
+  if (legacyTheoryNames.has(name) || name === devotionSkill || (name === gilfFreeTheory && character.race !== "Gilf") ||
       !skillPrices(name) || level > skillPrices(name).length) return null;
   if (item?.base === "Fegyverforgatás" && !item.branch && racialWeaponTraining(character)?.id === item.id) return null;
   // Alapkönyv, 96–97. oldal. A Mesélő igazolja a jártasság tanulási kódját.

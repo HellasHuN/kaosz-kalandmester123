@@ -25,7 +25,14 @@ function validMagic(magic) {
   const effect = (entry) => isRecord(entry) && isId(entry.id) && isText(entry.name) && isText(entry.description) &&
     isNumber(entry.difficulty) && isNumber(entry.ep);
   // Explicit null is valid for the tracked resources, whose initial state is unknown.
-  return hasFields(magic, { activeEp: isNonnegative, shield: isNonnegative }) &&
+  return hasFields(magic, { activeEp: isNonnegative, shield: isNonnegative,
+    academicSpecialization: entry => isRecord(entry) && isText(entry.codex) && isText(entry.branch),
+    academicExceptions: mapOf(entry => hasFields(entry, {
+      allowed: value => typeof value === "boolean",
+      bonus: value => typeof value === "boolean",
+      componentFree: value => typeof value === "boolean",
+    })),
+  }) &&
     Object.entries({
       patron: isText, academicCodices: stringList, sacredCodices: stringList,
       acquisitions: arrayOf((entry) => spellReference(entry) &&

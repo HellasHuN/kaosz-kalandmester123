@@ -16,6 +16,11 @@ export function readAdventure(storage) {
       (value.bestiary === undefined || (Array.isArray(value.bestiary) && value.bestiary.every(entry =>
         typeof entry?.id === "string" && typeof entry.name === "string" && typeof entry.type === "string" &&
         Object.values(entry).every(item => typeof item === "string")))) &&
+      (value.overrides === undefined || (Array.isArray(value.overrides) && value.overrides.every(entry =>
+        ["id", "character", "rule", "previous", "approved", "reason", "recordedAt"].every(key => typeof entry?.[key] === "string")))) &&
+      (value.trials === undefined || (Array.isArray(value.trials) && value.trials.every(entry =>
+        typeof entry?.id === "string" && typeof entry.actor === "string" && typeof entry.name === "string" &&
+        typeof entry.outcome === "string" && Number.isFinite(entry.target) && Number.isFinite(entry.roll)))) &&
       (value.currentSegment == null || (Number.isSafeInteger(value.currentSegment) && value.currentSegment > 0)) &&
       (value.segments === undefined || (Array.isArray(value.segments) && value.segments.every(entry =>
         typeof entry?.id === "string" && typeof entry.name === "string" && typeof entry.visible === "boolean" &&

@@ -1,3 +1,4 @@
+import { legacyTheoryNames } from "./teszt/academic.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { jpKoltsegek } from "./jpKoltsegek.js";
 import { attributeModifier, levelCost, paidLevels, skillPrices } from "./jpSzamitas.js";
@@ -12,7 +13,7 @@ import { artSkillName, baseSkillName, genericSpecializations, hasWeaponFoundatio
   specializationLearningRank, specializationNames } from "./jartassagSzakosodasok.js";
 
 export const creationSkillNames = [...Object.keys(jpKoltsegek).filter((name) =>
-  name !== "Mágiaelmélet" && name !== devotionSkill && !genericSpecializations.has(name)), ...specializationNames];
+  !legacyTheoryNames.has(name) && name !== devotionSkill && !genericSpecializations.has(name)), ...specializationNames];
 
 const racialStartingSkills = {
   "Elf": { "Természetismeret": 5 },
