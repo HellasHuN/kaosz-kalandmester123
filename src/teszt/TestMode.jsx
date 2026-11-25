@@ -1,3 +1,4 @@
+import SegmentTimeline from "./SegmentTimeline.jsx";
 import { useState } from "react";
 import { addMessage, conversationFor } from "./localAdventure.js";
 
@@ -32,18 +33,21 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
     <nav className="test-actions" aria-label="Tesztkaland">
       <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>Kaland áttekintése</button>
       <button type="button" aria-pressed={tab === "messages"} onClick={() => setTab("messages")}>Üzenetek</button>
+      <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}>Harci szegmensek</button>
       {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}>KM-jegyzetek</button>}
     </nav>
     {((tab === "notes" && !km) || tab === "overview") && <>
       <h3>Mintahelyzet · A ködbe veszett fogadó</h3>
       <p>Egy kihűlt fogadó ablakában lámpa ég. A csapat nyomokat kereshet, vagy bekopoghat.</p>
     </>}
-    {tab !== "notes" && <>
+    {(tab === "overview" || tab === "messages") && <>
       <label>Karakter <select value={selected ? String(selected.id) : ""} onChange={event => setRecipient(event.target.value)}>
         {characters.map(character => <option key={character.id} value={String(character.id)}>{character.name}</option>)}
       </select></label>
       {tab === "overview" && selected && <button type="button" onClick={() => onOpenCharacter(selected)}>Karakterlap megnyitása</button>}
     </>}
+    {tab === "segments" && <SegmentTimeline km={km} entries={adventure.segments ?? []} current={adventure.currentSegment}
+      onChange={(segments, currentSegment) => onChange({ ...adventure, segments, currentSegment })} />}
     {km && tab === "notes" && <label>KM-jegyzet<textarea rows={7} value={adventure.notes}
       onChange={event => onChange({ ...adventure, notes: event.target.value })} /></label>}
     {tab === "messages" && <>

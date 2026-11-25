@@ -80,3 +80,22 @@
   .test-actions > button { width: 100%; }
   .test-app .workspace-nav { flex-wrap: wrap; }
 }
+
+.test-timeline {
+  display: flex;
+  gap: .75rem;
+  padding: .75rem 0;
+  overflow-x: auto;
+  list-style: none;
+  border-top: 1px solid #ad8b50;
+}
+
+.test-timeline li {
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+}
+
+.test-timeline li[aria-current] {
+  border-left: 3px solid var(--test-brass);
+  padding-inline-start: .65rem;
+}

@@ -44,3 +44,22 @@ test("the house-rule search skill uses active perception and its proposed Jp sch
   const character = { stats: [50, 50, 50, 50, 40], adjustments: [0, 0, 0, 0, -8] };
   assert.equal(levelCost(character, "Információgyűjtés", 1), 115);
 });
+
+test("segment timeline is ordered, keeps ties and hides unrevealed opponents", async () => {
+  const { addSegment, segmentEntries, segmentGroups } = await import("../src/teszt/segments.js");
+  const entries = [
+    { id: "team", name: "Csapattárs", segment: 17, visible: true },
+    { id: "npc", name: "Ellenfél", segment: 2, visible: false },
+    { id: "own", name: "Saját", segment: 17, visible: true },
+  ];
+  assert.deepEqual(segmentEntries(entries, "km").map(entry => entry.id), ["npc", "team", "own"]);
+  assert.deepEqual([...segmentGroups(segmentEntries(entries, "player")).keys()], [17]);
+  assert.equal(segmentGroups(segmentEntries(entries, "player")).get(17).length, 2);
+  assert.equal(addSegment(entries, { id: "new", name: "Hibás", segment: 0 }), entries);
+});
+
+test("the elf nature selector offers explicit relevant skills rather than the whole catalog", async () => {
+  const { suggestedElfNatureSkills } = await import("../src/fajiSzakosodasok.js");
+  assert.ok(suggestedElfNatureSkills.includes("Nyomolvasás"));
+  assert.ok(!suggestedElfNatureSkills.includes("Mágiahasználat (akadémikus)"));
+});

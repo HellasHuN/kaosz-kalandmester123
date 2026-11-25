@@ -7,10 +7,14 @@ export function readAdventure(storage) {
     const raw = storage.getItem(storageKey);
     if (!raw) return { messages: [], notes: "", blocked: false };
     const value = JSON.parse(raw);
-    if (typeof value?.notes === "string" && Array.isArray(value.messages) && value.messages.every(message =>
+    if (typeof value?.notes === "string" &&
+      (value.currentSegment == null || (Number.isSafeInteger(value.currentSegment) && value.currentSegment > 0)) &&
+      (value.segments === undefined || (Array.isArray(value.segments) && value.segments.every(entry =>
+        typeof entry?.id === "string" && typeof entry.name === "string" && typeof entry.visible === "boolean" &&
+        Number.isSafeInteger(entry.segment) && entry.segment >= 1))) && Array.isArray(value.messages) && value.messages.every(message =>
       typeof message?.text === "string" && typeof message.recipient === "string" &&
       ["km", "player"].includes(message.author) && typeof message.sentAt === "string")) {
-      return { messages: value.messages, notes: value.notes, blocked: false };
+      return { ...value, messages: value.messages, notes: value.notes, blocked: false };
     }
   } catch {
     return { messages: [], notes: "", blocked: true };
@@ -21,7 +25,9 @@ export function readAdventure(storage) {
 export function writeAdventure(storage, adventure) {
   if (adventure.blocked) return false;
   try {
-    storage.setItem(storageKey, JSON.stringify({ notes: adventure.notes, messages: adventure.messages }));
+    const data = { ...adventure };
+    delete data.blocked;
+    storage.setItem(storageKey, JSON.stringify(data));
     return true;
   } catch {
     return false;

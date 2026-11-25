@@ -1,5 +1,4 @@
-import { artGenres, ogreLimbOptions } from "./fajiSzakosodasok.js";
-import { creationSkillNames } from "./alkotasiJartassagok.js";
+import { artGenres, ogreLimbOptions, suggestedElfNatureSkills } from "./fajiSzakosodasok.js";
 
 export default function FajiSzakosodasValaszto({ race, subrace, choices, onChange, weaponJp, stage }) {
   const tecath = race === "Gyíklény" && subrace === "Tecath";
@@ -29,7 +28,7 @@ export default function FajiSzakosodasValaszto({ race, subrace, choices, onChang
             if (event.target.value) set("approvedNatureSkills", [...(choices.approvedNatureSkills ?? []), event.target.value]);
           }}>
             <option value="">Jártasság kiválasztása</option>
-            {creationSkillNames.filter((skill) => !choices.approvedNatureSkills?.includes(skill)).map((skill) =>
+            {suggestedElfNatureSkills.filter((skill) => !choices.approvedNatureSkills?.includes(skill)).map((skill) =>
               <option key={skill}>{skill}</option>)}
           </select>
         </label>
