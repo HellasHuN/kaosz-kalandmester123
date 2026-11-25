@@ -1,6 +1,6 @@
 import { BookOpen, Feather, Flame, Sparkles, Sun, Zap } from "lucide-react";
 import "./MagicBook.css";
-import { rollDie } from "./teszt/dice.js";
+import { readPercentileRoll, rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
 import { logAcademicCasting, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
@@ -59,7 +59,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   const exception = Object.hasOwn(magic.academicExceptions ?? {}, spell.id) ? magic.academicExceptions[spell.id] : null;
   const trialSignature = JSON.stringify([trial?.target, cost.ep, context.units, context.target]);
   function rollAcademic(digital) {
-    const roll = digital ? rollDie(100) : Number(manualRoll);
+    const roll = digital ? rollDie(100) : readPercentileRoll(manualRoll);
     setTrialResult({ id: crypto.randomUUID(), signature: trialSignature, roll, outcome: percentileResult(trial.target, roll) });
   }
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
@@ -167,7 +167,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
       {form === "academic" && access.allowed && access.recorded && trial?.target != null && <>
         <p>Próba · Ep: {cost.ep ?? "KM-ellenőrzés"} · Nehézség: {cost.difficulty}</p>
         <label>Kézi k100 (00 = 100)
-          <input type="number" min="1" max="100" value={manualRoll} onChange={event => setManualRoll(event.target.value)} />
+          <input type="text" inputMode="numeric" maxLength={3} value={manualRoll} onChange={event => setManualRoll(event.target.value)} />
         </label>
         <button type="button" onClick={() => rollAcademic(true)}>Digitális k100</button>
         <button type="button" onClick={() => rollAcademic(false)}>Kézi dobás elbírálása</button>

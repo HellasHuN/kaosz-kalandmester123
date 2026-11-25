@@ -3,7 +3,7 @@ import { specialization, specializationNames, weaponRanks } from "../jartassagSz
 import { useState } from "react";
 import { attributes } from "../karakterFoeertekek.js";
 import { jpKoltsegek } from "../jpKoltsegek.js";
-import { rollDie } from "./dice.js";
+import { readPercentileRoll, rollDie } from "./dice.js";
 import { attributeTarget, investigationContest, percentileResult, skillTarget } from "./trials.js";
 
 const weapons = specializationNames.filter(name => {
@@ -61,13 +61,13 @@ export function SecretTrials({ characters, history, onRecord }) {
       const target = attribute ? attributeTarget(character, name, modifier)
         : skillTarget(character.skills?.[name] ?? 0, Number(fields.get("difficulty")) + modifier);
       const digital = fields.has("digital");
-      const roll = digital ? rollDie(100) : Number(fields.get("roll"));
+      const roll = digital ? rollDie(100) : readPercentileRoll(fields.get("roll"));
       const followUp = attribute && roll === 100 && target >= 100
-        ? (digital ? rollDie(100) : Number(fields.get("followUp"))) : undefined;
+        ? (digital ? rollDie(100) : readPercentileRoll(fields.get("followUp"))) : undefined;
       const result = percentileResult(target, roll, { attribute, followUp });
       const disguise = contest ? characters.find(item => String(item.id) === fields.get("opponent")) : null;
       const defenseTarget = disguise && skillTarget(disguise.skills?.["Álcázás"] ?? 0, Number(fields.get("defenseDifficulty")));
-      const defenseRoll = contest ? (digital ? rollDie(100) : Number(fields.get("defenseRoll"))) : null;
+      const defenseRoll = contest ? (digital ? rollDie(100) : readPercentileRoll(fields.get("defenseRoll"))) : null;
       const outcome = contest ? investigationContest(result, percentileResult(defenseTarget, defenseRoll)) : result;
       const record = { id: crypto.randomUUID(), actor: character.name, name, target, roll, outcome,
         ...(followUp ? { followUp } : {}), ...(contest ? { opponent: disguise?.name ?? "", defenseTarget, defenseRoll } : {}) };
@@ -82,14 +82,14 @@ export function SecretTrials({ characters, history, onRecord }) {
       </select></label>}
       {kind !== "attribute" && <label>Nehézség (0–10) <input name="difficulty" type="number" min="0" max="10" defaultValue="4" required /></label>}
       <label>{kind === "attribute" ? "Célszámmódosító" : "Nehézségmódosító"} <input name="modifier" type="number" defaultValue="0" required /></label>
-      <label>Kézi k100 (00 = 100) <input name="roll" type="number" min="1" max="100" /></label>
-      {kind === "attribute" && <label>Második dobás 100 esetére <input name="followUp" type="number" min="1" max="100" /></label>}
+      <label>Kézi k100 (00 = 100) <input name="roll" type="text" inputMode="numeric" maxLength={3} /></label>
+      {kind === "attribute" && <label>Második dobás 100 esetére <input name="followUp" type="text" inputMode="numeric" maxLength={3} /></label>}
       {kind === "contest" && <>
         <label>Álcázó karakter <select name="opponent" required>
           {characters.map(item => <option key={item.id} value={String(item.id)}>{item.name}</option>)}
         </select></label>
         <label>Álcázás nehézsége <input name="defenseDifficulty" type="number" min="0" max="10" defaultValue="4" required /></label>
-        <label>Álcázás kézi k100 <input name="defenseRoll" type="number" min="1" max="100" /></label>
+        <label>Álcázás kézi k100 <input name="defenseRoll" type="text" inputMode="numeric" maxLength={3} /></label>
       </>}
       <label><span><input name="digital" type="checkbox" /> Digitális dobás</span></label>
       <button type="submit">Próba elbírálása</button>

@@ -20,13 +20,11 @@ import { currentInheritance } from "./felverOrokles.js";
 import OroklesPanel from "./OroklesPanel.jsx";
 import { firstInvalidSkillChange, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { calculateTraitJp, fingerPrices, narratorTraitPrices, traitConflict, traitValueError } from "./karakterTulajdonsagok.js";
-import Karakterlap from "./Karakterlap";
 import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
 import { TEHETSEG, preserveUnchangedSkillCosts, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
 import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import Felszereles from "./Felszereles.jsx";
-import Magia from "./Magia.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
@@ -34,6 +32,8 @@ import {
   clampAttributeAdjustment, effectiveAttribute,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
+const Karakterlap = lazy(() => import("./Karakterlap.jsx"));
+const Magia = lazy(() => import("./Magia.jsx"));
 const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
 const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
 
@@ -1504,12 +1504,12 @@ setAncestry((previous) => ({
             ? <><CreationSection key="equipment" Editor={Felszereles} character={creationCharacter}
               onSave={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
           : creationEditable && creationTab === "magic"
-            ? <><CreationSection key="magic" Editor={Magia} character={creationCharacter}
-              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</>
+            ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
+              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
           : renderCharacterFields(creationActions)}
         </div>)}
         {page === "karakterlap" && (
-          <Karakterlap key={selectedCharacterId}
+          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId}
             character={selectedCharacter}
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}
@@ -1531,7 +1531,7 @@ setAncestry((previous) => ({
               renderTraits,
             }}
             confirmLeaving={confirmLeaving}
-          />
+          /></Suspense>
         )}
         {page === "visszatoltes" && (
           <section className="panel" aria-labelledby="restore-title">

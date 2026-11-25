@@ -97,3 +97,13 @@ test("academic successful cast debits only free Ep and an attempt cannot be reco
   assert.equal(logAcademicCasting(character, cast, spell, context, operation), cast);
   assert.deepEqual(undoSacredCasting(cast), { ...magic, castingLog: [] });
 });
+
+test("manual percentile dice accept the 00 face without treating empty or invalid input as a roll", async () => {
+  const { readPercentileRoll } = await import("../src/teszt/dice.js");
+  assert.equal(readPercentileRoll("00"), 100);
+  assert.equal(readPercentileRoll("100"), 100);
+  assert.equal(readPercentileRoll("07"), 7);
+  for (const value of ["", "0", "101", "5.5", "1e2", null]) {
+    assert.ok(Number.isNaN(readPercentileRoll(value)));
+  }
+});

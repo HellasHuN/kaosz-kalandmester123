@@ -6,6 +6,12 @@ import SegmentTimeline from "./SegmentTimeline.jsx";
 import { useState } from "react";
 import { addMessage, conversationFor, markConversationRead, unreadMessages } from "./localAdventure.js";
 
+const quickMessages = [
+  "Kérlek, dobj próbát.",
+  "A karaktered valami szokatlant észlel.",
+  "A következő cselekvésed előtt várd meg a KM jelzését.",
+];
+
 export default function TestMode({ mode, characters, adventure, onChange, onSelectMode, onOpenCharacter }) {
   const [tab, setTab] = useState("overview");
   const [recipient, setRecipient] = useState("");
@@ -92,6 +98,15 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       </li>)}</ul> : <p>Nincsenek üzenetek.</p>}
       <form onSubmit={send}>
         <label>Üzenet <textarea value={text} onChange={event => setText(event.target.value)} required maxLength={2000} /></label>
+        {km && <label>Gyorsüzenet a szerkesztőbe
+          <select value="" onChange={event => {
+            const message = event.target.value;
+            if (quickMessages.includes(message)) setText(previous => previous ? `${previous}\n${message}`.slice(0, 2000) : message);
+          }}>
+            <option value="">Válassz sablont</option>
+            {quickMessages.map(message => <option key={message}>{message}</option>)}
+          </select>
+        </label>}
         <button type="submit" disabled={!selected || !text.trim()}>Küldés</button>
       </form>
     </>}

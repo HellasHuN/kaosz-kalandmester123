@@ -72,12 +72,19 @@ const fields = {
 export function Bestiary({ entries, onChange }) {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(null);
-  const filtered = entries.filter(entry =>
+  const [type, setType] = useState("");
+  const types = [...new Set(entries.map(entry => entry.type).filter(value => typeof value === "string" && value))].sort((a, b) => a.localeCompare(b, "hu"));
+  const activeType = types.includes(type) ? type : "";
+  const filtered = entries.filter(entry => (!activeType || entry.type === activeType) &&
     `${entry.name} ${entry.type} ${entry.habitat}`.toLocaleLowerCase("hu").includes(query.trim().toLocaleLowerCase("hu")));
   return <section className="bestiary-panel">
     <header className="test-feature-title"><BookOpen aria-hidden="true" /><h3>Bestiárium</h3></header>
     <p>A saját lények adatai helyben tárolódnak.</p>
     <label>Keresés név, faj vagy élőhely szerint<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
+    <label>Szűrés faj vagy típus szerint<select value={activeType} onChange={event => setType(event.target.value)}>
+      <option value="">Minden faj és típus</option>
+      {types.map(value => <option key={value}>{value}</option>)}
+    </select></label>
     <button type="button" onClick={() => setEditing({ id: crypto.randomUUID() })}>Saját lény hozzáadása</button>
     {editing && <CreatureEditor key={editing.id} draft={editing} onCancel={() => setEditing(null)} onSave={next => {
       onChange(entries.some(entry => entry.id === next.id) ? entries.map(entry => entry.id === next.id ? next : entry) : [...entries, next]);
