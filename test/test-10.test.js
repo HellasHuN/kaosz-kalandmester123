@@ -77,3 +77,21 @@ test("message unread counters are independent for each role and recipient", asyn
   const reply = addMessage(read, "one", "player", "Válasz", time);
   assert.equal(unreadMessages(reply, "one", "km"), 1);
 });
+
+test("sacred casting logs manual resolution, spends once and undoes only a matching state", async () => {
+  const { logSacredCasting, undoSacredCasting } = await import("../src/teszt/sacredCasting.js");
+  const { readMagic, recordAcquisition } = await import("../src/magiaSzabalyok.js");
+  const character = { stats: [50, 50, 50, 60, 60], skills: { "Elhivatottság*": 2, Esszenciafelszabadítás: 5 } };
+  const spell = { id: "test", name: "Próba", codex: "Smaragd", difficulty: 2, ep: { kind: "fixed", amount: 6 } };
+  const magic = readMagic({ magic: { activeEp: 20, patron: "Ordinis", sacredCodices: ["Smaragd"] } });
+  const reserved = recordAcquisition(character, magic, spell, "sacred", {});
+  const operation = { id: "one", recordedAt: "2026-11-25T19:00:00Z" };
+  const context = { conditionsConfirmed: true };
+  const cast = logSacredCasting(character, reserved, spell, context, operation);
+  assert.equal(cast.activeEp, 14);
+  assert.equal(cast.castingLog[0].outcome, "kézi elbírálás");
+  assert.equal(logSacredCasting(character, cast, spell, context, operation), cast);
+  assert.deepEqual(undoSacredCasting(cast), { ...reserved, castingLog: [] });
+  const changed = { ...cast, activeEp: 11 };
+  assert.equal(undoSacredCasting(changed), changed);
+});

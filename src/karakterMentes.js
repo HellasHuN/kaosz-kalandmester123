@@ -30,6 +30,9 @@ function validMagic(magic) {
       patron: isText, academicCodices: stringList, sacredCodices: stringList,
       acquisitions: arrayOf((entry) => spellReference(entry) &&
         hasFields(entry, { ep: isNonnegative, units: isNonnegative, target: isRecord })),
+      castingLog: arrayOf(entry => isRecord(entry) && isId(entry.id) && isText(entry.spellName) &&
+        isText(entry.recordedAt) && isText(entry.outcome) && spellReference(entry.reservation) &&
+        isNonnegative(entry.previousEp) && isNonnegative(entry.remainingEp) && entry.remainingEp <= entry.previousEp),
       restrictedSpells: arrayOf(spellReference), wildEffects: arrayOf(effect), freeEffects: arrayOf(effect),
     }).every(([key, check]) => magic[key] === undefined || check(magic[key]));
 }

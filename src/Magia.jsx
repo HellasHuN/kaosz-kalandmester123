@@ -1,3 +1,4 @@
+import { logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
 import { codices, spells } from "./varazslatAdatok.js";
 import {
@@ -148,8 +149,12 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
           </button>
           {form === "sacred" && access.recorded && (
             <button type="button" disabled={result.state !== "ready"}
-              onClick={() => onChange(finishSacredSpell(character, magic, spell, context, true))}>
-              Elmondás és Ep-felhasználás rögzítése
+              onClick={() => {
+                if (!window.confirm("Rögzíted az elmondást és a lefoglalt Ep felhasználását? A kimenetel kézi elbírálásra marad.")) return;
+                const operation = { id: crypto.randomUUID(), recordedAt: new Date().toISOString() };
+                onChange(previous => logSacredCasting(character, previous, spell, context, operation));
+              }}>
+              Elvarázsol · szakrális kikérés
             </button>
           )}
           {notice && <p role="status">{notice}</p>}
@@ -358,6 +363,18 @@ export default function Magia({ character, onSave, ref }) {
             </li>
           ))}</ul>
         </section>
+      )}
+      {magic.castingLog?.length > 0 && (
+        <details>
+          <summary>Szakrális varázslási napló</summary>
+          <ol>{magic.castingLog.map(record => <li key={record.id}>
+            {record.spellName} · {record.previousEp - record.remainingEp} Ep · {record.outcome} ·{" "}
+            <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time>
+          </li>)}</ol>
+          {gm && editing && <button type="button" disabled={undoSacredCasting(magic) === magic} onClick={() => {
+            if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és kikérést?")) setDraft(undoSacredCasting);
+          }}>Utolsó elmondás visszavonása</button>}
+        </details>
       )}
       <p>Szabad Ep a kikérések után: {freeEp == null ? "ellenőrzendő" : Math.max(0, freeEp)}
         {freeEp < 0 && " · A kikérések meghaladják az aktuális keretet."}</p>
