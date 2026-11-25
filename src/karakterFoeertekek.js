@@ -1,8 +1,30 @@
 import { roundPercentageResult } from "./kerekites.js";
 import { skillAttributeBonuses } from "./jartassagVisszahatasok.js";
 
-export const BASE_STAT_POINTS = 220;
-export const PERCEPTION_POINTS = 50;
+export const STAT_POINTS = 270;
+export const LEGACY_PERCEPTION = 50;
+
+// TESZT 1.0 háziszabály-javaslatok. A számok tervezési értékek, nem könyvi táblázat.
+const proposals = {
+  Elf: [35, 60, 90, "Éles hallás és látás (Alapkönyv, 37. o.)."],
+  Ember: [20, 50, 80, "Az emberi érzékelés a viszonyítási alap."],
+  Gennymanó: [25, 55, 85, "Lopakodó szerepkör, TESZT 1.0-as javaslat."],
+  Gilf: [25, 55, 85, "TESZT 1.0-as, enyhén megemelt tartomány."],
+  Gnóm: [20, 50, 80, "Semleges tartomány. A Hatodik érzék külön faji képesség."],
+  Gyíklény: [20, 50, 85, "Semleges alap, a helyzetfüggő faji képességek külön érvényesülnek."],
+  Manó: [20, 50, 80, "Semleges tartomány. A méregérzékelés külön képesség."],
+  Ogár: [15, 45, 80, "Szélesebb tartomány a torzulásoktól független alaphoz."],
+  Ork: [25, 55, 85, "Ork éjjellátás, az erőállati érzékek külön maradnak (24–25. o., errata)."],
+  Törpe: [25, 55, 85, "Hő- és éjjellátás (Alapkönyv, 47. o.)."],
+  Tündérke: [20, 55, 90, "TESZT 1.0-as, tág tartomány."],
+  "Félvér elf": [25, 55, 85, "Az elf javaslathoz közelítő, tág félvér tartomány."],
+  "Félvér gilf": [20, 50, 85, "Tág félvér tartomány."],
+  "Félvér ogár": [15, 45, 85, "Tág félvér tartomány."],
+  "Félvér ork": [20, 50, 85, "Tág félvér tartomány."],
+  Szürkemanó: [15, 50, 90, "Tág tartomány többféle származáshoz."],
+};
+export const perceptionLimits = Object.fromEntries(Object.entries(proposals).map(([race, [min, suggested, max, note]]) =>
+  [race, { range: [min, max], suggested, note }]));
 export const PERCEPTION_LIMITS = [0, 100];
 
 export const attributes = [
@@ -27,7 +49,7 @@ export function ageStage(age, limits) {
 }
 
 export function statPoints(percent = 100) {
-  return roundPercentageResult((BASE_STAT_POINTS + PERCEPTION_POINTS) * percent / 100);
+  return roundPercentageResult(STAT_POINTS * percent / 100);
 }
 
 export function attributeAdjustmentLimit(base) {
@@ -40,7 +62,7 @@ export function clampAttributeAdjustment(base, adjustment) {
   return Math.max(-limit, Math.min(limit, adjustment));
 }
 
-export function statLimits(racialLimits, seniorPercent = 100) {
+export function statLimits(racialLimits, seniorPercent = 100, perceptionRange = PERCEPTION_LIMITS) {
   const [physical, aptitude, mind, essence] = racialLimits;
   const physicalMin = physical[0] * seniorPercent / 100;
   const aptitudeMin = aptitude[0] * seniorPercent / 100;
@@ -51,12 +73,12 @@ export function statLimits(racialLimits, seniorPercent = 100) {
     [roundPercentageResult(aptitudeMin), aptitude[1]],
     [mind[0], mind[1] + increase],
     [essence[0], essence[1] + increase],
-    PERCEPTION_LIMITS,
+    perceptionRange,
   ];
 }
 
 export function characterStats(character) {
-  return [...(character?.stats ?? [55, 55, 55, 55]).slice(0, 4), character?.stats?.[4] ?? PERCEPTION_POINTS];
+  return [...(character?.stats ?? [55, 55, 55, 55]).slice(0, 4), character?.stats?.[4] ?? LEGACY_PERCEPTION];
 }
 
 export function characterAdjustments(character) {
@@ -76,4 +98,25 @@ export function withEffectiveStrength(character) {
   const adjustments = characterAdjustments(character);
   adjustments[0] += bonus;
   return { ...character, adjustments };
+}
+
+export function allocateStartingStats(limits, budget, suggestedPerception) {
+  const values = limits.map(([min]) => min);
+  let remaining = budget - values.reduce((sum, value) => sum + value, 0);
+  const proposed = Math.min(Math.max(0, remaining), Math.max(0, suggestedPerception - values[4]), limits[4][1] - values[4]);
+  values[4] += proposed;
+  remaining -= proposed;
+  while (remaining > 0) {
+    let allocated = 0;
+    const count = values.slice(0, 4).some((value, index) => value < limits[index][1]) ? 4 : values.length;
+    for (let index = 0; index < count && remaining > 0; index++) {
+      if (values[index] < limits[index][1]) {
+        values[index]++;
+        remaining--;
+        allocated++;
+      }
+    }
+    if (!allocated) break;
+  }
+  return values;
 }

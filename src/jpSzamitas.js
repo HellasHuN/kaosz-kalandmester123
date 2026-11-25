@@ -16,6 +16,7 @@ const attributes = {
   Fizikum: [0, 0], Erő: [0, 1], Szívósság: [0, -1],
   Rátermettség: [1, 0], Ügyesség: [1, 1], Reflex: [1, -1],
   Tudat: [2, 0], Intelligencia: [2, 1], Lelkierő: [2, -1],
+  Érzékszerv: [4, 1], Intuíció: [4, -1],
   Esszencia: [3, 0], Varázserő: [3, 1], Esszenciapajzs: [3, -1],
 };
 

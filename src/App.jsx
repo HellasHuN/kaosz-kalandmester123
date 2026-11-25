@@ -30,9 +30,9 @@ import Magia from "./Magia.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
-  ageOptions, ageStage, attributeAdjustmentLimit, attributes, BASE_STAT_POINTS, characterAdjustments, characterStats,
+  ageOptions, ageStage, allocateStartingStats, attributeAdjustmentLimit, attributes, LEGACY_PERCEPTION, characterAdjustments, characterStats,
   clampAttributeAdjustment, effectiveAttribute,
-  PERCEPTION_POINTS, statLimits, statPoints,
+  perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
 const races = {
   Elf: [[20, 70], [50, 90], [55, 90], [30, 85]],
@@ -113,29 +113,6 @@ function getAncestryAgeLimits(node) {
       (firstLimits[index] + secondLimits[index]) / 2
     )
   );
-}
-function initialStats(limits, budget) {
-  const values = [...limits.slice(0, 4).map((limit) => limit[0]), PERCEPTION_POINTS];
-  let remaining = budget - values.reduce((sum, value) => sum + value, 0);
-  values[4] = Math.max(0, PERCEPTION_POINTS + Math.min(remaining, 0));
-  remaining = budget - values.reduce((sum, value) => sum + value, 0);
-
-  while (remaining > 0) {
-    let changed = false;
-
-    const count = values.slice(0, 4).some((value, index) => value < limits[index][1]) ? 4 : values.length;
-    for (let i = 0; i < count && remaining > 0; i++) {
-      if (values[i] < limits[i][1]) {
-        values[i]++;
-        remaining--;
-        changed = true;
-      }
-    }
-
-    if (!changed) break;
-  }
-
-  return values;
 }
 const INITIAL_JP = 10_000;
 
@@ -333,14 +310,16 @@ const calculatedAgeLimits =
   const sameSavedAllocation = sameSavedAge && selectedCharacter.ageAllocation?.stats === statPercent;
   const previousBudget = sameSavedAllocation && statPercent != null && statPercent < 100 &&
     savedGross !== statPoints(statPercent) && (
-      savedGross === Math.floor(BASE_STAT_POINTS * statPercent / 100) + PERCEPTION_POINTS ||
-      savedGross === Math.floor((BASE_STAT_POINTS + PERCEPTION_POINTS) * statPercent / 100)
+      savedGross === Math.floor((STAT_POINTS - LEGACY_PERCEPTION) * statPercent / 100) + LEGACY_PERCEPTION ||
+      savedGross === Math.floor(STAT_POINTS * statPercent / 100)
     );
   const grossStatBudget = legacyAllocation || previousBudget || (selectedCharacter && stage === "extrém")
     ? savedGross
     : statPercent == null ? null : statPoints(statPercent);
   const statBudget = grossStatBudget == null ? null : grossStatBudget - abilityCost;
-  const limits = race ? statLimits(races[race], stage === "senius" ? statPercent : 100).map(([min, max], index) =>
+  const perception = perceptionLimits[race];
+  const limits = race ? statLimits(races[race], stage === "senius" ? statPercent : 100, perception?.range).map(([min, max], index) =>
+    (index === 4 && selectedCharacter?.race === race && selectedCharacter.statAllocationVersion !== 1) ||
     legacyAllocation || (sameSavedAllocation && stage === "senius") || (selectedCharacter && stage === "extrém")
       ? [Math.min(min, savedStats[index]), Math.max(max, savedStats[index])] : [min, max]) : [];
   const remaining = statBudget == null ? null : statBudget - total;
@@ -454,7 +433,7 @@ function changeRace(value) {
   setParent2("");
 
   if (value) {
-    setStats(initialStats(statLimits(races[value]), statPoints()));
+    setStats(allocateStartingStats(statLimits(races[value], 100, perceptionLimits[value].range), statPoints(), perceptionLimits[value].suggested));
   }
 
   setAdjustments(characterAdjustments());
@@ -573,6 +552,7 @@ function saveCharacter({ notify = true } = {}) {
     jp: creationEditable ? creationBudget - creationCosts.total : existingCharacter.jp,
     ...(creationEditable && {
       playStatus: "draft",
+      ...(!existingCharacter && { statAllocationVersion: 1 }),
       skills: effectiveCreationSkills,
       skillEffectBaseline: creationCharacter.skillEffectBaseline,
       ...(subrace || existingCharacter?.subrace ? { subrace: subrace || undefined } : {}),
@@ -1395,7 +1375,7 @@ setAncestry((previous) => ({
           {previousBudget && <small>A mentett pontkeret változatlan. Életkorváltáskor az új számítás érvényesül.</small>}
           {creationEditable && statBudget != null && remaining !== 0 && (
             <button type="button" onClick={() => {
-              setStats(initialStats(limits, statBudget));
+              setStats(allocateStartingStats(limits, statBudget, perception.suggested));
               setAdjustments(characterAdjustments());
             }}>Főértékek újraelosztása a kerethez</button>
           )}

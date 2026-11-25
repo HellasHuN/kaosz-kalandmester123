@@ -27,3 +27,20 @@ test("local test messages are scoped to the recipient and survive a reload", asy
   assert.deepEqual(conversationFor(readAdventure(storage), "two"), []);
   assert.equal(addMessage(reply, "one", "player", " ", time), reply);
 });
+
+test("perception is allocated from the unified 270 point budget", async () => {
+  const { allocateStartingStats, perceptionLimits, statLimits } = await import("../src/karakterFoeertekek.js");
+  const limits = statLimits([[20, 70], [50, 90], [55, 90], [30, 85]], 100, perceptionLimits.Elf.range);
+  const stats = allocateStartingStats(limits, 270, perceptionLimits.Elf.suggested);
+  assert.equal(stats.reduce((sum, n) => sum + n, 0), 270);
+  assert.equal(stats[4], 60);
+  assert.ok(stats.every((n, i) => n >= limits[i][0] && n <= limits[i][1]));
+});
+
+test("the house-rule search skill uses active perception and its proposed Jp schedule", async () => {
+  const { levelCost, skillPrices, skillRequirement } = await import("../src/jpSzamitas.js");
+  assert.deepEqual(skillPrices("Információgyűjtés"), skillPrices("Álcázás"));
+  assert.deepEqual(skillRequirement("Információgyűjtés"), ["Érzékszerv", 40, 50, 60, 70]);
+  const character = { stats: [50, 50, 50, 50, 40], adjustments: [0, 0, 0, 0, -8] };
+  assert.equal(levelCost(character, "Információgyűjtés", 1), 115);
+});
