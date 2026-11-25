@@ -1,6 +1,6 @@
 ﻿import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
-import { learningMethods } from "./jartassagElofeltetelek.js";
+import { learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { traitSkillModifier } from "./karakterTulajdonsagok.js";
 import { racialSkillModifier } from "./fajiSzakosodasok.js";
 import { inheritedModifier } from "./felverOrokles.js";
@@ -78,6 +78,19 @@ export function changeDevotionInPlay(character, row, level, approved) {
 
 export function cancelTraining(row) {
   return { ...row, training: null };
+}
+
+export function firstInvalidTrainingChange(training, skills, character, original) {
+  for (const [name, record] of Object.entries(training)) {
+    const retained = record === original.skillTraining?.[name];
+    if (retained && skillPrerequisiteMessage(original.skills, name, record.level, original)) continue;
+    const previousDevotion = original.skills?.[devotionSkill] ?? 0;
+    const prerequisiteSkills = retained && previousDevotion > (skills[devotionSkill] ?? 0)
+      ? { ...skills, [devotionSkill]: previousDevotion } : skills;
+    const message = skillPrerequisiteMessage(prerequisiteSkills, name, record.level, character);
+    if (message) return message;
+  }
+  return "";
 }
 
 export function serializeSkills(rows) {
