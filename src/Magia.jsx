@@ -1,3 +1,5 @@
+import { rollDie } from "./teszt/dice.js";
+import { percentileResult } from "./teszt/trials.js";
 import { logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
 import { academicTheoryRank } from "./teszt/academic.js";
@@ -37,6 +39,8 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   const [kg, setKg] = useState(entry?.target?.kg ?? "");
   const [conditionsConfirmed, setConfirmed] = useState(false);
   const [notice, setNotice] = useState("");
+  const [manualRoll, setManualRoll] = useState("");
+  const [trialResult, setTrialResult] = useState(null);
   const access = spellAccess(character, magic, spell, form);
   const context = {
     units: Number(units), conditionsConfirmed,
@@ -47,6 +51,11 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   const result = spellReadiness(character, magic, spell, form, context);
   const trial = form === "academic" ? academicMagicTrial(character, magic, spell, cost.difficulty) : null;
   const exception = Object.hasOwn(magic.academicExceptions ?? {}, spell.id) ? magic.academicExceptions[spell.id] : null;
+  const trialSignature = JSON.stringify([trial?.target, cost.ep, context.units, context.target]);
+  function rollAcademic(digital) {
+    const roll = digital ? rollDie(100) : Number(manualRoll);
+    setTrialResult({ signature: trialSignature, roll, outcome: percentileResult(trial.target, roll) });
+  }
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
 
   function toggleAcquisition() {
@@ -116,12 +125,12 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
           {!gm && ` ${freeEnergyStatus(character, magic, cost.ep)?.reasons.join(" ") ?? ""}`}
         </p>
       )}
-      {(gm || form === "free") && access.allowed && (
+      {(gm || form === "free" || form === "academic") && access.allowed && (
         <>
           {(spell.ep?.kind === "perUnit" || spell.ep?.kind === "flight") && (
             <label>
               Mennyiség ({spell.ep.unit ?? "perc"})
-              <input type="number" min="1" max={spell.ep.maxUnits} step="1" disabled={!editing} value={units} onChange={(event) => setUnits(event.target.value)} />
+              <input type="number" min="1" max={spell.ep.maxUnits} step="1" disabled={!editing && form !== "academic"} value={units} onChange={(event) => setUnits(event.target.value)} />
             </label>
           )}
           {spell.ep?.kind === "flight" && (
@@ -136,7 +145,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
               </label>
               {target === "other" && (
                 <label>Bruttó tömeg (kg)
-                  <input type="number" min="1" step="any" disabled={!editing} value={kg} onChange={(event) => setKg(event.target.value)} />
+                  <input type="number" min="1" step="any" disabled={!editing && form !== "academic"} value={kg} onChange={(event) => setKg(event.target.value)} />
                 </label>
               )}
             </>
@@ -149,6 +158,21 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
           </label>}
         </>
       )}
+      {form === "academic" && access.allowed && access.recorded && trial?.target != null && <>
+        <p>Próba · Ep: {cost.ep ?? "KM-ellenőrzés"} · Nehézség: {cost.difficulty}</p>
+        <label>Kézi k100 (00 = 100)
+          <input type="number" min="1" max="100" value={manualRoll} onChange={event => setManualRoll(event.target.value)} />
+        </label>
+        <button type="button" onClick={() => rollAcademic(true)}>Digitális k100</button>
+        <button type="button" onClick={() => rollAcademic(false)}>Kézi dobás elbírálása</button>
+        {trialResult?.signature === trialSignature && <p role="status">{
+          trialResult.outcome === "invalid" ? "Adj meg 1–100 közötti dobást." :
+            `${trialResult.roll} / ${trial.target} · ${({
+              success: "Sikeres létrehozási próba", failure: "Sikertelen létrehozási próba",
+              "critical-failure": "Katasztrofális rontás",
+            })[trialResult.outcome]}. A célpont ellenállása és az Ep elszámolása külön ellenőrzendő.`
+        }</p>}
+      </>}
       {gm && <p aria-live="polite">{states[result.state]}{result.reasons.length > 0 && ` · ${result.reasons.join(" ")}`}</p>}
       {gm && editing && ((form === "practical") === (spell.codex === "Praktikus mágia")) && (
         <label className="magic-checkbox">
