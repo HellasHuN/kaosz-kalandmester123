@@ -1,3 +1,5 @@
+import { BookOpen, Feather, Flame, Sparkles, Sun, Zap } from "lucide-react";
+import "./MagicBook.css";
 import { rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
 import { logAcademicCasting, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
@@ -9,6 +11,10 @@ import {
   freeEnergyStatus, freeMagicTrial, sacredRequestLimit, spellAccess, spellCost, spellReadiness,
   unresolvedSacredReservations, wildEnergyStatus,
 } from "./magiaSzabalyok.js";
+
+function GrimoireHeading({ id, icon: Icon, children }) {
+  return <h3 id={id} className="grimoire-heading"><Icon aria-hidden="true" size={22} />{children}</h3>;
+}
 
 const states = {
   overflow: "Túlcsordulás",
@@ -371,7 +377,7 @@ export default function Magia({ character, onSave, ref }) {
 
   return (
     <section ref={panel} className="panel magic-panel" data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
-      <h2>Mágia és varázslatok</h2>
+      <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={26} /> Mágia és varázslatok</h2>
       <label className="magic-checkbox">
         <input type="checkbox" checked={gm} onChange={(event) => {
           if (panel.current.querySelector('form[data-unsaved="true"]') &&
@@ -500,7 +506,6 @@ export default function Magia({ character, onSave, ref }) {
           {formRequirements(character, magic, selectedForm).map((reason) => <p key={reason}>{reason}</p>)}
         </>
       )}
-      {!gm && showAcademic && <h3>Akadémikus mágia</h3>}
       {(!gm ? showAcademic || showSacred || practicalRows.length > 0 || showWildPatterns || showFreePatterns : true) && (
       <label>Varázslatok és rigmusok keresése
         <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -517,22 +522,26 @@ export default function Magia({ character, onSave, ref }) {
           Megjelenítési szűrők törlése
         </button>
       )}
-      {showAcademic && renderSpellList(codexRows)}
+      {showAcademic && <section className="grimoire-section" data-form="academic"
+        data-fire={specialization?.codex === "Skarlát"} aria-labelledby="academic-magic-heading">
+        <GrimoireHeading id="academic-magic-heading" icon={specialization?.codex === "Skarlát" ? Flame : BookOpen}>Akadémikus mágia</GrimoireHeading>
+        {renderSpellList(codexRows)}
+      </section>}
       {showSacred && (
-        <section aria-labelledby="sacred-magic-heading">
-          <h3 id="sacred-magic-heading">Szakrális mágia</h3>
+        <section className="grimoire-section" data-form="sacred" aria-labelledby="sacred-magic-heading">
+          <GrimoireHeading id="sacred-magic-heading" icon={Sun}>Szakrális mágia</GrimoireHeading>
           {!gm && formRequirements(character, magic, "sacred").map((reason) => <p key={reason}>{reason}</p>)}
           {renderSpellList(sacredRows, { sacred: true })}
         </section>
       )}
-      {(gm || practicalRows.length > 0) && <section aria-labelledby="practical-magic-heading">
-        <h3 id="practical-magic-heading">Praktikus mágia</h3>
+      {(gm || practicalRows.length > 0) && <section className="grimoire-section" data-form="practical" aria-labelledby="practical-magic-heading">
+        <GrimoireHeading id="practical-magic-heading" icon={Feather}>Praktikus mágia</GrimoireHeading>
         {gm && <p>{forms.practical.description}</p>}
         {renderSpellList(practicalRows, { practical: true })}
       </section>}
       {(gm || wildAvailable) && (
-        <section aria-labelledby="wild-magic-heading">
-          <h3 id="wild-magic-heading">Vadmágia</h3>
+        <section className="grimoire-section" data-form="wild" aria-labelledby="wild-magic-heading">
+          <GrimoireHeading id="wild-magic-heading" icon={Zap}>Vadmágia</GrimoireHeading>
           <p>{forms.wild.description} Az Esszenciakontroll szintjét a Smaragd Táblán kell a hatás nehézségével összevetni.</p>
           <details>
             <summary>Visszahatás és túlcsordulás</summary>
@@ -569,8 +578,8 @@ export default function Magia({ character, onSave, ref }) {
         </section>
       )}
       {(hasFreeSkill || (gm && selectedForm === "free")) && (
-        <section aria-labelledby="free-magic-heading">
-          <h3 id="free-magic-heading">Szabad mágia</h3>
+        <section className="grimoire-section" data-form="free" aria-labelledby="free-magic-heading">
+          <GrimoireHeading id="free-magic-heading" icon={Sparkles}>Szabad mágia</GrimoireHeading>
           <p>{forms.free.description} A minták végleges hatását a Mesélő állapítja meg. A Szabad mágia anyagi komponens nélkül működik.</p>
           {!gm && freeRequirements.map((reason) => <p key={reason}>{reason}</p>)}
           {gm && editing && (
