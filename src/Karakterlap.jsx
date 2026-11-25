@@ -1,9 +1,12 @@
+import { Backpack, BookOpen, ScrollText, Sparkles } from "lucide-react";
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
 import React from "react";
 import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
 import Magia from "./Magia";
 import KarakterlapElsoOldal from "./KarakterlapElsoOldal";
+
+const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
 
 function Karakterlap({
   character, stage, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
@@ -48,20 +51,23 @@ function Karakterlap({
   return (
     <div className={`themed-sheet ${activePage === 1 ? "parchment-page" : activePage === 2 ? "skills-reference-page" : ""}`}
       style={ancestryTheme(character.race, character.subrace)}>
-    {activePage === 1 && <header className="parchment-banner">
-      <h1>KÁOSZ SZEREPJÁTÉK</h1>
-      <p>Karakterlap • 1. oldal</p>
-    </header>}
-    {activePage === 2 && <header className="skills-reference-banner"><h1>KÁOSZ SZEREPJÁTÉK</h1></header>}
+    <header className="character-cover">
+      <div className="character-cover-art" aria-hidden="true" />
+      <div className="character-cover-caption">
+        <p>{[character.race, character.subrace].filter(Boolean).join(" · ")}</p>
+        <h1>{character.name}</h1>
+      </div>
+    </header>
     <div className="character-sheet-toolbar">
-    <nav className="karakterlap-nav" aria-label="Karakterlap oldalai">
-  {[activePage === 2 ? "Karakterlap I." : "Karakter", activePage <= 2 ? "Jártasságok" : "Képzettségek", "Felszerelés", "Mágia"].map((label, index) => (
-    <button key={index} type="button" aria-label={label} aria-current={activePage === index + 1 ? "page" : undefined}
-      onClick={() => openPage(index + 1)}>
-      {activePage === 1 && <span aria-hidden="true">{["♟", "⚔", "▣", "☆"][index]}</span>}{label}
-    </button>
-  ))}
-</nav>
+      <nav className="karakterlap-nav" aria-label="Karakterlap oldalai">
+        {["Karakter", "Jártasságok", "Felszerelés", "Mágia"].map((label, index) => {
+          const Icon = pageIcons[index];
+          return <button key={label} type="button" aria-current={activePage === index + 1 ? "page" : undefined}
+            onClick={() => openPage(index + 1)}>
+            <Icon aria-hidden="true" size={19} />{label}
+          </button>;
+        })}
+      </nav>
     <div className="character-sheet-actions">
       <button type="button" disabled={editing} onClick={startEditing}>Szerkesztés</button>
       <button type="button" disabled={!editing} onClick={finalizeEditing}>Véglegesítés</button>

@@ -3,7 +3,7 @@
 .workspace-screen:has(.skills-reference-page) > .workspace-nav { margin-block: 0.3rem; }
 
 .skills-reference-page {
-  --skill-art: url("./assets/jartassagok-referencia.png");
+  --skill-art: url("./assets/theme/jartassagok-referencia.webp");
   --skill-paper: url("./assets/pergamen-rostok.png");
   position: relative;
   border: 1px solid #c99750;

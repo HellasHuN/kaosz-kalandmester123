@@ -3,7 +3,7 @@ import { magicLimits, readMagic } from "./magiaSzabalyok.js";
 import { maxHealth, woundLevel, woundThresholds } from "./eletero.js";
 import { armorProtection } from "./felszereltVert.js";
 import { characterSpeed } from "./gyorsasag.js";
-import figure from "./assets/pancelzat-karakter-referencia.png";
+import figure from "./assets/theme/pancelzat-karakter-referencia.webp";
 import "./KarakterlapElsoOldal.css";
 
 const empty = "—";

@@ -1,3 +1,4 @@
+import { BookOpen, Compass, MapPin, Minus, PawPrint, Plus } from "lucide-react";
 import { useState } from "react";
 import { generateNpc, npcRoles } from "./npcDraft.js";
 
@@ -11,16 +12,17 @@ const samplePlaces = [
 export function MapTool({ markers, onChange }) {
   const [zoom, setZoom] = useState(1);
   const [query, setQuery] = useState("");
+  const [chosen, setChosen] = useState(null);
   const [layers, setLayers] = useState(["Helyszínek", "Táj", "Saját jelölők"]);
   const places = [...samplePlaces, ...markers].filter(place => layers.includes(place.layer) &&
     place.name.toLocaleLowerCase("hu").includes(query.trim().toLocaleLowerCase("hu")));
-  return <section>
-    <h3>Világtérkép</h3>
+  return <section className="atlas-panel">
+    <header className="test-feature-title"><Compass aria-hidden="true" /><h3>Világtérkép</h3></header>
     <p>Bemutatótérkép saját helyszínekkel. A pontok és a táj a mintakalandhoz tartoznak.</p>
     <label>Helyszín keresése<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
     <div className="test-actions">
-      <button type="button" onClick={() => setZoom(Math.max(1, zoom - .25))} disabled={zoom === 1}>Kicsinyítés</button>
-      <button type="button" onClick={() => setZoom(Math.min(3, zoom + .25))} disabled={zoom === 3}>Nagyítás</button>
+      <button type="button" onClick={() => setZoom(Math.max(1, zoom - .25))} disabled={zoom === 1}><Minus aria-hidden="true" size={16} />Kicsinyítés</button>
+      <button type="button" onClick={() => setZoom(Math.min(3, zoom + .25))} disabled={zoom === 3}><Plus aria-hidden="true" size={16} />Nagyítás</button>
     </div>
     <fieldset><legend>Rétegek</legend>{["Helyszínek", "Táj", "Saját jelölők"].map(layer =>
       <label key={layer}><span><input type="checkbox" checked={layers.includes(layer)} onChange={event =>
@@ -28,10 +30,16 @@ export function MapTool({ markers, onChange }) {
     )}</fieldset>
     <div className="test-map-viewport" tabIndex={0} aria-label="Bemutatótérkép, görgethető">
       <div className="test-map" style={{ width: `${zoom * 100}%`, height: `${zoom * 280}px` }}>
-        {places.map(place => <span key={place.id} style={{ left: `${place.x}%`, top: `${place.y}%` }}>◆ {place.name}</span>)}
+        {places.map(place => <button type="button" className="atlas-pin" key={place.id}
+          onClick={() => setChosen(place)} aria-pressed={chosen?.id === place.id}
+          style={{ left: `${place.x}%`, top: `${place.y}%` }}>
+          <MapPin size={14} aria-hidden="true" />{place.name}
+        </button>)}
       </div>
     </div>
-    <ul>{places.map(place => <li key={place.id}>{place.name} {place.layer === "Saját jelölők" &&
+    {chosen && places.some(place => place.id === chosen.id) && <p className="atlas-selected" role="status">
+      <strong>{chosen.name}</strong> · {chosen.layer}</p>}
+    <ul className="atlas-results">{places.map(place => <li key={place.id}>{place.name} {place.layer === "Saját jelölők" &&
       <button type="button" onClick={() => {
         if (window.confirm(`${place.name} jelölő törlése?`)) onChange(markers.filter(marker => marker.id !== place.id));
       }}>Jelölő törlése</button>}</li>)}</ul>
@@ -66,8 +74,8 @@ export function Bestiary({ entries, onChange }) {
   const [editing, setEditing] = useState(null);
   const filtered = entries.filter(entry =>
     `${entry.name} ${entry.type} ${entry.habitat}`.toLocaleLowerCase("hu").includes(query.trim().toLocaleLowerCase("hu")));
-  return <section>
-    <h3>Bestiárium</h3>
+  return <section className="bestiary-panel">
+    <header className="test-feature-title"><BookOpen aria-hidden="true" /><h3>Bestiárium</h3></header>
     <p>A saját lények adatai helyben tárolódnak.</p>
     <label>Keresés név, faj vagy élőhely szerint<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
     <button type="button" onClick={() => setEditing({ id: crypto.randomUUID() })}>Saját lény hozzáadása</button>
@@ -103,8 +111,8 @@ export function Bestiary({ entries, onChange }) {
       <button>Saját lény mentése</button>
       <button type="button" onClick={() => setEditing(null)}>Mégse</button>
     </form>}
-    {filtered.length ? <ul>{filtered.map(entry => <li key={entry.id}>
-      <details><summary>{entry.name} · {entry.type} · Saját lény</summary>
+    {filtered.length ? <ul className="bestiary-cards">{filtered.map(entry => <li key={entry.id}>
+      <details><summary><PawPrint size={19} aria-hidden="true" /> <span>{entry.name} · {entry.type} · Saját lény</span></summary>
         <dl>{Object.entries(fields).filter(([key]) => key !== "name" && key !== "type" && entry[key]).map(([key, label]) =>
           <div key={key}><dt>{label}</dt><dd>{entry[key]}</dd></div>)}</dl>
         <div className="test-actions">
@@ -112,6 +120,6 @@ export function Bestiary({ entries, onChange }) {
           <button type="button" onClick={() => setEditing({ ...entry, id: crypto.randomUUID(), name: `${entry.name} (másolat)` })}>Másolás</button>
         </div>
       </details>
-    </li>)}</ul> : <p>Nincs találat.</p>}
+    </li>)}</ul> : <p className="bestiary-empty"><PawPrint size={25} aria-hidden="true" /> Nincs találat.</p>}
   </section>;
 }

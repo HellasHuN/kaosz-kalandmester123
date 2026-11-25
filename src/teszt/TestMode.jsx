@@ -1,3 +1,4 @@
+import { BookOpen, ClipboardList, Compass, Map, MessageCircle, ScrollText, Shield, Swords } from "lucide-react";
 import Overrides from "./Overrides.jsx";
 import { SecretTrials } from "./TrialTools.jsx";
 import { Bestiary, MapTool } from "./FieldTools.jsx";
@@ -40,19 +41,19 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
   }
 
   return <section className="test-panel">
-    <h2>{km ? "Kalandmester mód" : "Játékos mód"}</h2>
+    <h2 className="test-heading">{km ? "Kalandmester mód" : "Játékos mód"}</h2>
     <nav className="test-actions" aria-label="Tesztkaland">
-      <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>Kaland áttekintése</button>
+      <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}><Compass aria-hidden="true" size={16} />Kaland áttekintése</button>
       <button type="button" aria-pressed={tab === "messages"} onClick={() => {
         setTab("messages");
         readThread(selected?.id);
-      }}>Üzenetek{unread > 0 && <span aria-label={`${unread} olvasatlan üzenet`}> ({unread})</span>}</button>
-      <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}>Harci szegmensek</button>
-      {km && <button type="button" aria-pressed={tab === "map"} onClick={() => setTab("map")}>Világtérkép</button>}
-      {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}>Bestiárium</button>}
-      {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => setTab("trials")}>Titkos próbák</button>}
-      {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}>Felülbírálások</button>}
-      {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}>KM-jegyzetek</button>}
+      }}><MessageCircle aria-hidden="true" size={16} />Üzenetek{unread > 0 && <span aria-label={`${unread} olvasatlan üzenet`}> ({unread})</span>}</button>
+      <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}><Swords aria-hidden="true" size={16} />Harci szegmensek</button>
+      {km && <button type="button" aria-pressed={tab === "map"} onClick={() => setTab("map")}><Map aria-hidden="true" size={16} />Világtérkép</button>}
+      {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}><BookOpen aria-hidden="true" size={16} />Bestiárium</button>}
+      {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => setTab("trials")}><Shield aria-hidden="true" size={16} />Titkos próbák</button>}
+      {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}><ClipboardList aria-hidden="true" size={16} />Felülbírálások</button>}
+      {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><ScrollText aria-hidden="true" size={16} />KM-jegyzetek</button>}
     </nav>
     {((tab === "notes" && !km) || tab === "overview") && <>
       <h3>Mintahelyzet · A ködbe veszett fogadó</h3>

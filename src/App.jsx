@@ -1,3 +1,5 @@
+import { ArrowUpRight, BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
+import "./online/mobileHome.css";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
 import { planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
@@ -32,6 +34,7 @@ import {
   clampAttributeAdjustment, effectiveAttribute,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
+const OnlineAdventure = lazy(() => import("./online/OnlineAdventure.jsx"));
 const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
 const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
 
@@ -163,7 +166,8 @@ function App() {
   const [selectedRacialAbilities, setSelectedRacialAbilities] = useState([]);
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
-  const [page, setPage] = useState("fomenu");
+  const [page, setPage] = useState(() =>
+    new URLSearchParams(window.location.search).has("kaland") ? "online-adventure" : "fomenu");
   const [testMode, setTestMode] = useState(null);
   const [adventure, setAdventure] = useState(() => readAdventure({
     getItem: (key) => window.localStorage.getItem(key),
@@ -1428,14 +1432,25 @@ setAncestry((previous) => ({
         {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
-          <section className="home-content" aria-labelledby="home-title">
-            <p className="test-release">TESZT 1.0</p>
-            <h1 id="home-title">Káosz szerepjáték</h1>
+          <section className="home-content mobile-home" aria-labelledby="home-title">
+            <div className="mobile-home-title">
+              <span className="mobile-home-mark" aria-hidden="true"><Swords size={29} /></span>
+              <p className="test-release">TESZT 1.0</p>
+              <h1 id="home-title">Káosz<br /><em>szerepjáték</em></h1>
+            </div>
             <nav className="home-actions" aria-label="Főmenü">
-              <button type="button" onClick={() => navigate("alkotas", null)}>Karakteralkotás</button>
-              <button type="button" onClick={() => navigate("karakterek")}>Karakter betöltése</button>
-              <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland kezdete</button>
-              <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>
+              <button className="mobile-home-online" type="button" onClick={() => navigate("online-adventure", null)}>
+                <Compass aria-hidden="true" size={26} />
+                <span><strong>Online kaland</strong>
+                  <small>Kaland létrehozása vagy csatlakozás meghívóval</small></span>
+                <ArrowUpRight aria-hidden="true" size={20} />
+              </button>
+              <div className="mobile-home-grid">
+                <button type="button" onClick={() => navigate("alkotas", null)}><Feather aria-hidden="true" size={20} />Karakteralkotás</button>
+                <button type="button" onClick={() => navigate("karakterek")}><BookOpen aria-hidden="true" size={20} />Karakter betöltése</button>
+                <button type="button" onClick={() => navigate("test-adventure", null)}><Swords aria-hidden="true" size={20} />Helyi kalandpróba</button>
+                <button type="button" onClick={() => navigate("test-settings", null)}><Settings aria-hidden="true" size={20} />Beállítások</button>
+              </div>
             </nav>
           </section>
         ) : (
@@ -1450,6 +1465,9 @@ setAncestry((previous) => ({
             )}
           </nav>
         )}
+        {page === "online-adventure" && <Suspense fallback={<p role="status">Online kaland betöltése…</p>}>
+          <OnlineAdventure characters={playingCharacters} />
+        </Suspense>}
         {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
             if (window.confirm("Visszatérsz a főmenübe?")) {
