@@ -57,7 +57,7 @@
   text-transform: none;
 }
 
-.test-app .mobile-home .home-actions .mobile-home-online {
+.test-app .mobile-home .home-actions .mobile-home-adventure {
   display: grid;
   justify-items: start;
   gap: .25rem;
@@ -67,8 +67,8 @@
   color: #201711;
 }
 
-.mobile-home-online strong { font-size: 1.2rem; }
-.mobile-home-online span { font-size: .9rem; }
+.mobile-home-adventure strong { font-size: 1.2rem; }
+.mobile-home-adventure span { font-size: .9rem; }
 .mobile-home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
 
 @media (min-width: 49rem) {
@@ -137,7 +137,7 @@
 .mobile-home-grid button { display: flex; align-items: center; justify-content: flex-start; gap: .55rem; text-align: left; }
 .mobile-home-grid button svg { flex: 0 0 auto; color: var(--kaosz-brass); }
 
-.test-app .mobile-home .home-actions .mobile-home-online {
+.test-app .mobile-home .home-actions .mobile-home-adventure {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: .85rem;
@@ -146,7 +146,7 @@
   border: 0;
 }
 
-.mobile-home-online span { display: grid; gap: .25rem; }
+.mobile-home-adventure span { display: grid; gap: .25rem; }
 
 @media (min-width: 49rem) {
   .test-app .mobile-home .home-actions { grid-template-columns: 1fr 1.25fr; }

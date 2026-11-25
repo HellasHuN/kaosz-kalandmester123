@@ -1,7 +1,7 @@
-import { BookOpen, ClipboardList, Compass, Map, MessageCircle, ScrollText, Shield, Swords } from "lucide-react";
+import { BookOpen, ClipboardList, Compass, Dices, Map, MessageCircle, ScrollText, Shield, Swords } from "lucide-react";
 import Overrides from "./Overrides.jsx";
 import { SecretTrials } from "./TrialTools.jsx";
-import { Bestiary, MapTool } from "./FieldTools.jsx";
+import { Bestiary, CreatureGenerator, MapTool } from "./FieldTools.jsx";
 import SegmentTimeline from "./SegmentTimeline.jsx";
 import { useState } from "react";
 import { addMessage, conversationFor, markConversationRead, unreadMessages } from "./localAdventure.js";
@@ -51,6 +51,7 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}><Swords aria-hidden="true" size={16} />Harci szegmensek</button>
       {km && <button type="button" aria-pressed={tab === "map"} onClick={() => setTab("map")}><Map aria-hidden="true" size={16} />Világtérkép</button>}
       {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}><BookOpen aria-hidden="true" size={16} />Bestiárium</button>}
+      {km && <button type="button" aria-pressed={tab === "generator"} onClick={() => setTab("generator")}><Dices aria-hidden="true" size={16} />Generátor</button>}
       {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => setTab("trials")}><Shield aria-hidden="true" size={16} />Titkos próbák</button>}
       {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}><ClipboardList aria-hidden="true" size={16} />Felülbírálások</button>}
       {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><ScrollText aria-hidden="true" size={16} />KM-jegyzetek</button>}
@@ -76,6 +77,8 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       onChange={markers => onChange({ ...adventure, markers })} />}
     {km && tab === "bestiary" && <Bestiary entries={adventure.bestiary ?? []}
       onChange={bestiary => onChange({ ...adventure, bestiary })} />}
+    {km && tab === "generator" && <CreatureGenerator
+      onSave={entry => onChange({ ...adventure, bestiary: [...(adventure.bestiary ?? []), entry] })} />}
     {tab === "segments" && <SegmentTimeline km={km} characters={characters} entries={adventure.segments ?? []} current={adventure.currentSegment}
       onChange={(segments, currentSegment) => onChange({ ...adventure, segments, currentSegment })} />}
     {km && tab === "notes" && <label>KM-jegyzet<textarea rows={7} value={adventure.notes}

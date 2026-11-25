@@ -24,12 +24,6 @@ A szegmenssáv kézi szegmenst vagy a könyv szerinti folyamatos kezdeményezés
 
 Az akadémikus Mágiaelmélet a korábbi kódexértékek közül a legmagasabbat is figyelembe veszi, a mentett jártasságok és Jp-költségek megmaradnak. A szakosodás és a birtokolt mondóka-pergamen TESZT háziszabály. A Vakharc fegyveres támadó- és védőszintet korlátozó szabálya könyvi (107. o.), az Érzékszerv/Intuíció szerinti képzési költség TESZT háziszabály. Az általános felülbírálási napló a KM döntését dokumentálja, a szabálymodulok saját szerkesztői érvényesítik a támogatott kivételeket. A térkép a mintahelyzet saját tájait használja. A bestiárium jelenleg saját lényeket kezel.
 
-## Online kaland · Supabase
+## A TESZT 1.0 tárolása
 
-1. A Supabase Dashboardon hozz létre egy **Free** projektet. A **Connect** ablakból másold ki a Project URL-t és a publishable kulcsot.
-2. Az **Authentication → Sign In / Providers** oldalon engedélyezd az anonim bejelentkezést. A játék vendégmunkameneteket használ, az új böngészőprofil külön felhasználó. Nyilvános nyitás előtt állíts be botvédelmet és ellenőrizd az anonim bejelentkezések forgalmi korlátait.
-3. A **SQL Editor → New query** ablakban futtasd a `supabase/migrations/20261125000000_online_adventures.sql` teljes tartalmát egyszer. Ez hozza létre a szobákat, a jogosultságokat és a Realtime adatfolyamot.
-4. Helyi kipróbáláshoz másold a `.env.example` fájlt `.env.local` névre, és add meg a két publikus értéket. Indítsd újra a Vite szervert.
-5. GitHub Actions Pages buildhez a tároló **Settings → Secrets and variables → Actions → Variables** lapján adj hozzá `VITE_SUPABASE_URL` és `VITE_SUPABASE_PUBLISHABLE_KEY` nevű repository változókat. Ezek az értékek a böngészős buildbe kerülnek. A database password, service role és secret kulcs a böngészős buildhez nem használható.
-
-Az online kalandban két független böngészőmunkamenet használható. A KM létrehozza a szobát, a **Csapat** fülről meghívót küld, a játékos pedig ezzel csatlakozik. A közös jelenet, az aktuális szegmens, a csapattagság és a szobachat szerveroldalon tárolódik. A karakter teljes adatlapja, a helyi kalandpróba, a saját bestiárium és a helyi térképadatok a böngészőben maradnak. A szobába a karakter neve és faja osztható meg külön művelettel.
+A játékos- és kalandmester mód ugyanabban a böngészőben próbálható ki. A statikus kiadás fiók és háttérszolgáltatás nélkül működik. A karakterek átvitelére a Beállítások JSON-exportja és -importja használható.

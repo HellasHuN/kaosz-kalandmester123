@@ -79,38 +79,10 @@ export function Bestiary({ entries, onChange }) {
     <p>A saját lények adatai helyben tárolódnak.</p>
     <label>Keresés név, faj vagy élőhely szerint<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
     <button type="button" onClick={() => setEditing({ id: crypto.randomUUID() })}>Saját lény hozzáadása</button>
-    <details>
-      <summary>NPC- és lénygenerátor</summary>
-      <p>Egyedi, szerkeszthető vázlat. Az erősség a generálás beállítása.</p>
-      <form onSubmit={event => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const draft = generateNpc({ id: crypto.randomUUID(), type: data.get("type"),
-          role: data.get("role"), strength: Number(data.get("strength")), habitat: data.get("habitat").trim() });
-        if (draft) setEditing(draft);
-      }}>
-        <label>Generált lény faja vagy típusa <input name="type" required maxLength={120} /></label>
-        <label>Szerepkör <select name="role">{npcRoles.map(role => <option key={role}>{role}</option>)}</select></label>
-        <label>Erősség <input type="number" name="strength" min="1" max="10" defaultValue="4" required /></label>
-        <label>Élőhely <input name="habitat" maxLength={120} /></label>
-        <button type="submit">Új vázlat generálása</button>
-      </form>
-    </details>
-    {editing && <form key={editing.id} onSubmit={event => {
-      event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      const next = { id: editing.id, ...Object.fromEntries([...data].map(([key, value]) => [key, value.trim()])) };
-      if (!next.name || !next.type) return;
+    {editing && <CreatureEditor key={editing.id} draft={editing} onCancel={() => setEditing(null)} onSave={next => {
       onChange(entries.some(entry => entry.id === next.id) ? entries.map(entry => entry.id === next.id ? next : entry) : [...entries, next]);
       setEditing(null);
-    }}>
-      {Object.entries(fields).map(([key, label]) => <label key={key}>{label}{
-        key === "name" || key === "type" ? <input name={key} defaultValue={editing[key]} required maxLength={120} />
-          : <textarea name={key} defaultValue={editing[key]} rows={2} maxLength={4000} />
-      }</label>)}
-      <button>Saját lény mentése</button>
-      <button type="button" onClick={() => setEditing(null)}>Mégse</button>
-    </form>}
+    }} />}
     {filtered.length ? <ul className="bestiary-cards">{filtered.map(entry => <li key={entry.id}>
       <details><summary><PawPrint size={19} aria-hidden="true" /> <span>{entry.name} · {entry.type} · Saját lény</span></summary>
         <dl>{Object.entries(fields).filter(([key]) => key !== "name" && key !== "type" && entry[key]).map(([key, label]) =>
@@ -121,5 +93,63 @@ export function Bestiary({ entries, onChange }) {
         </div>
       </details>
     </li>)}</ul> : <p className="bestiary-empty"><PawPrint size={25} aria-hidden="true" /> Nincs találat.</p>}
+  </section>;
+}
+
+
+function CreatureEditor({ draft, onSave, onCancel }) {
+  return <form onSubmit={event => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const next = { ...draft, ...Object.fromEntries([...data].map(([key, value]) => [key, value.trim()])) };
+    if (next.name && next.type) onSave(next);
+  }}>
+      {Object.entries(fields).map(([key, label]) => <label key={key}>{label}{
+        key === "name" || key === "type" ? <input name={key} defaultValue={draft[key]} required maxLength={120} />
+          : <textarea name={key} defaultValue={draft[key]} rows={2} maxLength={4000} />
+      }</label>)}
+    <button>Saját lény mentése</button>
+    <button type="button" onClick={onCancel}>Mégse</button>
+  </form>;
+}
+
+export function CreatureGenerator({ onSave }) {
+  const [drafts, setDrafts] = useState([]);
+  return <section>
+    <h3>NPC- és lénygenerátor</h3>
+    <p>Egyedi, szerkeszthető vázlatok. A KM ellenőrzi a végleges értékeket és az előfeltételeket.</p>
+    <form onSubmit={event => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      const count = Number(data.get("count"));
+      if (!Number.isInteger(count) || count < 1 || count > 10) return;
+      const next = Array.from({ length: count }, () => {
+        const draft = generateNpc({ id: crypto.randomUUID(), type: data.get("type").trim(),
+          role: data.get("role"), strength: Number(data.get("strength")), habitat: data.get("habitat").trim() });
+        return draft && { ...draft, description: data.get("kind"), behavior: data.get("behavior").trim(),
+          equipment: data.get("equipment").trim(), magic: data.get("magic").trim(), powers: data.get("powers").trim() };
+      }).filter(Boolean);
+      setDrafts(next);
+    }}>
+      <label>Kategória <select name="kind"><option>NPC</option><option>Szörny</option></select></label>
+      <label>Generált lény faja vagy típusa <input name="type" required maxLength={120} /></label>
+      <label>Szerepkör <select name="role">{npcRoles.map(role => <option key={role}>{role}</option>)}</select></label>
+      <label>Erősség <input type="number" name="strength" min="1" max="10" defaultValue="4" required /></label>
+      <label>Csoport létszáma <input type="number" name="count" min="1" max="10" defaultValue="1" required /></label>
+      <label>Élőhely <input name="habitat" maxLength={120} /></label>
+      <label>Viselkedés <input name="behavior" maxLength={400} /></label>
+      <label>Felszerelés <input name="equipment" maxLength={400} /></label>
+      <label>Mágikus adottságok <input name="magic" maxLength={400} /></label>
+      <label>Egyedi képességek <input name="powers" maxLength={400} /></label>
+      <button>{drafts.length ? "Újragenerálás" : "Új vázlat generálása"}</button>
+    </form>
+    {drafts.map(draft => <details key={draft.id} open={drafts.length === 1}>
+      <summary>{draft.name} · {draft.type}</summary>
+      <CreatureEditor draft={draft} onCancel={() => setDrafts(items => items.filter(item => item.id !== draft.id))}
+        onSave={entry => {
+          onSave(entry);
+          setDrafts(items => items.filter(item => item.id !== draft.id));
+        }} />
+    </details>)}
   </section>;
 }

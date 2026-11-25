@@ -1,5 +1,5 @@
 import { ArrowUpRight, BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
-import "./online/mobileHome.css";
+import "./teszt/mobileHome.css";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
 import { planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
@@ -34,7 +34,6 @@ import {
   clampAttributeAdjustment, effectiveAttribute,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
-const OnlineAdventure = lazy(() => import("./online/OnlineAdventure.jsx"));
 const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
 const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
 
@@ -166,8 +165,7 @@ function App() {
   const [selectedRacialAbilities, setSelectedRacialAbilities] = useState([]);
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
-  const [page, setPage] = useState(() =>
-    new URLSearchParams(window.location.search).has("kaland") ? "online-adventure" : "fomenu");
+  const [page, setPage] = useState("fomenu");
   const [testMode, setTestMode] = useState(null);
   const [adventure, setAdventure] = useState(() => readAdventure({
     getItem: (key) => window.localStorage.getItem(key),
@@ -1439,16 +1437,15 @@ setAncestry((previous) => ({
               <h1 id="home-title">Káosz<br /><em>szerepjáték</em></h1>
             </div>
             <nav className="home-actions" aria-label="Főmenü">
-              <button className="mobile-home-online" type="button" onClick={() => navigate("online-adventure", null)}>
+              <button className="mobile-home-adventure" type="button" onClick={() => navigate("test-adventure", null)}>
                 <Compass aria-hidden="true" size={26} />
-                <span><strong>Online kaland</strong>
-                  <small>Kaland létrehozása vagy csatlakozás meghívóval</small></span>
+                <span><strong>Kaland kezdete</strong>
+                  <small>Játékos és kalandmester mód</small></span>
                 <ArrowUpRight aria-hidden="true" size={20} />
               </button>
               <div className="mobile-home-grid">
                 <button type="button" onClick={() => navigate("alkotas", null)}><Feather aria-hidden="true" size={20} />Karakteralkotás</button>
                 <button type="button" onClick={() => navigate("karakterek")}><BookOpen aria-hidden="true" size={20} />Karakter betöltése</button>
-                <button type="button" onClick={() => navigate("test-adventure", null)}><Swords aria-hidden="true" size={20} />Helyi kalandpróba</button>
                 <button type="button" onClick={() => navigate("test-settings", null)}><Settings aria-hidden="true" size={20} />Beállítások</button>
               </div>
             </nav>
@@ -1465,9 +1462,6 @@ setAncestry((previous) => ({
             )}
           </nav>
         )}
-        {page === "online-adventure" && <Suspense fallback={<p role="status">Online kaland betöltése…</p>}>
-          <OnlineAdventure characters={playingCharacters} />
-        </Suspense>}
         {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
             if (window.confirm("Visszatérsz a főmenübe?")) {
