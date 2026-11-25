@@ -1,5 +1,3 @@
-import TestMode from "./teszt/TestMode.jsx";
-import TestSettings from "./teszt/TestSettings.jsx";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
 import { planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
@@ -24,7 +22,7 @@ import Karakterlap from "./Karakterlap";
 import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
 import { TEHETSEG, preserveUnchangedSkillCosts, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
-import { useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import Felszereles from "./Felszereles.jsx";
 import Magia from "./Magia.jsx";
 import "./App.css";
@@ -34,6 +32,9 @@ import {
   clampAttributeAdjustment, effectiveAttribute,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
+const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
+const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
+
 const races = {
   Elf: [[20, 70], [50, 90], [55, 90], [30, 85]],
   Ember: [[30, 80], [30, 80], [25, 80], [35, 90]],
@@ -1449,19 +1450,19 @@ setAncestry((previous) => ({
             )}
           </nav>
         )}
-        {page === "test-settings" && <TestSettings mode={testMode} onMode={selectTestMode}
+        {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
             if (window.confirm("Visszatérsz a főmenübe?")) {
               setTestMode(null);
               navigate("fomenu", null);
             }
-          }} onExport={exportCharacters} onImport={importCharacters} />}
-        {page === "test-adventure" && <>
+          }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
+        {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
           <TestMode key={testMode} mode={testMode} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
             ? playingCharacters : [...playingCharacters, sampleCharacter]}
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
-        </>}
+        </Suspense>}
         {page === "alkotas" && (
         <div className="creation-workspace"><div className="welcome">
           <h2>Karakteralkotás</h2>

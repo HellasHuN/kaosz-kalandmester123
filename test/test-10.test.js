@@ -63,3 +63,17 @@ test("the elf nature selector offers explicit relevant skills rather than the wh
   assert.ok(suggestedElfNatureSkills.includes("Nyomolvasás"));
   assert.ok(!suggestedElfNatureSkills.includes("Mágiahasználat (akadémikus)"));
 });
+
+test("message unread counters are independent for each role and recipient", async () => {
+  const { addMessage, markConversationRead, unreadMessages } = await import("../src/teszt/localAdventure.js");
+  const initial = { messages: [], notes: "" };
+  const time = "2026-11-25T19:00:00Z";
+  const sent = addMessage(initial, "one", "km", "Üzenet", time);
+  assert.equal(unreadMessages(sent, "one", "km"), 0);
+  assert.equal(unreadMessages(sent, "one", "player"), 1);
+  assert.equal(unreadMessages(sent, "two", "player"), 0);
+  const read = markConversationRead(sent, "one", "player");
+  assert.equal(unreadMessages(read, "one", "player"), 0);
+  const reply = addMessage(read, "one", "player", "Válasz", time);
+  assert.equal(unreadMessages(reply, "one", "km"), 1);
+});

@@ -8,6 +8,14 @@ export function readAdventure(storage) {
     if (!raw) return { messages: [], notes: "", blocked: false };
     const value = JSON.parse(raw);
     if (typeof value?.notes === "string" &&
+      (value.readCounts === undefined || (value.readCounts !== null && typeof value.readCounts === "object" &&
+        !Array.isArray(value.readCounts) && Object.values(value.readCounts).every(count => Number.isSafeInteger(count) && count >= 0))) &&
+      (value.markers === undefined || (Array.isArray(value.markers) && value.markers.every(entry =>
+        typeof entry?.id === "string" && typeof entry.name === "string" && entry.layer === "Saját jelölők" &&
+        [entry.x, entry.y].every(n => Number.isFinite(n) && n >= 0 && n <= 100)))) &&
+      (value.bestiary === undefined || (Array.isArray(value.bestiary) && value.bestiary.every(entry =>
+        typeof entry?.id === "string" && typeof entry.name === "string" && typeof entry.type === "string" &&
+        Object.values(entry).every(item => typeof item === "string")))) &&
       (value.currentSegment == null || (Number.isSafeInteger(value.currentSegment) && value.currentSegment > 0)) &&
       (value.segments === undefined || (Array.isArray(value.segments) && value.segments.every(entry =>
         typeof entry?.id === "string" && typeof entry.name === "string" && typeof entry.visible === "boolean" &&
@@ -43,4 +51,23 @@ export function addMessage(adventure, recipient, author, text, sentAt) {
 export function conversationFor(adventure, recipient) {
   if (recipient == null) return [];
   return adventure.messages.filter(message => message.recipient === String(recipient));
+}
+
+function readingKey(recipient, mode) {
+  return JSON.stringify([String(recipient), mode]);
+}
+
+function receivedMessages(adventure, recipient, mode) {
+  return conversationFor(adventure, recipient).filter(message => message.author !== mode).length;
+}
+
+export function unreadMessages(adventure, recipient, mode) {
+  return Math.max(0, receivedMessages(adventure, recipient, mode) -
+    (adventure.readCounts?.[readingKey(recipient, mode)] ?? 0));
+}
+
+export function markConversationRead(adventure, recipient, mode) {
+  if (!unreadMessages(adventure, recipient, mode)) return adventure;
+  return { ...adventure, readCounts: { ...adventure.readCounts,
+    [readingKey(recipient, mode)]: receivedMessages(adventure, recipient, mode) } };
 }

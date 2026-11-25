@@ -99,3 +99,29 @@
   border-left: 3px solid var(--test-brass);
   padding-inline-start: .65rem;
 }
+
+.test-map-viewport {
+  overflow: auto;
+  height: 280px;
+  border: 1px solid #ad8b50;
+}
+
+.test-map {
+  position: relative;
+  background:
+    linear-gradient(146deg, transparent 44%, #4d696c 45% 48%, transparent 49%),
+    radial-gradient(ellipse at 25% 20%, #52674b 0%, transparent 32%),
+    radial-gradient(ellipse at 68% 74%, #997d54 0%, transparent 25%),
+    #ded0a5;
+}
+
+.test-map span {
+  position: absolute;
+  max-width: 10rem;
+  color: #211818;
+  padding: .15rem;
+  background: #f1e3c6ed;
+  border-radius: .2rem;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
