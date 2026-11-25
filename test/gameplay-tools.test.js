@@ -77,3 +77,23 @@ test("proposed perception ranges cover all supported races and contain their rec
     assert.ok(note.trim());
   }
 });
+
+test("academic successful cast debits only free Ep and an attempt cannot be recorded twice", async () => {
+  const { logAcademicCasting, undoSacredCasting } = await import("../src/teszt/sacredCasting.js");
+  const { readMagic } = await import("../src/magiaSzabalyok.js");
+  const character = { stats: [50, 50, 50, 60, 60], skills: { "Mágiaelmélet": 3,
+    "Mágiahasználat (akadémikus)": 3, Esszenciafelszabadítás: 5 } };
+  const spell = { id: "academic", name: "Próba", codex: "Smaragd", difficulty: 2, ep: { kind: "perUnit", amount: 5 } };
+  const magic = readMagic({ magic: { activeEp: 20, acquisitions: [
+    { form: "academic", spellId: "academic" }, { form: "sacred", spellId: "other", ep: 10 },
+  ] } });
+  const operation = { id: "attempt", recordedAt: "2026-11-25T20:00:00Z", roll: 5 };
+  assert.equal(logAcademicCasting(character, magic, spell, { units: 3, conditionsConfirmed: true }, operation), magic);
+  assert.equal(logAcademicCasting(character, magic, spell, { units: 2 }, operation), magic);
+  const context = { units: 2, conditionsConfirmed: true };
+  const cast = logAcademicCasting(character, magic, spell, context, operation);
+  assert.equal(cast.activeEp, 10);
+  assert.deepEqual(cast.acquisitions, magic.acquisitions);
+  assert.equal(logAcademicCasting(character, cast, spell, context, operation), cast);
+  assert.deepEqual(undoSacredCasting(cast), { ...magic, castingLog: [] });
+});

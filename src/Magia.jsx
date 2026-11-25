@@ -1,6 +1,6 @@
 import { rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
-import { logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
+import { logAcademicCasting, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
 import { academicTheoryRank } from "./teszt/academic.js";
 import { codices, spells } from "./varazslatAdatok.js";
@@ -54,7 +54,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   const trialSignature = JSON.stringify([trial?.target, cost.ep, context.units, context.target]);
   function rollAcademic(digital) {
     const roll = digital ? rollDie(100) : Number(manualRoll);
-    setTrialResult({ signature: trialSignature, roll, outcome: percentileResult(trial.target, roll) });
+    setTrialResult({ id: crypto.randomUUID(), signature: trialSignature, roll, outcome: percentileResult(trial.target, roll) });
   }
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
 
@@ -172,6 +172,14 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
               "critical-failure": "Katasztrofális rontás",
             })[trialResult.outcome]}. A célpont ellenállása és az Ep elszámolása külön ellenőrzendő.`
         }</p>}
+        {gm && editing && trialResult?.signature === trialSignature && trialResult.outcome === "success" && spell.fp == null && (
+          <button type="button" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}
+            onClick={() => {
+              if (!window.confirm("Rögzíted a sikeres létrehozást és az Ep-levonást? A célpont ellenállása külön próba.")) return;
+              const operation = { id: trialResult.id, roll: trialResult.roll, recordedAt: new Date().toISOString() };
+              onChange(previous => logAcademicCasting(character, previous, spell, context, operation));
+            }}>Sikeres elmondás és Ep-levonás rögzítése</button>
+        )}
       </>}
       {gm && <p aria-live="polite">{states[result.state]}{result.reasons.length > 0 && ` · ${result.reasons.join(" ")}`}</p>}
       {gm && editing && ((form === "practical") === (spell.codex === "Praktikus mágia")) && (
@@ -415,13 +423,13 @@ export default function Magia({ character, onSave, ref }) {
       )}
       {magic.castingLog?.length > 0 && (
         <details>
-          <summary>Szakrális varázslási napló</summary>
+          <summary>Varázslási napló</summary>
           <ol>{magic.castingLog.map(record => <li key={record.id}>
             {record.spellName} · {record.previousEp - record.remainingEp} Ep · {record.outcome} ·{" "}
             <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time>
           </li>)}</ol>
           {gm && editing && <button type="button" disabled={undoSacredCasting(magic) === magic} onClick={() => {
-            if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és kikérést?")) setDraft(undoSacredCasting);
+            if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és az esetleges szakrális kikérést?")) setDraft(undoSacredCasting);
           }}>Utolsó elmondás visszavonása</button>}
         </details>
       )}
