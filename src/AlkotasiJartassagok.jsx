@@ -1,3 +1,5 @@
+import { devotionSkill } from "./elhivatottsag.js";
+import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
 import { useState } from "react";
 import { skillPrices } from "./jpSzamitas.js";
 import { relatedAttribute } from "./jartassagFejlesztes.js";
@@ -30,8 +32,8 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
   const { shield, release } = magicLimits(character);
   const speed = characterSpeed(withEffectiveStrength(character));
 
-  function change(name, level) {
-    const error = onChange(name, level);
+  function change(name, level, approved = false) {
+    const error = onChange(name, level, approved);
     setMessage(error);
     if (!error) setQuery("");
   }
@@ -70,7 +72,7 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                       .filter((option) => option >= minimum && (option <= Math.max(minimum, creationSkillLimit(character, name)) || option === level))
                       .map((option) => <option key={option}>{option}</option>)}
                   </select> : level}</td>
-                  <td>{costs.skillJpPaid[name] ?? "—"}</td>
+                  <td>{costs.skillJpPaid[name] ?? "—"}{costs.estimatedSkillJp.includes(name) && <small> · hiányos előzmény</small>}</td>
                   <td>{trainingGrants[name] ? `Képzési csomag · ${trainingGrants[name]}. szint` : grants[name] ? "Faji jártasság"
                     : editable ? <button type="button" aria-label={`${name} törlése`} onClick={() => change(name, 0)}>×</button>
                     : character.skillTraining?.[name] ? "Folyamatban" : "—"}</td>
@@ -90,6 +92,8 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
         <p>Esszenciapajzs maximuma <strong>{shield}</strong> · Felszabadítható Ep <strong>{release}</strong> · Gyorsaság <strong>{speed.value ?? "—"}</strong></p>
         {character.race === "Gilf" && <p>A szabad Mágiaelmélet és a szabad Mágiahasználat induló plafonja 4. szint.
           Az Esszenciafelszabadítás induló plafonja 2. szint.</p>}
+        {remaining != null && <ElhivatottsagValaszto creation level={character.skills[devotionSkill] ?? 0}
+          maximum={creationSkillLimit(character, devotionSkill)} onChange={(level, approved) => change(devotionSkill, level, approved)} />}
         <InduloJartassagEngedelyek character={character} onChange={onApprovalsChange} />
         <KepzesiCsomagValaszto character={character} onChange={onPackageChange} />
         <label htmlFor="creation-skill-search">Új jártasság keresése</label>

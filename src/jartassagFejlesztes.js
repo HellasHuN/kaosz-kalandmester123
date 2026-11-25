@@ -1,5 +1,6 @@
 ﻿import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
-import { learningMethods } from "./jartassagElofeltetelek.js";
+import { devotionError, devotionSkill } from "./elhivatottsag.js";
+import { learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { traitSkillModifier } from "./karakterTulajdonsagok.js";
 import { racialSkillModifier } from "./fajiSzakosodasok.js";
 import { inheritedModifier } from "./felverOrokles.js";
@@ -19,7 +20,7 @@ export function trainingQuote(character, name, current, method = "mentor") {
   const prior = specializationLearningRank(name, current, character);
   const relearn = foundation === "practice" && current === 1;
   const level = relearn ? 1 : prior + 1;
-  if (name === "Mágiaelmélet" || name === "Elhivatottság*" || (name === gilfFreeTheory && character.race !== "Gilf") ||
+  if (name === "Mágiaelmélet" || name === devotionSkill || (name === gilfFreeTheory && character.race !== "Gilf") ||
       !skillPrices(name) || level > skillPrices(name).length) return null;
   if (item?.base === "Fegyverforgatás" && !item.branch && racialWeaponTraining(character)?.id === item.id) return null;
   // Alapkönyv, 96–97. oldal. A Mesélő igazolja a jártasság tanulási kódját.
@@ -62,13 +63,34 @@ export function completeTraining(row, name) {
   }
   const prior = specialization(name)?.branch ? Math.max(1, row.level, training?.from ?? 0) : row.level;
   if (!training || training.level !== prior + 1) return row;
-  const prices = Array.from({ length: prior }, (_, index) => row.prices[index] ?? 0);
+  const prices = Array.from({ length: prior }, (_, index) => index < row.level ? (row.prices[index] ?? null) : 0);
   return { ...row, level: training.level, prices: [...prices, training.cost], training: null,
     ...(training.method === "practice-foundation" && { foundation: "practice" }) };
 }
 
+export function changeDevotionInPlay(character, row, level, approved) {
+  if (devotionError(character, level, approved) || level === row.level || row.training) return row;
+  const prices = Array.from({ length: level }, (_, index) =>
+    index < row.level ? (row.prices[index] ?? null) : 0);
+  const sunk = (row.sunk ?? 0) + row.prices.slice(level, row.level).reduce((sum, price) => sum + price, 0);
+  return { ...row, level, prices, sunk };
+}
+
 export function cancelTraining(row) {
   return { ...row, training: null };
+}
+
+export function firstInvalidTrainingChange(training, skills, character, original) {
+  for (const [name, record] of Object.entries(training)) {
+    const retained = record === original.skillTraining?.[name];
+    if (retained && skillPrerequisiteMessage(original.skills, name, record.level, original)) continue;
+    const previousDevotion = original.skills?.[devotionSkill] ?? 0;
+    const prerequisiteSkills = retained && previousDevotion > (skills[devotionSkill] ?? 0)
+      ? { ...skills, [devotionSkill]: previousDevotion } : skills;
+    const message = skillPrerequisiteMessage(prerequisiteSkills, name, record.level, character);
+    if (message) return message;
+  }
+  return "";
 }
 
 export function serializeSkills(rows) {
@@ -78,7 +100,7 @@ export function serializeSkills(rows) {
     Object.fromEntries(acquired.map(([name, row]) => [name, row.level])),
     Object.fromEntries(acquired.map(([name, row]) => [name, paidTotal(row)])),
     Object.fromEntries(acquired.map(([name, row]) => [name, row.prices.slice(0, row.level)])),
-    acquired.filter(([, row]) => row.estimated).map(([name]) => name),
+    acquired.filter(([, row]) => row.prices.slice(0, row.level).includes(null)).map(([name]) => name),
     Object.fromEntries(entries.filter(([, row]) => row.training).map(([name, row]) => [name, row.training])),
     Object.fromEntries(entries.filter(([, row]) => row.note).map(([name, row]) => [name, row.note])),
     Object.fromEntries(acquired.filter(([, row]) => row.foundation).map(([name, row]) => [name, row.foundation])),

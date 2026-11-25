@@ -1,3 +1,5 @@
+import { readCharacters, writeCharacters } from "./karakterMentes.js";
+import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { ancestryValidation, creationGenderOptions, fixedParentRace, getBreedingStatus } from "./szarmazas.js";
 import { speedByRace } from "./gyorsasag.js";
 import VallasValaszto from "./VallasValaszto.jsx";
@@ -17,7 +19,7 @@ import { calculateTraitJp, fingerPrices, narratorTraitPrices, traitConflict, tra
 import Karakterlap from "./Karakterlap";
 import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
-import { TEHETSEG, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
+import { TEHETSEG, preserveUnchangedSkillCosts, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
 import { useState, useEffect, useRef } from "react";
 import Felszereles from "./Felszereles.jsx";
 import Magia from "./Magia.jsx";
@@ -233,13 +235,11 @@ function updateTraitValue(traitName, value) {
     [traitName]: value,
   }));
 }
-const [savedCharacters, setSavedCharacters] = useState(() => {
-  try {
-    return JSON.parse(localStorage.getItem("kaosz-karakterek") || "[]");
-  } catch {
-    return [];
-  }
-});
+const [initialSaves] = useState(() => readCharacters(() => window.localStorage, Object.keys(races)));
+const [savedCharacters, setSavedCharacters] = useState(initialSaves.characters);
+const [saveBlocked, setSaveBlocked] = useState(initialSaves.blocked);
+const previousSave = useRef(initialSaves.raw);
+const [devotionApproval, setDevotionApproval] = useState(null);
 const [selectedCharacterId, setSelectedCharacterId] = useState(null);
 const [creationTab, setCreationTab] = useState("details");
 const [creationSkills, setCreationSkills] = useState({});
@@ -251,11 +251,13 @@ const [deletingCharacter, setDeletingCharacter] = useState(null);
 const [deleteStep, setDeleteStep] = useState(0);
 const [farewellMessage, setFarewellMessage] = useState("");
 useEffect(() => {
-  localStorage.setItem(
-    "kaosz-karakterek",
-    JSON.stringify(savedCharacters)
-  );
-}, [savedCharacters]);
+  if (saveBlocked || savedCharacters === initialSaves.characters) return;
+  if (writeCharacters(() => window.localStorage, savedCharacters, previousSave.current)) {
+    previousSave.current = JSON.stringify(savedCharacters);
+  } else {
+    setSaveBlocked(true);
+  }
+}, [savedCharacters, initialSaves, saveBlocked]);
   const total = stats.reduce((sum, value) => sum + value, 0);
 function traitPoints({ advantages, disadvantages, traitValues, talentSkills, race }) {
 const selectedAdvantageJp = advantages.reduce((sum, name) => {
@@ -394,15 +396,20 @@ const calculatedAgeLimits =
     return "";
   }
 
-  function changeCreationSkill(name, level) {
+  function changeCreationSkill(name, level, devotionApproved = false) {
     if (!creationEditable) return "Csak még nem játszott karakter jártasságai módosíthatók itt.";
     if (creationOriginal?.skillTraining?.[name]) return "Ehhez a jártassághoz már folyamatban lévő fejlesztés tartozik.";
     if (level > (effectiveCreationSkills[name] ?? 0)) {
       const error = skillPrerequisiteMessage(effectiveCreationSkills, name, level, creationCharacter);
       if (error) return error;
     }
-    const skills = updateCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal);
+    if (name === devotionSkill) {
+      const error = devotionError(creationCharacter, level, devotionApproved);
+      if (error) return error;
+    }
+    const skills = updateCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
     if (skills === effectiveCreationSkills) return "A szinthez nincs elég elkölthető Jp, vagy a választás meghaladja az induló szintkorlátot.";
+    if (name === devotionSkill) setDevotionApproval({ level, religion });
     setCreationSkills((previous) => {
       const next = { ...previous };
       if (level > (creationGrants[name] ?? 0)) next[name] = level;
@@ -569,9 +576,8 @@ function saveCharacter({ notify = true } = {}) {
         ? { creationSkillsUnderGrant: skillsUnderRacialGrant(creationSkills, creationGrants) } : {}),
       ...(Object.keys(racialSkills).length > 0 || existingCharacter?.creationRacialSkills
         ? { creationRacialSkills: racialSkills } : {}),
-      skillJpPaid: creationCosts.skillJpPaid,
-      skillJpByLevel: creationCosts.skillJpByLevel,
-      estimatedSkillJp: creationCosts.estimatedSkillJp,
+      ...preserveUnchangedSkillCosts(creationOriginal, effectiveCreationSkills, creationCosts.skillJpPaid,
+        creationCosts.skillJpByLevel, creationCosts.estimatedSkillJp),
     }),
     ...(!legacyAllocation && stage !== "extrém" && {
       ageAllocation: {
@@ -607,10 +613,11 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   setInheritedTraits(character.inheritedTraits ?? {});
   setCreationExtras({});
 
-  if (notify) alert("A karakter sikeresen elmentve!");
+  if (notify) alert(saveBlocked ? "A karakter az aktuális munkamenetben frissült." : "A karakter sikeresen elmentve!");
   return true;
 }
   function loadCharacter(character, forCreation = false) {
+    setDevotionApproval(null);
     setCreationTab("details");
     setCreationSkills(forCreation ? purchasedCreationSkills(character) : {});
     setCreationClarifications({});
@@ -689,8 +696,9 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   function saveSkills(character, skills, jp, skillJpPaid, skillJpByLevel, estimatedSkillJp, skillTraining, skillNotes, skillFoundations, skillSunkJp,
     original = character) {
     setSavedCharacters((previous) => previous.map((saved) =>
-      saved === character ? { ...original, skills, jp, skillJpPaid, skillJpByLevel, estimatedSkillJp, skillTraining, skillNotes,
-        skillFoundations, skillSunkJp, skillEffectBaseline: original.skillEffectBaseline ?? original.skills ?? {} } : saved
+      saved === character ? { ...original, skills, jp,
+        ...preserveUnchangedSkillCosts(original, skills, skillJpPaid, skillJpByLevel, estimatedSkillJp),
+        skillTraining, skillNotes, skillFoundations, skillSunkJp, skillEffectBaseline: original.skillEffectBaseline ?? original.skills ?? {} } : saved
     ));
   }
 
@@ -771,6 +779,10 @@ function validateCharacter() {
     race !== selectedCharacter.race || gender !== (selectedCharacter.gender ?? ""));
   if (!name.trim() || !race || !Number.isInteger(Number(age)) || Number(age) < 1) {
     message = "Töltsd ki a nevet, életkort és válaszd ki a fajt!";
+  } else if (creationEditable && (effectiveCreationSkills[devotionSkill] ?? 0) > (creationOriginal?.skills?.[devotionSkill] ?? 0) &&
+      (devotionApproval?.level !== effectiveCreationSkills[devotionSkill] || devotionApproval.religion !== religion ||
+        devotionError(creationCharacter, effectiveCreationSkills[devotionSkill], true))) {
+    message = "A jelenlegi vallással és szinttel hagyasd jóvá az Elhivatottságot a Kalandmesterrel.";
   } else if (traitError) {
     message = traitError;
   } else if (creationEditable && advantages.includes("Spontán mágia") &&
@@ -1385,6 +1397,8 @@ setAncestry((previous) => ({
   return (
     <div className="app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
+        {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
+          módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
           <section className="home-content" aria-labelledby="home-title">
             <h1 id="home-title">Káosz Kalandmester</h1>

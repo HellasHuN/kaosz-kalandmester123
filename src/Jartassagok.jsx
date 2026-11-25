@@ -1,7 +1,9 @@
+import { devotionError, devotionSkill } from "./elhivatottsag.js";
+import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
 import { useImperativeHandle, useRef, useState } from "react";
 import { codexTheorySkills, jpKoltsegek } from "./jpKoltsegek.js";
-import { cancelTraining, committedJp, completeTraining, relatedAttribute, serializeSkills, skillRows, trainingQuote } from "./jartassagFejlesztes.js";
-import { firstInvalidSkillChange, learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
+import { cancelTraining, changeDevotionInPlay, committedJp, completeTraining, firstInvalidTrainingChange, relatedAttribute, serializeSkills, skillRows, trainingQuote } from "./jartassagFejlesztes.js";
+import { devotionPrerequisiteMessage, firstInvalidSkillChange, learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { maxHealth } from "./eletero.js";
 import { packageGrants } from "./kepzesiCsomagok.js";
 import { artSkillName, clarifySpecialization, genericSpecializations, hasWeaponFoundation, racialWeaponTraining, specialization, specializationLearningRank,
@@ -128,12 +130,12 @@ export default function Jartassagok({ character, onSave, ref }) {
         window.alert("Előbb csökkentsd az aktuális életerőt az új maximumra.");
         return false;
       }
-      const invalid = firstInvalidSkillChange(levels, original.skills, skillCharacter, original) ||
-        Object.entries(training).map(([name, record]) => {
-          const previous = original.skillTraining?.[name];
-          return previous && skillPrerequisiteMessage(original.skills, name, previous.level, original) ? ""
-            : skillPrerequisiteMessage(levels, name, record.level, skillCharacter);
-        }).find(Boolean);
+      const invalid = firstInvalidSkillChange(levels, original.skills, skillCharacter, original, {}, { retainAfterDevotionLoss: true }) ||
+        firstInvalidTrainingChange(training, levels, skillCharacter, original) ||
+        Object.entries(original.skillTraining ?? {}).map(([name, record]) =>
+          record.relearn && original.skillFoundations?.[name] === "practice" && levels[name] &&
+            !foundations[name] && !training[name]
+            ? skillPrerequisiteMessage(levels, name, record.level, skillCharacter) : "").find(Boolean);
       if (invalid) { window.alert(invalid); return false; }
       onSave(character, levels, remaining, paid, byLevel, estimated, training, notes, foundations, sunk, original);
     }
@@ -162,6 +164,8 @@ export default function Jartassagok({ character, onSave, ref }) {
           <tbody>
             {Object.entries(rows).filter(([, row]) => row.level || row.training || row.note).map(([name, row]) => {
               const attribute = relatedAttribute(name);
+              const devotionNotice = row.level && devotionPrerequisiteMessage(acquired, name, row.level, skillCharacter);
+              const pendingPrerequisite = row.training && skillPrerequisiteMessage(acquired, name, row.training.level, skillCharacter);
               const next = !genericSpecializations.has(name) && trainingQuote(skillCharacter, name, row.level);
               const item = specialization(name);
               const unknownWeaponBranches = name === "Fegyverforgatás" && row.level > 1;
@@ -174,6 +178,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                 <th scope="row">
                   <span className="skill-reference-icon" aria-hidden="true" style={{ "--skill-icon": icons[attribute] ?? 8 }} />
                   {name}
+                  {devotionNotice ? <small> · {devotionNotice}</small> : null}
                   {trainingGrants[name] > 0 && <small> · Csomagszint {trainingGrants[name]}</small>}
                   {item?.group && <small> ({item.group})</small>}
                   {item && row.level > 0 && <small> · {row.prices.reduce((sum, amount) => sum + amount, 0)} Jp</small>}
@@ -186,7 +191,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                 </th>
                 <td>{attribute ?? "—"}</td>
                 <td className="skill-reference-centered">
-                  {editing && !unknownWeaponBranches && !row.training && row.level > minimum ? (
+                  {editing && name !== devotionSkill && !unknownWeaponBranches && !row.training && row.level > minimum ? (
                     <select aria-label={`${name} szintcsökkentése`} value={row.level} onChange={(event) => {
                       const level = Number(event.target.value);
                       update(name, (previous) => ({ ...previous, level, prices: previous.prices.slice(0, level) }));
@@ -198,7 +203,9 @@ export default function Jartassagok({ character, onSave, ref }) {
                 <td className="skill-reference-centered">
                   {row.training ? <>
                     <span className="skill-reference-progress"><span aria-hidden="true">⌛</span> Folyamatban → {row.training.level}</span>
-                    {editing && saved[name]?.training === row.training && <button type="button" onClick={() => approve(name)}>Jóváhagyás</button>}
+                    {pendingPrerequisite && <small> · {pendingPrerequisite}</small>}
+                    {editing && saved[name]?.training === row.training &&
+                      <button type="button" disabled={Boolean(pendingPrerequisite)} onClick={() => approve(name)}>Jóváhagyás</button>}
                     {editing && <button type="button" onClick={() => withdrawTraining(name)}>Fejlesztés visszavonása</button>}
                   </> : editing && next
                     ? <button type="button" disabled={next.cost > remaining} onClick={() => chooseTraining(name)}>
@@ -211,7 +218,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                       const note = event.target.value;
                       update(name, (previous) => ({ ...previous, note }));
                     }} />
-                  {!unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
+                  {name !== devotionSkill && !unknownWeaponBranches && !row.training && !hasBranches && !original.creationRacialSkills?.[name] && !trainingGrants[name] && row.level > 0 && <button type="button" aria-label={`${name} eltávolítása`}
                     onClick={() => setDraft((previous) => {
                       const next = { ...previous };
                       if (row.sunk) next[name] = { ...blank, sunk: row.sunk };
@@ -239,6 +246,12 @@ export default function Jartassagok({ character, onSave, ref }) {
       </div>
       <p className="skill-reference-budget" aria-live="polite">Elkölthető Jp <strong>{remaining}</strong></p>
       {editing && <>
+        <ElhivatottsagValaszto level={rows[devotionSkill]?.level ?? 0} maximum={10}
+          onChange={(level, approved) => {
+            const error = devotionError(original, level, approved);
+            if (error) { window.alert(error); return; }
+            update(devotionSkill, (row) => changeDevotionInPlay(original, row, level, approved));
+          }} />
         {quote && <form className="skill-reference-training" key={candidate} onSubmit={startTraining}>
           <strong>{candidate} · {quote.level}. szint · {quote.cost} Jp</strong>
           {prerequisite && <p role="status">{prerequisite}</p>}

@@ -1,3 +1,4 @@
+import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { jpKoltsegek } from "./jpKoltsegek.js";
 import { attributeModifier, levelCost, paidLevels, skillPrices } from "./jpSzamitas.js";
 import { racialSkillModifier, racialWeaponCost } from "./fajiSzakosodasok.js";
@@ -11,7 +12,7 @@ import { artSkillName, baseSkillName, genericSpecializations, hasWeaponFoundatio
   specializationLearningRank, specializationNames } from "./jartassagSzakosodasok.js";
 
 export const creationSkillNames = [...Object.keys(jpKoltsegek).filter((name) =>
-  name !== "Mágiaelmélet" && name !== "Elhivatottság*" && !genericSpecializations.has(name)), ...specializationNames];
+  name !== "Mágiaelmélet" && name !== devotionSkill && !genericSpecializations.has(name)), ...specializationNames];
 
 const racialStartingSkills = {
   "Elf": { "Természetismeret": 5 },
@@ -96,6 +97,7 @@ export function invalidStartingSkill(character, original, grants) {
 }
 
 function creationLevelCost(character, name, level, groupSkills) {
+  if (name === devotionSkill) return jpKoltsegek[name][level - 1];
   const base = baseSkillName(name);
   const inherited = inheritedModifier(character, base);
   const modifier = base !== name && base === "Íjászat" && character.race === "Gennymanó"
@@ -134,8 +136,12 @@ export function creationSkillCosts(character, original) {
       const item = specialization(name);
       const lostGrant = index < (historicalGrants[name] ?? 0);
       const price = creationLevelCost(character, name, index + 1, item ? earlierSkills : undefined);
-      if (!lostGrant && historical?.prices[index] != null && (item || price === creationLevelCost(original, name, index + 1))) {
-        retainedEstimate ||= historical.estimated;
+      if (!lostGrant && historical?.prices[index] === null) {
+        retainedEstimate = true;
+        return null;
+      }
+      if (!lostGrant && historical?.prices[index] != null &&
+          (name === devotionSkill || item || price === creationLevelCost(original, name, index + 1))) {
         return historical.prices[index];
       }
       return price;
@@ -156,9 +162,10 @@ export function savedCreationSkillTotal(character) {
   }, (character.racialSpecializationJp ?? 0) + packageJp(character.trainingPackages));
 }
 
-export function updateCreationSkill(character, budget, name, level, original) {
+export function updateCreationSkill(character, budget, name, level, original, devotionApproved = false) {
+  if (name === devotionSkill && devotionError(character, level, devotionApproved)) return character.skills;
   const item = specialization(name);
-  if (!creationSkillNames.includes(name) || !Number.isInteger(level) || level < 0 ||
+  if ((name !== devotionSkill && !creationSkillNames.includes(name)) || !Number.isInteger(level) || level < 0 ||
       level > skillPrices(name).length || (item?.branch && level > 0 &&
       (level <= specializationLearningRank(name, 0, character) || !hasWeaponFoundation(character, item)))) return character.skills;
   if (level > 0 && item?.base === "Fegyverforgatás" && !item.branch &&

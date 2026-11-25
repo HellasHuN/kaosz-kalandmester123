@@ -73,24 +73,32 @@ export function levelCost(character, name, level, learningModifier = 0, groupSki
 
 export function paidLevels(character, name, level) {
   const recorded = character.skillJpByLevel?.[name];
-  if (recorded) {
-    return { prices: recorded, estimated: character.estimatedSkillJp?.includes(name) ?? false };
-  }
-
-  const basePrices = skillPrices(name).slice(0, level);
-  const baseTotal = basePrices.reduce((sum, price) => sum + price, 0);
-  const total = character.skillJpPaid?.[name] ?? baseTotal;
-  if (total === baseTotal) return { prices: basePrices, estimated: !Object.hasOwn(character.skillJpPaid ?? {}, name) };
-
-  // Allocate by cumulative weight so the inferred prices sum to the saved total.
-  let cumulativeWeight = 0;
-  let allocated = 0;
-  const prices = basePrices.map((price) => {
-    cumulativeWeight += baseTotal ? price : 1;
-    const next = Math.floor(total * cumulativeWeight / (baseTotal || level));
-    const amount = next - allocated;
-    allocated = next;
-    return amount;
+  const estimated = character.estimatedSkillJp?.includes(name) ?? false;
+  const total = character.skillJpPaid?.[name];
+  const knownTotal = !estimated && Number.isFinite(total) && total >= 0;
+  const prices = Array.from({ length: level }, (_, index) => {
+    // Old estimated arrays contained only guessed prices. New arrays mark each unknown level with null.
+    if (recorded && (!estimated || recorded.includes(null))) return recorded[index] ?? null;
+    // A verified aggregate can only be fully refunded when the whole skill is removed.
+    if (knownTotal) return index === 0 ? total : 0;
+    return null;
   });
-  return { prices, estimated: true };
+  return { prices, estimated: prices.includes(null) };
+}
+
+// Keep a legacy price record as supplied until its skill or recorded level costs are edited.
+export function preserveUnchangedSkillCosts(original, skills, skillJpPaid, skillJpByLevel, estimatedSkillJp) {
+  const paid = { ...skillJpPaid };
+  const byLevel = { ...skillJpByLevel };
+  const estimates = new Set(estimatedSkillJp);
+  for (const name of estimatedSkillJp) {
+    if (!skillPrices(name) || original?.skills?.[name] !== skills[name]) continue;
+    if (JSON.stringify(paidLevels(original, name, skills[name]).prices) !== JSON.stringify(byLevel[name])) continue;
+    if (Object.hasOwn(original.skillJpPaid ?? {}, name)) paid[name] = original.skillJpPaid[name];
+    else delete paid[name];
+    if (Object.hasOwn(original.skillJpByLevel ?? {}, name)) byLevel[name] = original.skillJpByLevel[name];
+    else delete byLevel[name];
+    if (!original.estimatedSkillJp?.includes(name)) estimates.delete(name);
+  }
+  return { skillJpPaid: paid, skillJpByLevel: byLevel, estimatedSkillJp: [...estimates] };
 }

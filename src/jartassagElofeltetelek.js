@@ -1,3 +1,4 @@
+import { devotionSkill } from "./elhivatottsag.js";
 // A 97. oldal szerint minden szükséges jártasságnak el kell érnie a cél szintjét.
 export const verifiedPrerequisites = {
   "Orvoslás": { skills: ["Anatómia/Élettan"], page: 98 },
@@ -133,13 +134,28 @@ export function skillPrerequisiteMessage(skills, name, level, character) {
   return missing.length ? `${name} ${level}. szint előfeltétele: ${missing.join(", ")} legalább ${level}. szinten.` : "";
 }
 
-export function firstInvalidSkillChange(skills, original = {}, character, previousCharacter = character, packageLevels = {}) {
+export function devotionPrerequisiteMessage(skills, name, level, character) {
+  if (level <= (skills?.[devotionSkill] ?? 0)) return "";
+  const missing = missingSkillPrerequisites(skills, name, level, character);
+  const withDevotion = missingSkillPrerequisites({ ...skills, [devotionSkill]: level }, name, level, character);
+  return missing.some((requirement) => !withDevotion.includes(requirement))
+    ? "Az Elhivatottság előfeltétele jelenleg nem teljesül. A megszerzett szint megmarad, a használatról a KM dönt."
+    : "";
+}
+
+export function firstInvalidSkillChange(skills, original = {}, character, previousCharacter = character, packageLevels = {},
+  { retainAfterDevotionLoss = false } = {}) {
+  // A KM által csökkentett Elhivatottság csak a már megszerzett szint megtartását érinti.
+  const retainedSkills = retainAfterDevotionLoss && (skills[devotionSkill] ?? 0) < (original[devotionSkill] ?? 0)
+    ? { ...skills, [devotionSkill]: original[devotionSkill] } : skills;
   for (const [name, level] of Object.entries(skills)) {
     if (!level || level <= (packageLevels[name] ?? 0)) continue;
-    const missing = missingSkillPrerequisites(skills, name, level, character);
+    const retainingRank = level <= (original[name] ?? 0);
+    const prerequisiteSkills = retainingRank ? retainedSkills : skills;
+    const missing = missingSkillPrerequisites(prerequisiteSkills, name, level, character);
     const previousMissing = missingSkillPrerequisites(original, name, level, previousCharacter);
     if (missing.length && (level > (original[name] ?? 0) || missing.some((skill) => !previousMissing.includes(skill)))) {
-      return skillPrerequisiteMessage(skills, name, level, character);
+      return skillPrerequisiteMessage(prerequisiteSkills, name, level, character);
     }
   }
   return "";
