@@ -123,7 +123,8 @@ export function spellAccess(character, magic, spell, form) {
   const skills = character.skills ?? {};
   const theory = academicTheoryRank(skills);
   const fromScroll = form === "practical" && spell.codex === "Praktikus mágia" && ownsScroll(character.equipment, spell);
-  const spellLevel = form === "academic" && Number.isInteger(spell.difficulty) ? spell.difficulty : 0;
+  const baseDifficulty = Number.isInteger(spell.difficulty) ? spell.difficulty : spell.ep?.self?.difficulty;
+  const spellLevel = form === "academic" && Number.isInteger(baseDifficulty) ? baseDifficulty : 0;
   if (spellLevel > (skills[magicUseSkills[form]] ?? 0)) {
     reasons.push(`${magicUseSkills[form]}: ${skills[magicUseSkills[form]] ?? 0}. szint, szükséges: ${spellLevel}.`);
   }
@@ -156,11 +157,15 @@ export function readDamageDice(input, expectedDice) {
 export function spellCost(spell, form, { units, target, approvedEp, referenceSpellId } = {}) {
   const { ep } = spell;
   let amount;
+  if (form === "academic" && ep?.kind === "targetVariant") {
+    return typeof target?.self === "boolean" ? ep[target.self ? "self" : "other"] : { ep: null, difficulty: null };
+  }
   if (ep?.kind === "fixed") amount = ep.amount;
   if (ep?.kind === "perUnit" && Number.isSafeInteger(units) && units > 0 &&
       (ep.maxUnits == null || units <= ep.maxUnits)) amount = ep.amount * units;
   if (form === "academic" && ep?.kind === "approvedEp" && Number.isSafeInteger(approvedEp) &&
-      approvedEp >= ep.min && (ep.max == null || approvedEp <= ep.max)) amount = approvedEp;
+      approvedEp >= ep.min && (approvedEp - ep.min) % (ep.step ?? 1) === 0 &&
+      (ep.max == null || approvedEp <= ep.max)) amount = approvedEp;
   if (form === "academic" && ep?.kind === "referenceEp") {
     const reference = spellsById.get(referenceSpellId);
     if (reference?.codex === spell.codex && reference.ep?.kind === "fixed") amount = reference.ep.amount;
@@ -208,10 +213,11 @@ export function availableMagicEp(character, magic, ownReservation) {
 }
 
 export function spellReadiness(character, magic, spell, form, context = {}) {
-  const access = spellAccess(character, magic, spell, form);
+  const cost = spellCost(spell, form, context);
+  const variant = spell.ep?.kind === "targetVariant" && form === "academic" && cost.difficulty != null;
+  const access = spellAccess(character, magic, variant ? { ...spell, difficulty: cost.difficulty } : spell, form);
   if (!access.allowed) return { state: "denied", reasons: access.reasons };
   if (access.needsAcquisition && !access.recorded) return { state: "pending", reasons: ["A megszerzés még nincs rögzítve."] };
-  const cost = spellCost(spell, form, context);
   const limits = magicLimits(character);
   const reservation = form === "sacred" && access.needsAcquisition &&
     magic.acquisitions.find((entry) => entry.spellId === spell.id && entry.form === form);
