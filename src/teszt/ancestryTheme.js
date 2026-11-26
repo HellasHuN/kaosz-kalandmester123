@@ -1,3 +1,5 @@
+import { subraces } from "../fajiSzabalyok.js";
+
 const palette = {
   Elf: ["#607c4c", "#294632"], Ember: ["#a67c52", "#5c3c30"],
   Gennymanó: ["#7d8949", "#3a4125"], Gilf: ["#8b6d9a", "#40304d"],
@@ -26,14 +28,16 @@ const variants = {
 };
 
 const raceOrder = Object.keys(palette);
-const variantArt = { "Bérci könnyűléptű": 11, "Mocsári ork": 5, Vízimanó: 5,
-  Tündérmanó: 12, "Fekete gnóm": 3, "Városi gnóm": 1, Scyss: 15 };
+const variantOrder = ["Erdei elf", "Bérci könnyűléptű", "Hegyi ork", "Üregi (dombi) ork", "Mocsári ork",
+  "Barlangi manó", "Vízimanó", "Tündérke", "Tündérmanó", "Átlagos gnóm", "Fekete gnóm", "Városi gnóm", "Tecath", "Scyss"];
 
 export function ancestryTheme(race, subrace) {
-  const [accent, shade] = (Object.hasOwn(variants, subrace) && variants[subrace]) ||
-    (Object.hasOwn(palette, race) && palette[race]) || palette.Ember;
+  const variant = Object.hasOwn(subraces, race) && subraces[race].includes(subrace) ? subrace : null;
+  const [accent, shade] = variants[variant] ?? (Object.hasOwn(palette, race) ? palette[race] : palette.Ember);
   const raceIndex = raceOrder.indexOf(race);
-  const position = Object.hasOwn(variantArt, subrace) ? variantArt[subrace] : raceIndex < 0 ? 1 : raceIndex;
+  const prefix = variant ? `variant-${variantOrder.indexOf(variant) + 1}` : `race-${raceIndex < 0 ? 2 : raceIndex + 1}`;
+  const directory = new URL(`${import.meta.env.BASE_URL}ancestry/`, document.baseURI).href;
   return { "--sheet-accent": accent, "--sheet-shade": shade,
-    "--sheet-art-x": `${(position % 4) * 100 / 3}%`, "--sheet-art-y": `${Math.floor(position / 4) * 100 / 3}%` };
+    "--ancestry-portrait": `url("${directory}${prefix}.webp")`,
+    "--ancestry-background": `url("${directory}${prefix}-landscape.webp")` };
 }

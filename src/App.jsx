@@ -1,3 +1,4 @@
+import { ancestryTheme } from "./teszt/ancestryTheme.js";
 import { ArrowUpRight, BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
 import "./teszt/mobileHome.css";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
@@ -1485,15 +1486,20 @@ setAncestry((previous) => ({
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
         {page === "alkotas" && (
-        <div className="creation-workspace"><div className="welcome">
-          <h2>Karakteralkotás</h2>
+        <div className="creation-workspace" style={ancestryTheme(race, subrace)}>
+          <header className="character-cover creation-cover">
+            <div className="character-cover-art" aria-hidden="true" />
+            <div className="character-cover-caption">
+              <h2>Karakteralkotás</h2>
+              {race && <p>{[race, subrace].filter(Boolean).join(" · ")}</p>}
+            </div>
           {selectedCharacterId !== null && (
             <button className="save" onClick={() => navigate("alkotas", null)}>
               Új karakter
             </button>
           )}
 
-        </div>
+        </header>
 
         {creationEditable && (
           <nav className="workspace-nav" aria-label="A karakteralkotás részei">

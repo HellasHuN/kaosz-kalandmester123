@@ -26,7 +26,7 @@ const zones = [
   ["Bal láb", "right", 80, 57, 78],
 ];
 
-function ArmorDiagram({ character }) {
+export function ArmorDiagram({ character }) {
   const { protection, unknownEquipment, unknownCoverage, unknownLevel } =
     armorProtection(character.equipment, zones.map(([label]) => label));
   const speed = characterSpeed(withEffectiveStrength(character));
@@ -59,6 +59,7 @@ function ArmorDiagram({ character }) {
           })}
         </ul>
       </figure>
+      <p className="armor-legend"><span>Védett zóna</span><span>Védelem nincs jelölve</span></p>
       <div className="armor-speed">
         <span>Gyorsaság</span>
         <output aria-label="Aktuális gyorsaság">{speed.value ?? empty}</output>

@@ -250,12 +250,6 @@
 .bestiary-cards dd { margin: .1rem 0 .55rem; }
 .bestiary-empty { display: flex; align-items: center; gap: .55rem; }
 
-.character-cover-art {
-  background-image: linear-gradient(0deg, #101015dd 0%, #10101520 72%), url('../assets/theme/ancestry.webp');
-  background-size: 100% 100%, 400% 400%;
-  background-position: center, var(--sheet-art-x) var(--sheet-art-y);
-}
-
 .test-panel .test-map {
   background: #ded0a5 url('../assets/theme/atlas.webp') center / 100% 100% no-repeat;
 }
@@ -380,4 +374,137 @@
 @media (max-width: 640px) {
   .themed-sheet .sheet-center { grid-row: 2; }
   .themed-sheet .sheet-left { grid-row: 1; }
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover {
+  isolation: isolate;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .55rem;
+  min-height: clamp(12rem, 28vw, 20rem);
+  padding: clamp(.65rem, 3vw, 1.5rem);
+  border: 4px double #d3a568;
+  background: var(--sheet-shade);
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-art {
+  background: linear-gradient(0deg, #1c151bdd, transparent 46%),
+    var(--ancestry-background) center 44% / cover;
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-art::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(57%, 27rem);
+  background: var(--ancestry-portrait) center 36% / cover no-repeat;
+  mask-image: linear-gradient(90deg, #000 72%, transparent);
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-caption {
+  margin-inline-start: min(35%, 15rem);
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  padding: .55rem clamp(.65rem, 2vw, 1.15rem);
+  border: 3px double #865631;
+  border-radius: .45rem;
+  color: #341b16;
+  background: url('../assets/pergamen-rostok.png'), linear-gradient(125deg, #fff0cd, #ddae72);
+  text-shadow: none;
+  box-shadow: 0 .3rem 1rem #20101296;
+}
+
+.character-cover-caption h2 {
+  margin: 0;
+  color: #63262a;
+  font: 700 clamp(1.25rem, 4vw, 2.55rem)/1.05 Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.test-app .creation-cover .character-cover-caption p { color: #46231c; margin: .38rem 0 0; }
+.test-app .creation-cover > button { align-self: end; }
+
+.test-app .creation-workspace {
+  --creation-gold: #c59656;
+  min-width: 0;
+  padding: clamp(.4rem, 2vw, 1rem);
+  border: 3px double var(--creation-gold);
+  border-radius: .65rem;
+  background: radial-gradient(ellipse at top, var(--sheet-shade), #28171a 75%);
+}
+
+.test-app .creation-workspace .creation-panel {
+  border: 4px double #a77947;
+  background: url('../assets/pergamen-rostok.png'), radial-gradient(ellipse at 60% 20%, #fff0ce, #efd39e);
+  box-shadow: inset 0 0 1.1rem #8f552644;
+}
+
+.test-app .creation-panel h3 {
+  padding: .45rem .65rem;
+  color: #ffeac1;
+  background: linear-gradient(#652b2e, #3e161c);
+  border: 3px double #af824b;
+  border-radius: .38rem;
+}
+
+.test-app .creation-workspace :is(input:not([type="checkbox"], [type="range"]), select, textarea) {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #9c6b41;
+  box-shadow: inset 0 1px .3rem #98643529;
+}
+
+.test-app .creation-workspace button:not(.skills-remove),
+.test-app .themed-sheet .character-sheet-actions button {
+  min-height: 44px;
+  border: 2px solid #a27646;
+  background: linear-gradient(#652c32, #35171d);
+  color: #fff1cd;
+  font-family: Georgia, serif;
+}
+.test-app .creation-workspace button:is([aria-pressed="true"], :hover:not(:disabled)),
+.test-app .themed-sheet .character-sheet-actions button:hover:not(:disabled) {
+  border-color: #e2b474;
+  box-shadow: inset 0 0 .6rem #e1a5625c;
+}
+
+.test-app .creation-workspace .workspace-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .35rem;
+  margin-block: .6rem;
+}
+
+.test-app .creation-workspace .workspace-nav button {
+  min-width: 0;
+  padding-inline: .25rem;
+  overflow-wrap: anywhere;
+}
+
+.test-app .themed-sheet .equipment-sheet {
+  display: grid;
+  gap: .6rem;
+  padding: .4rem;
+  min-width: 0;
+}
+.equipment-sheet > .armor-card {
+  --paper-grain: url('../assets/pergamen-rostok.png');
+  width: min(100%, 41rem);
+  box-sizing: border-box;
+  justify-self: center;
+  color: #382219;
+}
+.equipment-sheet > .equipment-panel { min-width: 0; }
+.armor-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem .8rem; color: #36271a; font-size: .83rem; }
+.armor-legend span::before { content: ""; display: inline-block; width: .75rem; height: .75rem; margin-right: .35rem; border: 1px solid #493221; background: #e9b553; }
+.armor-legend span + span::before { background: #64514a; }
+.themed-sheet .armor-label.has-armor { color: #2a1a10; background: #e9b553; border-color: #825223; }
+.themed-sheet .armor-label.has-armor strong { color: #2b190f; }
+.themed-sheet .armor-figure g:not(.has-armor) polyline { stroke-dasharray: 2 1.2; }
+
+@media (max-width: 35rem) {
+  .test-app .creation-workspace .workspace-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .test-app :is(.creation-workspace, .themed-sheet) .character-cover-caption { margin-inline-start: min(24%, 5rem); }
 }

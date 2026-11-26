@@ -4,7 +4,7 @@ import React from "react";
 import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
 import Magia from "./Magia";
-import KarakterlapElsoOldal from "./KarakterlapElsoOldal";
+import KarakterlapElsoOldal, { ArmorDiagram } from "./KarakterlapElsoOldal";
 
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
 
@@ -78,7 +78,10 @@ function Karakterlap({
       edit={editing ? characterEditor : null} onChangeHealth={onChangeHealth} onOpenSkills={() => openPage(2)} />}
     {activePage === 2 && <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />}
     {activePage === 3 && (
-      <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
+      <div className="equipment-sheet">
+        <ArmorDiagram character={character} />
+        <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
+      </div>
     )}
     {activePage === 4 && (
       <Magia ref={editor} character={character} onSave={onSaveMagic} />
