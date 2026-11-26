@@ -41,3 +41,21 @@ export function ancestryTheme(race, subrace) {
     "--ancestry-portrait": `url("${directory}${prefix}.webp")`,
     "--ancestry-background": `url("${directory}${prefix}-landscape.webp")` };
 }
+
+const pagePortraits = {
+  "Ember::Férfi": "human-male.webp",
+  "Ember::Nő": "human-female.webp",
+  "Elf:Erdei elf:Nő": "forest-elf-female.webp",
+  "Gilf::Nő": "gilf-female.webp",
+};
+
+export function pageAncestryTheme(race, subrace, gender) {
+  const theme = ancestryTheme(race, subrace);
+  const key = `${race}:${subrace || ""}:${gender || ""}`;
+  const variant = pagePortraits[key] ?? (race === "Gilf" ? pagePortraits["Gilf::Nő"] : undefined);
+  if (variant) {
+    const directory = new URL(`${import.meta.env.BASE_URL}ancestry/page-one/`, document.baseURI).href;
+    theme["--ancestry-portrait"] = `url("${directory}${variant}")`;
+  }
+  return theme;
+}

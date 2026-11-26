@@ -5,13 +5,12 @@ import { armorProtection } from "./felszereltVert.js";
 import { characterSpeed } from "./gyorsasag.js";
 import figure from "./assets/theme/pancelzat-karakter-referencia.webp";
 import "./KarakterlapElsoOldal.css";
+import "./CharacterPage.css";
+import { Brain, Eye, Flame, HeartPulse, Shield, Sparkles, Swords, UserRound } from "lucide-react";
+import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
+import { profileFields, readProfile } from "./characterProfile.js";
 
 const empty = "—";
-const attributeIconPositions = [36.04, 41.79, 47.57, 53.18, 64.58];
-
-function AttributeIcon({ position }) {
-  return <span className="attribute-icon" style={{ "--icon-y": `${position}%` }} aria-hidden="true" />;
-}
 const zones = [
   ["Fej", "left", 12, 47, 10],
   ["Nyak", "right", 12, 54, 17],
@@ -79,131 +78,121 @@ function TraitList({ items }) {
   return <ul className="parchment-traits">{items.map((item, index) => <li key={index}>{item.name ?? item}</li>)}</ul>;
 }
 
-function EleteroPanel({ current, maximum, savedMaximum, onChange }) {
-  const fp = current ?? savedMaximum;
-  const level = woundLevel(fp, maximum);
-  const status = level == null ? "Az aktuális Fizikumpont nincs rögzítve vagy érvénytelen."
-    : fp < 0 ? "0 alatti Fp · halál" : fp === 0 ? "0 Fp · 10. sebszint"
-      : level === 0 ? "Sértetlen" : `${level}. sebszint`;
+const attributeIcons = [HeartPulse, Swords, Brain, Flame, Eye];
 
-  return (
-    <section className="parchment-card">
-      <h3>Életerő</h3>
-      <dl className="sheet-data sheet-health"><div><dt>Életerő (Fp)</dt><dd>
-        <div className="health-controls">
-          <button type="button" aria-label="Életerő csökkentése" disabled={fp <= 0 || fp - 1 > savedMaximum} onClick={() => onChange(-1)}>−</button>
-          <output aria-label="Aktuális életerő">{fp}</output>
-          <button type="button" aria-label="Életerő növelése" disabled={fp < 0 || fp >= Math.min(maximum, savedMaximum)} onClick={() => onChange(1)}>+</button>
-        </div>
-        {" / "}<span aria-label="Maximális életerő">{maximum}</span>
-      </dd></div></dl>
-      <ol className="wound-scale" aria-label="Sebszintek">
-        {woundThresholds(maximum).map((limit, index) => (
-          <li key={index} aria-current={level === index + 1 ? "step" : undefined}
-            title={`A(z) ${index + 1}. rubrika felső határa: ${limit} elvesztett Fp`}>{index + 1}</li>
-        ))}
-      </ol>
-      <p className="wound-status" aria-live="polite">{status}</p>
-      {current == null && <p className="wound-status">Kiinduló érték a Fizikumból. Aktuális érték még nincs külön rögzítve.</p>}
-    </section>
-  );
+export function CharacterPageHeader({ character, title, actions }) {
+  return <header className="first-page-header" style={pageAncestryTheme(character.race, character.subrace, character.gender)}>
+    <div className="first-page-header-art" aria-hidden="true" />
+    <h2>{title}</h2>
+    <div className="first-page-banner-label">Általános</div>
+    <div className="first-page-identity">
+      <h1>{character.name || "Új karakter"}</h1>
+      <p>{[character.race, character.subrace, character.gender, character.age && `${character.age} év`].filter(Boolean).join(" · ") || "Válassz fajt a karakterhez"}</p>
+    </div>
+    {actions}
+  </header>;
 }
 
-export default function KarakterlapElsoOldal({ character, stage, edit, onChangeHealth, onOpenSkills }) {
+function EleteroPanel({ current, maximum, savedMaximum, onChange, canIncrease }) {
+  const fp = current ?? savedMaximum;
+  const level = woundLevel(fp, maximum);
+  return <section className="first-page-frame first-page-health" aria-label="Életerő">
+    <div className="first-page-health-top">
+      <h3><HeartPulse aria-hidden="true" />Életerő</h3>
+      <button type="button" aria-label="Életerő csökkentése" disabled={!onChange || fp <= 0 || fp - 1 > maximum} onClick={() => onChange(-1)}>−</button>
+      <div className="first-page-health-value"><output aria-label="Aktuális életerő">{fp}</output> / <span aria-label="Maximális életerő">{maximum}</span></div>
+      <button type="button" aria-label="Életerő növelése" disabled={!onChange || !canIncrease || fp < 0 || fp >= maximum} onClick={() => onChange(1)}>+</button>
+    </div>
+    <div className="first-page-wounds">
+      <span aria-live="polite">Sebszint: {level ?? empty} / 10</span>
+      <ol className="wound-scale" aria-label="Sebszintek">
+        {woundThresholds(maximum).map((limit, index) => <li key={index} data-wounded={level >= index + 1}
+          aria-current={level === index + 1 ? "step" : undefined} title={`Elvesztett életerő felső határa: ${limit}`}>{index + 1}</li>)}
+      </ol>
+    </div>
+  </section>;
+}
+
+export default function KarakterlapElsoOldal({ character, stage, edit, mode = "player", onChangeHealth, extra, budget, actions }) {
   const stats = edit?.stats ?? characterStats(character);
   const adjustments = edit?.adjustments ?? characterAdjustments(character);
   const displayed = { ...character, stats, adjustments };
   const magic = readMagic(character);
-  const limits = magicLimits(edit ? { ...character, stats, adjustments } : character);
-  const parents = character.ancestry?.parents?.map(({ race }) => race).filter(Boolean) ?? [];
+  const limits = magicLimits(displayed);
+  const profile = edit?.profile ?? readProfile(character);
+  const parents = character.ancestry?.parents?.map(parent => parent?.race).filter(Boolean) ?? [];
   const origin = (parents.length ? parents : [character.parent1, character.parent2].filter(Boolean)).join(" / ");
-  const featuredSkills = Object.entries(character.skills ?? {})
-    .filter(([, rank]) => Number.isFinite(rank) && rank > 0)
-    .sort((first, second) => second[1] - first[1]).slice(0, 5);
-  const info = [
-    ["Név", edit?.name ?? character.name],
-    ["Faj", edit?.race ?? character.race],
-    ["Nem", character.gender],
-    ["Életkor", edit ? edit.age : character.age ? `${character.age} év` : null],
-    ["Életszakasz", edit ? edit.stage : stage],
-    ["Származás", origin],
-    ["Vallás", edit?.religion ?? character.religion ?? magic.patron],
+  const showDetailsEditor = Boolean(edit);
+  const basics = [
+    ["Név", edit?.name ?? character.name], ["Faj", edit?.race ?? character.race],
+    ["Életkor", edit?.age ?? (character.age ? `${character.age} év` : empty)], ["Nem", edit?.gender ?? character.gender],
   ];
-
-  return (
-    <div className="parchment-sheet" data-unsaved={edit?.changed ?? false}>
-      <div className="sheet-left">
-        <section className="parchment-card sheet-identity">
-          <h3>Karakter adatai</h3>
-          <div className="identity-layout">
-            <dl className="sheet-data">{info.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || empty}</dd></div>)}</dl>
-            <div className="sheet-crest" aria-hidden="true" />
-          </div>
-          {edit?.ancestry && <details><summary>Származás szerkesztése</summary>{edit.ancestry}</details>}
-          {edit?.ageOptions}
-        </section>
-        <section className="parchment-card sheet-attributes">
-          <h3>Főértékek</h3>
-          <table>
-            <thead><tr><th scope="col">Főérték</th><th scope="col">Érték</th><th scope="col">Aktív</th><th scope="col">Passzív</th></tr></thead>
-            <tbody>
-              {attributes.map(([name, active, passive], index) => {
-                const base = stats[index];
-                const adjustment = adjustments[index];
-                return <tr key={name}>
-                  <th scope="row"><span className="attribute-name"><AttributeIcon position={attributeIconPositions[index]} />{name}</span></th>
-                  <td>{edit && <button type="button" aria-label={`${name} csökkentése`} disabled={!edit.limits[index] || base <= edit.limits[index][0]} onClick={() => edit.changeStat(index, -1)}>−</button>}
-                    {effectiveAttribute(displayed, index)}
-                    {edit && <button type="button" aria-label={`${name} növelése`} disabled={!edit.limits[index] || base >= edit.limits[index][1]} onClick={() => edit.changeStat(index, 1)}>+</button>}
-                  </td>
-                  <td><strong>{effectiveAttribute(displayed, index, 1)}</strong><small>{active}</small>
-                    {edit && <div className="sheet-split-controls">
-                      <button type="button" aria-label={`${active} csökkentése`} disabled={adjustment <= -attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
-                      <button type="button" aria-label={`${active} növelése`} disabled={adjustment >= attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
-                    </div>}
-                  </td>
-                  <td><strong>{effectiveAttribute(displayed, index, -1)}</strong><small>{passive}</small></td>
-                </tr>;
-              })}
-            </tbody>
-          </table>
-          {edit && <p>Hátralévő főértékpont: {edit.remaining ?? empty}</p>}
-          <dl className="sheet-data"><div><dt>Elkölthető Jp</dt><dd>{character.jp ?? 0}</dd></div></dl>
-          <div className="sheet-landscape" aria-hidden="true" />
-        </section>
-      </div>
-      <div className="sheet-center">
-        <EleteroPanel current={character.currentFp} maximum={maxHealth(displayed)} savedMaximum={maxHealth(character)} onChange={onChangeHealth} />
-        <section className="parchment-card">
-          <h3>Esszencia</h3>
-          <table className="sheet-resources">
-            <thead><tr><th scope="col">Erőforrás</th><th scope="col">Aktuális</th><th scope="col">Maximum</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">Aktív esszencia (Ep)</th><td>{magic.activeEp ?? empty}</td><td>{limits.activeEp}</td></tr>
-              <tr><th scope="row">Esszenciapajzs</th><td>{magic.shield ?? <span title="Az aktuális pajzsérték nincs rögzítve a Mágia oldalon.">{empty}</span>}</td><td>{limits.shield}</td></tr>
-            </tbody>
-          </table>
-          {magic.shield == null && <p className="armor-caption">Az aktuális pajzsérték nincs rögzítve a Mágia oldalon.</p>}
-        </section>
-        <ArmorDiagram character={edit ? { ...character, race: edit.race, stats, adjustments } : character} />
-      </div>
-      <div className="sheet-right">
-        {featuredSkills.length > 0 && <section className="parchment-card sheet-featured">
-          <h3>Kiemelt jártasságok</h3>
-          <dl className="sheet-data">{featuredSkills.map(([name, rank]) =>
-            <div key={name}><dt>{name}</dt><dd>{rank}</dd></div>)}</dl>
-          <button type="button" onClick={onOpenSkills}>Összes jártasság</button>
-        </section>}
-        <section className="parchment-card">
-          <h3>Egyéb jellemzők</h3>
-          <h4>Előnyök</h4><TraitList items={character.advantages} />
-          <h4>Hátrányok</h4><TraitList items={character.disadvantages} />
-          {edit && <details><summary>Előnyök és hátrányok szerkesztése</summary>{edit.renderTraits()}</details>}
-          <h4>Megjegyzések</h4>
-          {edit ? <textarea aria-label="Megjegyzések" value={edit.notes} onChange={(event) => edit.setNotes(event.target.value)} />
-            : <p className="sheet-notes">{character.equipment?.notes || empty}</p>}
-        </section>
-      </div>
+  return <div className="first-page-body" data-unsaved={mode !== "creation" && Boolean(edit?.changed)}>
+    <section aria-label="Főértékek">
+      <ul className="first-page-stats">
+        {attributes.map(([name, active, passive], index) => {
+          const base = stats[index];
+          const adjustment = adjustments[index];
+          const bounds = edit?.limits[index];
+          const Icon = attributeIcons[index];
+          return <li className="creation-stat first-page-stat" key={name} data-stat={index}>
+            <div className="first-page-stat-base">
+              <span><Icon aria-hidden="true" /><span>{name}{bounds && <small className="first-page-bounds">{bounds.join("–")}</small>}</span></span>
+              {bounds && <button type="button" aria-label={`${name} csökkentése`} disabled={base <= bounds[0]} onClick={() => edit.changeStat(index, -1)}>−</button>}
+              <output aria-label={name}>{effectiveAttribute(displayed, index)}</output>
+              {bounds && <button type="button" aria-label={`${name} növelése`} disabled={base >= bounds[1]} onClick={() => edit.changeStat(index, 1)}>+</button>}
+            </div>
+            <div className="first-page-stat-split">
+              <div><span>{active}</span><output aria-label={active}>{effectiveAttribute(displayed, index, 1)}</output>
+                {bounds && <span className="first-page-adjust">
+                  <button type="button" aria-label={`${active} csökkentése`} disabled={adjustment <= -attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
+                  <button type="button" aria-label={`${active} növelése`} disabled={adjustment >= attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
+                </span>}
+              </div>
+              <div><span>{passive}</span><output aria-label={passive}>{effectiveAttribute(displayed, index, -1)}</output></div>
+            </div>
+          </li>;
+        })}
+      </ul>
+      {budget}
+      {edit && mode !== "creation" && <p>Hátralévő főértékpont: {edit.remaining ?? empty} · Elkölthető Jp: {character.jp ?? 0}</p>}
+    </section>
+    <EleteroPanel current={edit?.health ?? character.currentFp} maximum={maxHealth(displayed)} savedMaximum={maxHealth(character)}
+      onChange={onChangeHealth} canIncrease={mode === "gm" || Boolean(edit && mode !== "creation")} />
+    <dl className="first-page-resources">
+      <div><dt><Flame aria-hidden="true" />Aktuális aktív Ep</dt><dd>{edit?.resourceFields?.("activeEp", limits.activeEp) ?? `${magic.activeEp ?? empty} / ${limits.activeEp}`}</dd></div>
+      <div><dt><Sparkles aria-hidden="true" />Felszabadítható esszencia</dt><dd>{limits.release} Ep</dd></div>
+      <div><dt><Shield aria-hidden="true" />Aktuális Esszenciapajzs</dt><dd>{edit?.resourceFields?.("shield", limits.shield) ?? `${magic.shield ?? empty} / ${limits.shield}`}</dd></div>
+    </dl>
+    <section className="first-page-frame first-page-details" aria-label="Karakter adatai">
+      <h3><UserRound aria-hidden="true" />Karakter adatai</h3>
+      <dl className="first-page-basics creation-grid">{basics.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || empty}</dd></div>)}</dl>
+      {edit?.subrace}
+      <details>
+        <summary>További adatok</summary>
+        <dl className="first-page-info">
+          <div><dt>Vallás</dt><dd>{edit?.religion ?? (character.religion || magic.patron || empty)}</dd></div>
+          <div><dt>Származás</dt><dd>{origin || empty}</dd></div>
+          <div><dt>Életszakasz</dt><dd>{edit?.stage ?? stage ?? empty}</dd></div>
+          {character.jp != null && <div><dt>Elkölthető Jp</dt><dd>{character.jp}</dd></div>}
+          {profileFields.map(([key, label, unit]) => <div key={key}><dt>{label}</dt><dd>{showDetailsEditor
+            ? <input aria-label={label} type={unit ? "number" : "text"} min={unit ? "0.01" : undefined} step={unit ? "any" : undefined}
+                maxLength={160} value={profile[key]} onChange={event => edit.setProfile(key, event.target.value)} />
+            : profile[key] ? `${profile[key]}${unit ? ` ${unit}` : ""}` : empty}</dd></div>)}
+        </dl>
+        {edit?.ancestry}
+        {edit?.ageOptions}
+        <p>Megjegyzések</p>
+        {edit?.setNotes ? <textarea aria-label="Megjegyzések" value={edit.notes} onChange={event => edit.setNotes(event.target.value)} />
+          : <p>{character.equipment?.notes || empty}</p>}
+      </details>
+    </section>
+    {extra}
+    <div className="first-page-traits">
+      {[[ "Előnyök", edit?.advantages ?? character.advantages], ["Hátrányok", edit?.disadvantages ?? character.disadvantages]].map(([label, values]) =>
+        <details className="first-page-frame" key={label}><summary>{label} ({values?.length ?? 0})</summary><TraitList items={values} /></details>)}
     </div>
-  );
+    {edit?.renderTraits && <details className="first-page-frame"><summary>Előnyök és hátrányok szerkesztése</summary>{edit.renderTraits(mode === "creation")}</details>}
+    {actions}
+  </div>;
 }

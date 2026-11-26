@@ -58,6 +58,10 @@ function validCharacter(character, allowedRaces) {
     age: (age) => isText(age) || isNumber(age),
     race: (race) => isText(race) && (!allowedRaces || allowedRaces.includes(race)), subrace: isText,
     playStatus: (status) => status === "draft" || status === "playing",
+    profile: (value) => hasFields(value, {
+      birthplace: isText, heightCm: scalar, weightKg: scalar, hairColor: isText, eyeColor: isText,
+      socialStatus: isText, distinguishingMarks: isText,
+    }),
     religion: isText, gender: isText, parent1: isText, parent2: isText,
     jp: isNumber, currentFp: isNumber, maxFp: isNumber, stats: (stats) =>
       (stats.length === 4 || stats.length === 5) && arrayOf(isNumber)(stats),

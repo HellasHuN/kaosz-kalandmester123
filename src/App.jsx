@@ -1,7 +1,10 @@
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
+import KarakterlapElsoOldal, { CharacterPageHeader } from "./KarakterlapElsoOldal.jsx";
+import { profileError, readProfile } from "./characterProfile.js";
+import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
 import MainMenu from "./teszt/MainMenu.jsx";
 import "./teszt/mobileHome.css";
-import { markConversationRead, readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
+import { markConversationRead, readAdventure, sampleCharacter, unreadMessages, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
 import { persistCharacterStatus, planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
@@ -29,8 +32,8 @@ import AlkotasiFelszereles from "./AlkotasiFelszereles.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
-  ageOptions, ageStage, allocateStartingStats, attributeAdjustmentLimit, attributes, LEGACY_PERCEPTION, characterAdjustments, characterStats,
-  clampAttributeAdjustment, effectiveAttribute,
+  ageOptions, ageStage, allocateStartingStats, attributeAdjustmentLimit, LEGACY_PERCEPTION, characterAdjustments, characterStats,
+  clampAttributeAdjustment,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
 const Karakterlap = lazy(() => import("./Karakterlap.jsx"));
@@ -143,6 +146,7 @@ function creationFields(character) {
     religion: character?.religion ?? character?.magic?.patron ?? "",
     gender: character?.gender ?? "",
     notes: character?.equipment?.notes ?? "",
+    profile: readProfile(character),
   };
 }
 
@@ -166,6 +170,9 @@ function App() {
   const [selectedRacialAbilities, setSelectedRacialAbilities] = useState([]);
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
+  const [profile, setProfile] = useState(() => readProfile());
+  const [healthDraft, setHealthDraft] = useState(null);
+  const [resourceDraft, setResourceDraft] = useState({});
   const [page, setPage] = useState("fomenu");
   const [sheetPageOnOpen, setSheetPageOnOpen] = useState(1);
   const [sheetEditingOnOpen, setSheetEditingOnOpen] = useState(false);
@@ -519,6 +526,29 @@ function saveCharacter({ notify = true } = {}) {
     return false;
   }
 
+  const profileMessage = profileError(profile, savedFields.profile);
+  const profileChanges = Object.entries(profile).filter(([key, value]) => value !== savedFields.profile[key]);
+  if (profileMessage) { alert(profileMessage); return false; }
+  const updatedCharacter = { ...existingCharacter, stats, adjustments };
+  if (healthDraft != null && healthDraft > maxHealth(updatedCharacter)) {
+    alert("Az életerő nem haladhatja meg a módosított maximumot.");
+    return false;
+  }
+  const originalMagic = readMagic(existingCharacter ?? {});
+  const nextMagic = { ...originalMagic, ...resourceDraft };
+  if (Object.keys(resourceDraft).length) {
+    const maximum = magicLimits(updatedCharacter);
+    const available = availableMagicEp(updatedCharacter, nextMagic);
+    const previousAvailable = availableMagicEp(existingCharacter, originalMagic);
+    if (Object.entries(resourceDraft).some(([key, value]) =>
+      value != null && (!Number.isFinite(value) || value < 0 || value > maximum[key])) ||
+      (resourceDraft.activeEp != null && resourceDraft.activeEp < (originalMagic.activeEp ?? 0) &&
+        (unresolvedSacredReservations(nextMagic).length || (available != null && available < Math.min(0, previousAvailable ?? 0))))) {
+      alert("A módosított esszenciaérték vagy a szakrális foglalás kívül esik a megengedett kereten.");
+      return false;
+    }
+  }
+
   const selectedTalents = advantages.includes(TEHETSEG) ? talentSkills.filter(Boolean) : [];
   if (creationEditable && advantages.includes(TEHETSEG) && !selectedTalents.length) {
     alert("Válassz legalább egy jártasságot a Született tehetség előnyhöz!");
@@ -536,6 +566,11 @@ function saveCharacter({ notify = true } = {}) {
     ...(religion !== savedFields.religion && { religion: religion.trim() }),
     ...(!creationEditable && notes !== savedFields.notes && { equipment: { ...existingCharacter?.equipment, notes } }),
     ...(gender !== savedFields.gender && { gender }),
+    ...(profileChanges.length > 0 && {
+      profile: { ...existingCharacter?.profile, ...Object.fromEntries(profileChanges.map(([key, value]) => [key, value.trim()])) },
+    }),
+    ...(healthDraft != null && { currentFp: healthDraft }),
+    ...(Object.keys(resourceDraft).length > 0 && { magic: nextMagic }),
     id: existingCharacter?.id ?? Date.now(),
     name: name.trim(),
     age,
@@ -592,6 +627,8 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   setCreationClarifications({});
   setInheritedTraits(character.inheritedTraits ?? {});
   setCreationExtras({});
+  setHealthDraft(null);
+  setResourceDraft({});
 
   if (notify) alert(saveBlocked ? "A karakter az aktuális munkamenetben frissült." : "A karakter sikeresen elmentve!");
   return true;
@@ -625,14 +662,17 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     setReligion(fields.religion);
     setGender(fields.gender);
     setNotes(fields.notes);
+    setProfile(fields.profile);
+    setHealthDraft(null);
+    setResourceDraft({});
   }
 
   const characterFieldsChanged = JSON.stringify({
     name, age: String(age), race, subrace, racialAbilities: selectedRacialAbilities, racialSpecializations,
     parent1, parent2, ancestry, inheritedTraits, stats, ageAllocation,
     advantages, disadvantages, traitValues, talentSkills, approvedTraits, adjustments,
-    religion, gender, notes,
-  }) !== JSON.stringify(creationFields(selectedCharacter));
+    religion, gender, notes, profile,
+  }) !== JSON.stringify(creationFields(selectedCharacter)) || healthDraft != null || Object.keys(resourceDraft).length > 0;
 
   function confirmLeaving() {
     const hasChanges = (page === "alkotas" && (characterFieldsChanged ||
@@ -838,7 +878,7 @@ function validateCharacter() {
   const checkAncestry = creationEditable && isHalfBlood && (!selectedCharacter ||
     JSON.stringify(ancestry) !== JSON.stringify(creationFields(selectedCharacter).ancestry));
   const lineage = checkAncestry ? ancestryValidation(ancestry) : {};
-  const checkGender = creationEditable && (!selectedCharacter ||
+  const checkGender = (creationEditable || testMode === "km") && (!selectedCharacter ||
     race !== selectedCharacter.race || gender !== (selectedCharacter.gender ?? ""));
   if (!name.trim() || !race || !Number.isInteger(Number(age)) || Number(age) < 1) {
     message = "Töltsd ki a nevet, életkort és válaszd ki a fajt!";
@@ -886,7 +926,7 @@ function validateCharacter() {
     message = `A főértékek összege pontosan ${statBudget} kell legyen!`;
   } else if (!stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
     message = "Valamelyik főérték kívül esik a faj és az életkor határértékein!";
-  } else if (selectedCharacter?.currentFp > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
+  } else if ((healthDraft ?? selectedCharacter?.currentFp) > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
     message = "A megadott Fizikum az aktuális életerő alá esne. Előbb csökkentsd az aktuális értéket.";
   }
   if (message) alert(message);
@@ -1323,44 +1363,34 @@ setAncestry((previous) => ({
     </>;
   }
 
+  function renderGender() {
+    const options = creationGenderOptions(race);
+    return <select aria-label="Nem" value={gender} onChange={event => setGender(event.target.value)}>
+      <option value="">{race === "Gennymanó" ? "Nincs elkülönült nem" : "Nincs megadva"}</option>
+      {gender && !options.includes(gender) && <option value={gender} disabled>{gender} (mentett érték)</option>}
+      {options.map(option => <option key={option}>{option}</option>)}
+    </select>;
+  }
+
+  function renderSubrace() {
+    return subraces[race] && <label>Alfaj
+      <select value={subrace} onChange={(event) => {
+        setSubrace(event.target.value);
+        setRacialSpecializations((previous) => activeRacialChoices(race, event.target.value, previous));
+      }}>
+        <option value="">Válassz alfajt!</option>
+        {subraces[race].map(variant => <option key={variant}>{variant}</option>)}
+      </select>
+    </label>;
+  }
+
+  function updateProfile(key, value) {
+    setProfile(previous => ({ ...previous, [key]: value }));
+  }
+
   function renderCharacterFields(actions) {
-    const genderOptions = creationGenderOptions(race);
     const abilityOptions = racialAbilities[race] ?? [];
-    return <div className="creation-fields">
-      <section className="panel creation-panel">
-        <h3>Karakter adatai</h3>
-        <div className="creation-grid">
-          <label>Karakter neve
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Karakter neve" />
-          </label>
-          <label>Faj{renderRaceSelector()}</label>
-          {subraces[race] && <label>Alfaj
-            <select value={subrace} onChange={(event) => {
-              setSubrace(event.target.value);
-              setRacialSpecializations((previous) => activeRacialChoices(race, event.target.value, previous));
-            }}>
-              <option value="">Válassz alfajt!</option>
-              {subraces[race].map((variant) => <option key={variant}>{variant}</option>)}
-            </select>
-          </label>}
-          <label>Nem
-            <select value={gender} onChange={(event) => setGender(event.target.value)}>
-              <option value="">{race === "Gennymanó" ? "Nincs elkülönült nem" : "Nincs megadva"}</option>
-              {gender && !genderOptions.includes(gender) && (
-                <option value={gender}>{gender} (mentett érték)</option>
-              )}
-              {genderOptions.map((option) => <option key={option}>{option}</option>)}
-            </select>
-          </label>
-          <label>Vallás
-            <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />
-          </label>
-          {race && calculatedAgeLimits && <>
-            <label>Életkor{renderAgeSelector()}</label>
-            <div><strong>Életszakasz</strong><p>{stage ?? "—"}</p></div>
-            {renderAgePointOptions()}
-          </>}
-        </div>
+    const extra = <>
         {isHalfBlood && <div className="creation-ancestry"><h4>Származás</h4>{renderAncestryFields()}
           {ancestryValidation(ancestry).magical && <label>
             <input type="checkbox" checked={ancestry.magicApproved === true}
@@ -1374,7 +1404,6 @@ setAncestry((previous) => ({
         {race && calculatedAgeLimits && <small>
           Juvenis határ {calculatedAgeLimits[0]} év · Átlagos életkor {calculatedAgeLimits[1]}–{calculatedAgeLimits[2]} év · Extrém maximum {calculatedAgeLimits[3]} év
         </small>}
-      </section>
       {isHalfBlood && creationEditable && <OroklesPanel ancestry={ancestry} records={resolvedInheritance}
         onChange={(key, record) => setInheritedTraits((previous) => {
           const next = { ...previous };
@@ -1409,8 +1438,9 @@ setAncestry((previous) => ({
           {racialSelectionError(race, subrace, selectedRacialAbilities) &&
             <p role="status">{racialSelectionError(race, subrace, selectedRacialAbilities)}</p>}
         </section>}
-        <section className="panel creation-panel">
-          <h3>Főértékek</h3>
+      </>}
+    </>;
+    const budget = race && <div className="first-page-budget">
           <dl className="creation-points">
             <div><dt>Rendelkezésre áll</dt><dd>{statBudget ?? "—"}</dd></div>
             <div><dt>Felhasználva</dt><dd>{total}</dd></div>
@@ -1424,51 +1454,34 @@ setAncestry((previous) => ({
               setAdjustments(characterAdjustments());
             }}>Főértékek újraelosztása a kerethez</button>
           )}
-          <ul className="creation-stats">
-            {attributes.map(([label, active, passive], index) => {
-              const value = stats[index];
-              const adjustment = adjustments[index];
-              const limit = attributeAdjustmentLimit(value);
-              const [min, max] = limits[index];
-              return <li className="creation-stat" key={label}>
-                <div className="creation-stat-line">
-                  <div><strong>{label}</strong><small>Határok: {min}–{max}</small></div>
-                  <div className="creation-stepper">
-                    <button type="button" aria-label={label + " csökkentése"} disabled={value <= min} onClick={() => changeStat(index, -1)}>−</button>
-                    <output aria-label={label}>{effectiveAttribute(creationCharacter, index)}</output>
-                    <button type="button" aria-label={label + " növelése"} disabled={value >= max} onClick={() => changeStat(index, 1)}>+</button>
-                  </div>
-                </div>
-                <dl className="creation-stat-components">
-                  <div>
-                    <dt>{active} <small>Aktív</small></dt>
-                    <dd className="creation-stepper">
-                      <button type="button" aria-label={active + " csökkentése"} disabled={adjustment <= -limit} onClick={() => changeAdjustment(index, -1)}>−</button>
-                      <output aria-label={active}>{effectiveAttribute(creationCharacter, index, 1)}</output>
-                      <button type="button" aria-label={active + " növelése"} disabled={adjustment >= limit} onClick={() => changeAdjustment(index, 1)}>+</button>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{passive} <small>Passzív</small></dt>
-                    <dd><output aria-label={passive}>{effectiveAttribute(creationCharacter, index, -1)}</output></dd>
-                  </div>
-                </dl>
-              </li>;
-            })}
-          </ul>
-        </section>
-        <section className="panel creation-panel creation-traits" aria-label="Előnyök és hátrányok">
-          {renderTraits(true)}
-        </section>
-        {actions}
-      </>}
     </div>;
+    return <KarakterlapElsoOldal mode="creation"
+      character={{ ...creationCharacter, name, jp: creationBudget == null ? undefined : creationBudget - creationCosts.total }}
+      stage={stage} extra={extra} budget={budget} actions={race && actions}
+      edit={{
+        stats, adjustments, limits, profile, setProfile: updateProfile, changeStat, changeAdjustment,
+        name: <input aria-label="Karakter neve" value={name} placeholder="Karakter neve" onChange={event => setName(event.target.value)} />,
+        race: <label>Faj{renderRaceSelector()}</label>,
+        age: race && calculatedAgeLimits ? <label>Életkor{renderAgeSelector()}</label> : null,
+        gender: renderGender(), subrace: renderSubrace(),
+        religion: <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />,
+        ageOptions: renderAgePointOptions(),
+        advantages, disadvantages, renderTraits: race ? renderTraits : null,
+      }} />;
   }
   const creationActions = (
     <div className="skills-actions">
       <button className="save" onClick={checkCharacter}>KARAKTER ELLENŐRZÉSE</button>
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
+  );
+  const creationTabs = (
+    <nav className={creationTab === "details" ? "first-page-tabs creation-first-page-tabs" : "workspace-nav"} aria-label="A karakteralkotás részei">
+      <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
+      <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
+      <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
+      <button type="button" aria-pressed={creationTab === "magic"} onClick={() => openCreationTab("magic")}>Mágia</button>
+    </nav>
   );
   const inPlayerView = page === "karakterlap" || (page === "test-adventure" && testMode === "player");
   const selectingForPlay = page === "jatek";
@@ -1490,7 +1503,7 @@ setAncestry((previous) => ({
           <nav className="workspace-nav" aria-label="Visszalépés">
             {!inPlayerView && page !== "test-settings" &&
               <button type="button" onClick={returnHome}>Vissza a főmenübe</button>}
-            {page !== "test-settings" && <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
+            {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
             {testMode && page !== "test-adventure" &&
               <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
             {page !== "karakterek" && (
@@ -1509,8 +1522,11 @@ setAncestry((previous) => ({
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
         {page === "alkotas" && (
-        <div className={creationTab === "details" ? "creation-workspace compact-creation" : "creation-workspace"} style={ancestryTheme(race, subrace)}>
-          <header className="character-cover creation-cover">
+        <div className={creationTab === "details" ? "creation-workspace compact-creation first-page-shell" : "creation-workspace"} style={ancestryTheme(race, subrace)}>
+          {creationTab === "details"
+            ? <CharacterPageHeader title="Karakteralkotás" character={{ name, race, subrace, age, gender }}
+                actions={selectedCharacterId !== null && <button className="first-page-new" type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button>} />
+            : <header className="character-cover creation-cover">
             <div className="character-cover-art" aria-hidden="true" />
             <div className="character-cover-caption">
               <h2>Karakteralkotás</h2>
@@ -1522,16 +1538,9 @@ setAncestry((previous) => ({
             </button>
           )}
 
-        </header>
+        </header>}
 
-        {creationEditable && (
-          <nav className="workspace-nav" aria-label="A karakteralkotás részei">
-            <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
-            <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
-            <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
-            <button type="button" aria-pressed={creationTab === "magic"} onClick={() => openCreationTab("magic")}>Mágia</button>
-          </nav>
-        )}
+        {creationEditable && creationTab !== "details" && creationTabs}
         {creationEditable && creationTab === "skills"
           ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
@@ -1549,6 +1558,7 @@ setAncestry((previous) => ({
             ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
               onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
           : renderCharacterFields(creationActions)}
+        {creationEditable && creationTab === "details" && creationTabs}
         </div>)}
         {page === "karakterlap" && (
           <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
@@ -1558,15 +1568,35 @@ setAncestry((previous) => ({
             onSaveSkills={saveSkills}
             onSaveEquipment={saveEquipment} onSaveMagic={saveMagic}
             onStartCharacterEdit={() => loadCharacter(selectedCharacter)}
+            onCancelCharacterEdit={() => loadCharacter(selectedCharacter)}
             onFinalizeCharacterEdit={() => !characterFieldsChanged || saveCharacter({ notify: false })}
-            onChangeHealth={(amount) => updateHealth(selectedCharacterId, amount)}
+            mode={testMode === "km" ? "gm" : "player"}
+            onSettings={() => navigate("test-settings", null)}
+            onChat={() => openMenuChat(selectedCharacter)}
+            unread={unreadMessages(adventure, selectedCharacterId, "player")}
+            onChangeHealth={(amount, staged) => {
+              if (!staged) { if (amount < 0 || testMode === "km") updateHealth(selectedCharacterId, amount); return; }
+              const updated = changeCurrentHealth({ ...selectedCharacter, stats, adjustments,
+                currentFp: healthDraft ?? selectedCharacter.currentFp ?? maxHealth(selectedCharacter) }, amount);
+              if (updated.currentFp !== undefined) setHealthDraft(updated.currentFp);
+            }}
             characterEditor={{
               changed: characterFieldsChanged,
               stats, adjustments, limits, remaining, stage, notes, setNotes,
+              profile, setProfile: updateProfile, health: healthDraft, advantages, disadvantages,
+              identity: { name, race, subrace, age, gender },
+              gender: testMode === "km" ? renderGender() : null,
+              resourceFields: testMode === "km" ? (key, maximum) => <input type="number" min="0" max={maximum} step="any"
+                aria-label={key === "activeEp" ? "Aktuális aktív Ep" : "Aktuális Esszenciapajzs"}
+                value={(Object.hasOwn(resourceDraft, key) ? resourceDraft[key] : selectedCharacter.magic?.[key]) ?? ""}
+                onChange={event => {
+                  const value = event.target.value;
+                  setResourceDraft(previous => ({ ...previous, [key]: value === "" ? null : Number(value) }));
+                }} /> : null,
               changeStat, changeAdjustment,
               name: <input aria-label="Karakter neve" value={name} onChange={(event) => setName(event.target.value)} />,
               religion: <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />,
-              race: renderRaceSelector(),
+              race: null,
               age: race && calculatedAgeLimits ? renderAgeSelector() : null,
               ancestry: isHalfBlood ? renderAncestryFields() : null,
               ageOptions: renderAgePointOptions(),
