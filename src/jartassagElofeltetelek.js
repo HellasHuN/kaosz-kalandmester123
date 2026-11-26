@@ -107,10 +107,7 @@ export function missingSkillPrerequisites(skills, name, level, character) {
   if (name === "Mechanika" && character?.race === "Gnóm" && level <= 6) return [];
   if (name === "Mértan" && character?.race === "Gnóm" && level <= 3) return [];
   const missing = (verifiedPrerequisites[baseSkillName(name)]?.skills ?? []).filter((skill) => (skills?.[skill] ?? 0) < level);
-  if (name === academicUse && academicTheoryRank(skills) < level) missing.push(generalTheory);
-  if (character?.race === "Gilf" && name === freeMagicUse && (skills?.[gilfFreeTheory] ?? 0) < level) {
-    missing.push(gilfFreeTheory);
-  }
+  if ((name === academicUse || name === freeMagicUse) && academicTheoryRank(skills) < level) missing.push(generalTheory);
   const weaponRestriction = weaponTrainingRestriction(character, name);
   if (weaponRestriction) missing.push(weaponRestriction);
   if (item?.requiresWeapon) {
@@ -126,7 +123,6 @@ export function missingSkillPrerequisites(skills, name, level, character) {
 }
 
 export function skillPrerequisiteMessage(skills, name, level, character) {
-  if (name === gilfFreeTheory && character?.race !== "Gilf") return "A szabad Mágiaelmélet ezen a jártasságsoron gilf karakterhez tartozik.";
   const missing = missingSkillPrerequisites(skills, name, level, character);
   const weaponRestriction = weaponTrainingRestriction(character, name);
   if (weaponRestriction) return weaponRestriction;

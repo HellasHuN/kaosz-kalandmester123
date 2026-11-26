@@ -8,12 +8,13 @@ import { magicLimits } from "./magiaSzabalyok.js";
 import { characterSpeed } from "./gyorsasag.js";
 import { withEffectiveStrength } from "./karakterFoeertekek.js";
 import KepzesiCsomagValaszto from "./KepzesiCsomagValaszto.jsx";
-import { gilfFreeTheory } from "./gilfMagia.js";
+import { academicUse, generalTheory, legacyTheoryNames, legacyTheoryRank } from "./teszt/academic.js";
+import AkademikusKodexValaszto from "./AkademikusKodexValaszto.jsx";
 import { artSkillName, genericSpecializations, hasWeaponFoundation, racialWeaponTraining, specialization,
   specializationLearningRank, specializationRefinementOptions } from "./jartassagSzakosodasok.js";
 import "./Jartassagok.css";
 
-export default function AlkotasiJartassagok({ character, budget, costs, grants, racialGrants, trainingGrants, original, onChange, onClarify, onPackageChange }) {
+export default function AlkotasiJartassagok({ character, budget, costs, grants, racialGrants, trainingGrants, original, onChange, onClarify, onPackageChange, onAcademicCodex }) {
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(null);
@@ -21,7 +22,6 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
   const racialWeapon = racialWeaponTraining(character);
   const choices = search ? creationSkillNames.filter((name) =>
     name.toLocaleLowerCase("hu").includes(search) &&
-    (name !== gilfFreeTheory || character.race === "Gilf") &&
     !Object.hasOwn(character.skills, name) && !character.skillTraining?.[name] &&
     levelsFor(name).length > 0 && hasWeaponFoundation(character, specialization(name)) &&
     !(specialization(name)?.base === "Fegyverforgatás" && !specialization(name).branch &&
@@ -37,7 +37,8 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
   const pendingPrice = pending && quoteCreationSkill(character, budget, pending.name, pending.level, original).cost;
 
   function levelsFor(name, current) {
-    const floor = Math.max(grants[name] ?? 0, specializationLearningRank(name, 0, character) + 1);
+    const theoryFloor = name === generalTheory ? legacyTheoryRank(character.skills) + 1 : 1;
+    const floor = Math.max(grants[name] ?? 0, specializationLearningRank(name, 0, character) + 1, theoryFloor);
     const ceiling = creationSkillLimit(character, name);
     return skillPrices(name).map((_, index) => index + 1)
       .filter((level) => level === current || (level >= floor && level <= ceiling));
@@ -110,6 +111,9 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                 <tr key={name}>
                   <th scope="row">{name}{scope && <small> ({scope})</small>}
                     {relatedAttribute(name) && <small>{relatedAttribute(name)}</small>}
+                    {legacyTheoryNames.has(name) && <small>Korábbi Mágiaelmélet-rekord</small>}
+                    {name === academicUse && <AkademikusKodexValaszto specialization={character.magic?.academicSpecialization}
+                      onChange={onAcademicCodex} />}
                     {racialGrants[name] && <small>Faji jártasság · {racialGrants[name]}. szint</small>}
                     {trainingGrants[name] && <small>Képzési csomag · {trainingGrants[name]}. szint</small>}
                     {character.skillTraining?.[name] && <small>Folyamatban</small>}

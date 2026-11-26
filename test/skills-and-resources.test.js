@@ -42,7 +42,7 @@ test("gilf free-magic purchase needs matching free theory and uses the full rank
   assert.equal(creationSkillLimit(gilf, "Esszenciafelszabadítás"), 10);
   assert.equal(updateCreationSkill(gilf, 10000, freeMagicUse, 4), gilf.skills);
   assert.equal(updateCreationSkill(gilf, 10000, freeMagicUse, 3)[freeMagicUse], 3);
-  assert.equal(creationSkillLimit(human, gilfFreeTheory), 0);
+  assert.equal(updateCreationSkill(human, 10000, gilfFreeTheory, 1), human.skills);
 });
 
 test("free-magic trials use the actual skill rank and difficulty", () => {

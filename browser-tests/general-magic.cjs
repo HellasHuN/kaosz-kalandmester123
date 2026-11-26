@@ -119,15 +119,12 @@ async function verify(page) {
   assert.ok((await read()).magic.acquisitions.some(({ spellId }) => spellId === 'official:langhivas'));
   await button('Szerkesztés').click();
   await magic.getByLabel(/Alapkódex/).selectOption('Azúr');
-  const branch = magic.getByLabel(/Mágikus ág/);
-  await branch.selectOption({ index: 1 });
-  const selectedBranch = await branch.inputValue();
   await button('Véglegesítés').click();
   assert.equal((await read()).magic.academicSpecialization ?? null, null);
   await magic.getByRole('checkbox', { name: /jóváhagyta a szakosodás módosítását/ }).check();
   await button('Véglegesítés').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0].magic.academicSpecialization?.codex === 'Azúr');
-  assert.deepEqual((await read()).magic.academicSpecialization, { codex: 'Azúr', branch: selectedBranch });
+  assert.deepEqual((await read()).magic.academicSpecialization, { codex: 'Azúr' });
   await page.reload();
   await button('Karakterbetöltés').click();
   await button('Karakterlap megnyitása').click();

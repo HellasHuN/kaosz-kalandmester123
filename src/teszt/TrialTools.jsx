@@ -1,3 +1,4 @@
+import { academicTheoryRank, generalTheory } from "./academic.js";
 import { blindCombatRanks } from "./blindCombat.js";
 import { specialization, specializationNames, weaponRanks } from "../jartassagSzakosodasok.js";
 import { useState } from "react";
@@ -59,8 +60,9 @@ export function SecretTrials({ characters, history, overrides, onRecord }) {
       const contest = kind === "contest";
       const name = contest ? "Információgyűjtés" : fields.get("name");
       const modifier = Number(fields.get("modifier"));
+      const rank = name === generalTheory ? academicTheoryRank(character.skills) : character.skills?.[name] ?? 0;
       const target = attribute ? effectiveTrialTarget(overrides, character, name, modifier)
-        : skillTarget(character.skills?.[name] ?? 0, Number(fields.get("difficulty")) + modifier);
+        : skillTarget(rank, Number(fields.get("difficulty")) + modifier);
       const digital = fields.has("digital");
       const roll = digital ? rollDie(100) : readPercentileRoll(fields.get("roll"));
       const followUp = attribute && roll === 100 && target >= 100

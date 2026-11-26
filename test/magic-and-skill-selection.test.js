@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BookOpen, Droplets, Flame, Sparkles } from "lucide-react";
 import { getCodexIcon } from "../src/codexIcons.js";
-import { academicBranchesFor, validAcademicSpecialization } from "../src/teszt/academic.js";
+import { validAcademicSpecialization } from "../src/teszt/academic.js";
 import { codices, spells } from "../src/varazslatAdatok.js";
 import { readCharacters, writeCharacters } from "../src/karakterMentes.js";
 import { creationSkillCosts, creationSkillLimit, invalidCreationSkill, quoteCreationSkill, updateCreationSkill } from "../src/alkotasiJartassagok.js";
@@ -22,10 +22,10 @@ test("each real codex has its own icon; Azúr remains water-themed", () => {
 
 test("specialization options reflect the catalog and a valid choice survives storage", () => {
   const academicSpecialization = { codex: "Azúr", branch: "speciális" };
-  assert.ok(academicBranchesFor("Azúr").includes(academicSpecialization.branch));
+  assert.ok(validAcademicSpecialization({ codex: "Azúr" }));
   assert.ok(validAcademicSpecialization(academicSpecialization));
   assert.ok(validAcademicSpecialization(null));
-  assert.equal(validAcademicSpecialization({ codex: "Azúr", branch: "időmágia" }), false);
+  assert.equal(validAcademicSpecialization({ codex: "Azúr", branch: "időmágia" }), true);
   assert.equal(validAcademicSpecialization({ codex: "Kódexfüggetlen", branch: "speciális" }), false);
   let raw = null;
   const storage = { getItem: () => raw, setItem: (_, value) => { raw = value; } };

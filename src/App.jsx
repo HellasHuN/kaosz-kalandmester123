@@ -10,7 +10,7 @@ import { speedByRace } from "./gyorsasag.js";
 import VallasValaszto from "./VallasValaszto.jsx";
 import AlkotasiJartassagok from "./AlkotasiJartassagok.jsx";
 import { clarifySpecialization } from "./jartassagSzakosodasok.js";
-import { gilfFreeTheory } from "./gilfMagia.js";
+import { legacyTheoryNames, selectAcademicCodex, validAcademicSpecialization } from "./teszt/academic.js";
 import { combineCreationGrants, creationGrantedSkills, creationSkillCosts, invalidCreationSkill, purchasedCreationSkills,
   savedCreationSkillTotal, skillsUnderRacialGrant, quoteCreationSkill } from "./alkotasiJartassagok.js";
 import { racialAbilities, racialAbilityCost, racialRuleNotes, racialSelectionError, subraces } from "./fajiSzabalyok.js";
@@ -923,7 +923,7 @@ function checkCharacter() {
                   <option value="">Válassz jártasságot!</option>
                   {[...new Set([...talentEligibleSkills, ...talentSkills.filter(Boolean)])]
                     .filter((skill) => skill !== talentSkills[1 - index] &&
-                      (skill !== gilfFreeTheory || race === "Gilf" || skill === talentSkills[index])).map((skill) => (
+                      (!legacyTheoryNames.has(skill) || skill === talentSkills[index])).map((skill) => (
                     <option key={skill} value={skill}>{skill} · {talentCost(skill)} Jp</option>
                   ))}
                 </select>
@@ -1518,7 +1518,12 @@ setAncestry((previous) => ({
         {creationEditable && creationTab === "skills"
           ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
-            original={creationOriginal} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
+            original={creationOriginal} onAcademicCodex={(codex) => {
+              const academicSpecialization = selectAcademicCodex(creationCharacter.magic?.academicSpecialization, codex);
+              if (!validAcademicSpecialization(academicSpecialization) ||
+                  !window.confirm("A Kalandmester jóváhagyta az akadémikus szakosodás módosítását?")) return;
+              setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization } }));
+            }} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
           {creationActions}</>
           : creationEditable && creationTab === "equipment"
             ? <><AlkotasiFelszereles equipment={creationCharacter.equipment}

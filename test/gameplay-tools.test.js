@@ -38,12 +38,12 @@ test("general theory reads the highest previously paid theory without changing s
   assert.deepEqual(skills, before);
 });
 
-test("academic benefits apply only to acquired spells and off-branch permissions are specific", async () => {
+test("academic eligibility and benefits follow the selected codex; exceptions are individual", async () => {
   const { academicAccess } = await import("../src/teszt/academic.js");
   const selected = { academicSpecialization: { codex: "Smaragd", branch: "tűz" }, acquisitions: [] };
   const own = { id: "own", type: "tűz", codex: "Smaragd" };
   const other = { id: "other", type: "jég", codex: "Azúr" };
-  assert.deepEqual(academicAccess(selected, own), { allowed: true, bonus: 0, componentFree: false });
+  assert.deepEqual(academicAccess(selected, own), { allowed: true, bonus: 20, componentFree: true });
   assert.equal(academicAccess(selected, other).allowed, false);
   const learned = { ...selected, acquisitions: [{ form: "academic", spellId: own.id }] };
   assert.deepEqual(academicAccess(learned, own), { allowed: true, bonus: 20, componentFree: true });

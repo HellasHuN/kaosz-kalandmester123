@@ -4,7 +4,8 @@ import { readPercentileRoll, rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
 import { logAcademicCasting, logAcademicFailure, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
-import { academicBranchesFor, academicCodices, academicTheoryRank, validAcademicSpecialization } from "./teszt/academic.js";
+import { academicException, academicTheoryRank, selectAcademicCodex, setAcademicGrant, validAcademicSpecialization } from "./teszt/academic.js";
+import AkademikusKodexValaszto from "./AkademikusKodexValaszto.jsx";
 import { getCodexIcon } from "./codexIcons.js";
 import { azureSpells, codices, spells } from "./varazslatAdatok.js";
 import {
@@ -52,6 +53,18 @@ const independentTypes = catalogTypes(independentSpells);
 const scarletTypes = catalogTypes(scarletSpells);
 const azureTypes = catalogTypes(azureSpells);
 
+const codexHeaderArt = {
+  Skarlát: "magic-scarlet/langtenger.webp",
+  Azúr: "magic-azure/orveny.webp",
+  Alabástrom: "magic-independent/varazshej.webp",
+  Arany: "magic-independent/bunteto-tekintet.webp",
+  Ezüst: "magic-independent/lassitas.webp",
+  Fekete: "magic-independent/remseges-allkapcsok.webp",
+  Gránit: "magic-independent/varazstargy-kotese.webp",
+  Kígyókő: "magic-independent/magialeplezes.webp",
+  Smaragd: "magic-independent/sebgyogyitas.webp",
+};
+
 function hasSpellArtwork(spell) {
   return spell.codex === independentCodex || spell.codex === scarletCodex || spell.codex === azureCodex;
 }
@@ -85,7 +98,10 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
   const cost = spellCost(spell, form, context);
   const result = spellReadiness(character, magic, spell, form, context);
   const trial = form === "academic" ? academicMagicTrial(character, magic, spell, cost.difficulty) : null;
-  const exception = Object.hasOwn(magic.academicExceptions ?? {}, spell.id) ? magic.academicExceptions[spell.id] : null;
+  const exception = academicException(magic, spell);
+  const grant = exception?.granted === true;
+  const ownCodex = magic.academicSpecialization?.codex === spell.codex;
+  const hasAcademicSkill = character.skills?.["Mágiahasználat (akadémikus)"] > 0;
   const trialSignature = JSON.stringify([trial?.target, cost.ep, context.units, context.target, context.referenceSpellId]);
   const currentOutcome = trialResult?.signature === trialSignature && trialResult.outcome !== "invalid";
   const recordedAttempt = currentOutcome && magic.castingLog?.find(record => record.id === trialResult.id);
@@ -263,7 +279,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
         {spell.fp != null && <><dt>Fizikumpont-igény</dt><dd>{spell.fp} Fp</dd></>}
         <dt>Erő</dt><dd>{spell.power ?? "—"}</dd>
         <dt>Hatótávolság</dt><dd>{spell.range ?? "—"}</dd>
-        <dt>{form === "free" ? "A minta komponensei" : "Komponensek"}</dt><dd>{trial?.componentFree ? "Komponensmentes · TESZT háziszabály" : (spell.components ?? "—")}</dd>
+        <dt>{form === "free" ? "A minta komponensei" : "Komponensek"}</dt><dd>{spell.components ?? "—"}</dd>
         <dt>Elmondási idő</dt><dd>{spell.castTime ?? "—"}</dd>
         <dt>Hatóidő</dt><dd>{spell.duration ?? "—"}</dd>
         <dt>Forrás</dt><dd>
@@ -272,16 +288,27 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
           {spell.errata && <> · <a href="https://anyflip.com/npfrw/wdjj/basic" target="_blank" rel="noreferrer">Errata</a></>}
         </dd>
       </dl>
+      {trial?.componentFree && /\banyagi\b/iu.test(spell.components ?? "") &&
+        <p>Az anyagi komponens elhagyható · TESZT háziszabály. A szó, a mozdulat és az egyedi feltételek érvényben maradnak.</p>}
       {trial?.target != null && <p>Smaragd célszám: {trial.target}%{trial.bonus ? ` · Szakosodás: +${trial.bonus} százalékpont` : ""}</p>}
       {access.fromScroll && <p>Birtokolt mondóka-pergamen. Az olvashatóságot és a használati feltételeket a KM ellenőrzi.</p>}
-      {gm && editing && form === "academic" && magic.academicSpecialization && (
-        <fieldset><legend>Egyedi akadémikus engedély · TESZT háziszabály</legend>
-          {[["allowed", "Másik kódexből tanulható"], ["bonus", "+20 százalékpont"], ["componentFree", "Komponensmentesség"]].map(([key, label]) =>
-            <label key={key}><input type="checkbox" checked={exception?.[key] === true} onChange={event => {
-              const checked = event.target.checked;
-              onChange(previous => ({ ...previous, academicExceptions: { ...previous.academicExceptions,
-                [spell.id]: { ...previous.academicExceptions?.[spell.id], [key]: checked } } }));
-            }} /> {label}</label>)}
+      {gm && editing && form === "academic" && hasAcademicSkill && (
+        <fieldset>
+          <legend>KM-formulaengedély · TESZT háziszabály</legend>
+          {grant && <p>A formula egyedi KM-engedéllyel megszerzettként van rögzítve.</p>}
+          <button type="button" onClick={() => {
+            if (grant && !window.confirm(`Visszavonod a(z) ${spell.name} egyedi KM-engedélyét?`)) return;
+            onChange(previous => setAcademicGrant(character, previous, spell, !grant));
+          }}>{grant ? "KM-engedély visszavonása" : "Formula megadása (KM)"}</button>
+          {(grant || (exception?.allowed && entry)) && !ownCodex &&
+            [["bonus", "+20 százalékpont engedélyezése"], ["componentFree", "Anyagi komponens elhagyásának engedélyezése"]]
+              .map(([key, label]) => <label className="magic-checkbox" key={key}>
+                <input type="checkbox" checked={exception?.[key] === true} onChange={event => {
+                  const checked = event.target.checked;
+                  onChange(previous => ({ ...previous, academicExceptions: { ...previous.academicExceptions,
+                    [spell.id]: { ...academicException(previous, spell), [key]: checked } } }));
+                }} />{label}
+              </label>)}
         </fieldset>
       )}
       {spell.note && <p>{spell.note}</p>}
@@ -330,7 +357,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
           Kizárás ennél a karakter–mágiaforma párosnál
         </label>
       )}
-      {gm && editing && access.needsAcquisition && (access.allowed || access.recorded) && (
+      {gm && editing && !grant && access.needsAcquisition && (access.allowed || access.recorded) && (
         <>
           <button type="button" onClick={toggleAcquisition} disabled={unresolved}>
             {access.recorded ? (form === "sacred" ? "Kikérés törlése" : "Rögzítés törlése") : `Rögzítés: ${forms[form].acquisition}`}
@@ -374,9 +401,10 @@ export default function Magia({ character, onSave, ref }) {
   const skills = character.skills ?? {};
   const theoryRank = academicTheoryRank(skills);
   const specialization = magic.academicSpecialization;
-  const specializationChanged = editing && (specialization?.codex !== saved.academicSpecialization?.codex ||
-    specialization?.branch !== saved.academicSpecialization?.branch);
-  const compatibleBranches = academicBranchesFor(specialization?.codex);
+  const specializationChanged = editing && specialization?.codex !== saved.academicSpecialization?.codex;
+  const headerCodex = !illustratedCodex && specialization?.codex;
+  const headerArt = headerCodex && Object.hasOwn(codexHeaderArt, headerCodex)
+    ? new URL(`${import.meta.env.BASE_URL}${codexHeaderArt[headerCodex]}`, document.baseURI).href : null;
   const hasAcademicSkill = skills["Mágiahasználat (akadémikus)"] > 0;
   const hasSacredSkill = skills["Elhivatottság*"] > 0;
   const hasFreeSkill = skills["Mágiahasználat (szabad)"] > 0;
@@ -409,7 +437,7 @@ export default function Magia({ character, onSave, ref }) {
   function save() {
     if (!editing || !validResources) return false;
     if (specializationChanged && (!hasAcademicSkill || !validAcademicSpecialization(specialization) || !specializationApproved)) {
-      window.alert("Az akadémikus szakosodás módosításához érvényes kódex és ág, valamint KM-jóváhagyás szükséges.");
+      window.alert("Az akadémikus szakosodás módosításához érvényes kódex és KM-jóváhagyás szükséges.");
       return false;
     }
     if (panel.current.querySelector('form[data-unsaved="true"]')) {
@@ -541,7 +569,8 @@ export default function Magia({ character, onSave, ref }) {
 
   return (
     <section ref={panel} className={`panel magic-panel${illustrated ? "" : " general-grimoire"}`} data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
-      <header className="grimoire-banner">
+      <header className="grimoire-banner" data-specialization-codex={headerArt ? headerCodex : undefined}
+        style={headerArt ? { "--codex-header-image": `url("${headerArt}")` } : undefined}>
         <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={29} /> Mágia és varázslatok</h2>
         <p><EssenceIcon aria-hidden="true" size={22} /><span>Felszabadítható esszencia</span><strong>{limits.release} Ep</strong></p>
       </header>
@@ -619,29 +648,13 @@ export default function Magia({ character, onSave, ref }) {
       {(hasAcademicSkill || specialization) && <fieldset className="grimoire-settings academic-specialization">
         <legend>Akadémikus szakosodás · TESZT háziszabály</legend>
         {hasAcademicSkill && <p>Általános Mágiaelmélet: {theoryRank}. szint</p>}
-        {specialization ? <p>Aktuális szakosodás: <CodexBadge codex={specialization.codex} /> · {specialization.branch || "Ág kiválasztása szükséges"}</p>
+        {specialization ? <p>Aktuális szakosodás: <CodexBadge codex={specialization.codex} /></p>
           : <p>Aktuális szakosodás: Általános akadémikus</p>}
         {editing && hasAcademicSkill && <>
-          <label>Alapkódex <select value={specialization?.codex ?? ""} onChange={event => {
-            const codex = event.target.value;
-            const branch = academicBranchesFor(codex).includes(specialization?.branch) ? specialization.branch : "";
+          <AkademikusKodexValaszto specialization={specialization} onChange={codex => {
             setSpecializationApproved(false);
-            setDraft(previous => ({ ...previous, academicSpecialization: codex ? { codex, branch } : null }));
-          }}>
-            <option value="">Általános akadémikus</option>
-            {specialization && !academicCodices.includes(specialization.codex) && <option disabled>{specialization.codex}</option>}
-            {academicCodices.map(codex => <option key={codex}>{codex}</option>)}
-          </select></label>
-          {specialization && <label>Mágikus ág <select value={specialization.branch} onChange={event => {
-            const branch = event.target.value;
-            setSpecializationApproved(false);
-            setDraft(previous => ({ ...previous, academicSpecialization: { ...previous.academicSpecialization, branch } }));
-          }}>
-            <option value="">Válassz ágat</option>
-            {specialization.branch && !compatibleBranches.includes(specialization.branch) &&
-              <option value={specialization.branch} disabled>{specialization.branch} (korábbi mentés)</option>}
-            {compatibleBranches.map(branch => <option key={branch}>{branch}</option>)}
-          </select></label>}
+            setDraft(previous => ({ ...previous, academicSpecialization: selectAcademicCodex(previous.academicSpecialization, codex) }));
+          }} />
           {specializationChanged && <label className="magic-checkbox">
             <input type="checkbox" checked={specializationApproved} disabled={!validAcademicSpecialization(specialization)}
               onChange={event => setSpecializationApproved(event.target.checked)} />

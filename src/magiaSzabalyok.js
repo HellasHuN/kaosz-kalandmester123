@@ -130,7 +130,7 @@ export function spellAccess(character, magic, spell, form) {
   }
   if (form === "academic") {
     if (theory < Math.max(1, spellLevel)) reasons.push(`Mágiaelmélet: ${theory}. szint, szükséges: ${Math.max(1, spellLevel)}.`);
-    if (!academicAccess(magic, spell).allowed) reasons.push("Másik kódexhez vagy ághoz külön KM-engedély szükséges.");
+    if (!academicAccess(magic, spell).allowed) reasons.push("Ehhez a kódexen kívüli formulához külön KM-engedély szükséges.");
   }
   if (form === "sacred" && !spell.evilPrayer && !hasCodexPermission(magic.sacredCodices, spell.codex)) {
     reasons.push("A papság számára ez a kódex nincs engedélyezve.");

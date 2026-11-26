@@ -10,7 +10,7 @@ import { baseSkillName, genericSpecializations, racialWeaponSkillModifier, sameG
 export const TEHETSEG = "Született tehetség";
 const codexSkills = new Set(Object.values(codexTheorySkills));
 export const talentEligibleSkills = [...Object.keys(jpKoltsegek), ...specializationNames]
-  .filter((name) => name !== "Mágiaelmélet" && !genericSpecializations.has(name) &&
+  .filter((name) => name !== "Mágiaelmélet" && name !== gilfFreeTheory && !codexSkills.has(name) && !genericSpecializations.has(name) &&
     !specialization(name)?.branch && skillRequirement(name) !== null).sort((a, b) => a.localeCompare(b, "hu"));
 const talentDiscount = 15;
 const attributes = {
@@ -39,6 +39,7 @@ export function talentCost(name) {
 }
 
 export function skillPrices(name) {
+  if (codexSkills.has(name) || name === gilfFreeTheory) return jpKoltsegek.Mágiaelmélet;
   return specialization(name)?.prices ?? (name === "Fegyverforgatás" ? [600] : jpKoltsegek[baseSkillName(name)]);
 }
 
@@ -101,6 +102,15 @@ export function preserveUnchangedSkillCosts(original, skills, skillJpPaid, skill
     if (Object.hasOwn(original.skillJpByLevel ?? {}, name)) byLevel[name] = original.skillJpByLevel[name];
     else delete byLevel[name];
     if (!original.estimatedSkillJp?.includes(name)) estimates.delete(name);
+  }
+  for (const name of [...codexSkills, gilfFreeTheory]) {
+    if (!original || original.skills?.[name] !== skills[name]) continue;
+    if (Object.hasOwn(original.skillJpPaid ?? {}, name)) paid[name] = original.skillJpPaid[name];
+    else delete paid[name];
+    if (Object.hasOwn(original.skillJpByLevel ?? {}, name)) byLevel[name] = original.skillJpByLevel[name];
+    else delete byLevel[name];
+    if (original.estimatedSkillJp?.includes(name)) estimates.add(name);
+    else estimates.delete(name);
   }
   return { skillJpPaid: paid, skillJpByLevel: byLevel, estimatedSkillJp: [...estimates] };
 }

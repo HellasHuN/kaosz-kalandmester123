@@ -1,5 +1,4 @@
 import { codices } from "./varazslatAdatok.js";
-import { gilfFreeTheory } from "./gilfMagia.js";
 
 export const codexTheorySkills = Object.fromEntries(codices
   .filter((codex) => codex !== "Kódexfüggetlen")
@@ -148,8 +147,3 @@ export const jpKoltsegek = {
   "Zsongás": [200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000],
   "Zsonglőrködés": [100, 150, 200, 250, 300, 300, 400, 400, 400, 800]
 };
-jpKoltsegek[gilfFreeTheory] = jpKoltsegek.Mágiaelmélet;
-
-for (const name of Object.values(codexTheorySkills)) {
-  jpKoltsegek[name] = jpKoltsegek["Mágiaelmélet"];
-}

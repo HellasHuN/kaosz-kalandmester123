@@ -508,3 +508,18 @@
   background: linear-gradient(#652c32, #35171d);
   font-family: Georgia, serif;
 }
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex] {
+  background: linear-gradient(90deg, #170f16fa 10%, #170f16b0 60%, #170f1655),
+    var(--codex-header-image) center 45% / cover no-repeat;
+}
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex="Skarlát"] {
+  background: linear-gradient(90deg, #260c10f5 10%, #5e210f99 70%, #50140835),
+    var(--codex-header-image) center 45% / cover no-repeat;
+}
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex="Azúr"] {
+  background: linear-gradient(90deg, #081928f5 10%, #10345399 70%, #0a29433b),
+    var(--codex-header-image) center 48% / cover no-repeat;
+}
