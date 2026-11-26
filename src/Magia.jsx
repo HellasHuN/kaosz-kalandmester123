@@ -6,7 +6,7 @@ import { logAcademicCasting, logAcademicFailure, logSacredCasting, undoSacredCas
 import { useImperativeHandle, useRef, useState } from "react";
 import { academicBranchesFor, academicCodices, academicTheoryRank, validAcademicSpecialization } from "./teszt/academic.js";
 import { getCodexIcon } from "./codexIcons.js";
-import { codices, spells } from "./varazslatAdatok.js";
+import { azureSpells, codices, spells } from "./varazslatAdatok.js";
 import {
   academicMagicTrial, approveLegacyReservation, availableMagicEp, finishSacredSpell, formRequirements, forms, hasCodexPermission, magicLimits, readDamageDice, readMagic, recordAcquisition,
   freeEnergyStatus, freeMagicTrial, sacredRequestLimit, spellAccess, spellCost, spellReadiness,
@@ -45,18 +45,21 @@ function costLabel(ep) {
 const independentCodex = "Kódexfüggetlen";
 const independentSpells = spells.filter(spell => spell.codex === independentCodex);
 const scarletCodex = "Skarlát";
+const azureCodex = "Azúr";
 const scarletSpells = spells.filter(spell => spell.codex === scarletCodex);
 const catalogTypes = entries => [...new Set(entries.map(spell => spell.type))].sort((a, b) => a.localeCompare(b, "hu"));
 const independentTypes = catalogTypes(independentSpells);
 const scarletTypes = catalogTypes(scarletSpells);
+const azureTypes = catalogTypes(azureSpells);
 
 function spellArtwork(spell) {
-  const folder = spell.codex === scarletCodex ? "magic-scarlet" : "magic-independent";
+  const folder = spell.codex === azureCodex ? "magic-azure"
+    : spell.codex === scarletCodex ? "magic-scarlet" : "magic-independent";
   return `${import.meta.env.BASE_URL}${folder}/${spell.id.slice("official:".length)}.webp`;
 }
 
-function SpellDetails({ spell, character, magic, form, gm, editing, onChange, independent = false, scarlet = false }) {
-  const illustrated = independent || scarlet;
+function SpellDetails({ spell, character, magic, form, gm, editing, onChange, independent = false, scarlet = false, azure = false }) {
+  const illustrated = independent || scarlet || azure;
   const castDialog = useRef(null);
   const entry = magic.acquisitions.find((item) => item.spellId === spell.id && item.form === form);
   const [units, setUnits] = useState(entry?.units ?? "");
@@ -122,6 +125,14 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
             <input type="number" min={spell.ep.min} max={spell.ep.max} step={spell.ep.step ?? 1} value={approvedEp}
               onChange={event => setApprovedEp(event.target.value)} />
           </label>}
+          {azure && spell.ep?.kind === "epChoice" && <label>Varázslat változata
+            <select value={approvedEp} onChange={event => setApprovedEp(event.target.value)}>
+              <option value="">Válassz változatot</option>
+              {spell.ep.choices.map(choice => <option key={choice.amount} value={choice.amount}>
+                {choice.label} · {choice.amount} Ep
+              </option>)}
+            </select>
+          </label>}
           {independent && spell.ep?.kind === "referenceEp" && <label>Hivatkozott varázslat
             <select value={referenceSpellId} onChange={event => setReferenceSpellId(event.target.value)}>
               <option value="">Válassz rögzített költségű varázslatot</option>
@@ -135,7 +146,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
               <input type="number" min="1" max={spell.ep.maxUnits} step="1" disabled={!editing && form !== "academic"} value={units} onChange={(event) => setUnits(event.target.value)} />
             </label>
           )}
-          {(spell.ep?.kind === "flight" || (scarlet && spell.ep?.kind === "targetVariant")) && (
+          {(spell.ep?.kind === "flight" || ((scarlet || azure) && spell.ep?.kind === "targetVariant")) && (
             <>
               <label>
                 Célpont
@@ -286,14 +297,16 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, in
         <p className="independent-condition">{access.recorded ? "Ismert formula" : "Még nincs megtanulva"} · {states[result.state]}</p>
         {result.reasons.length > 0 && <p>{result.reasons.join(" ")}</p>}
         {spell.ep?.kind === "variable" && <p>KM ellenőrzése szükséges a pontos Ep-igényhez és a külön feltételekhez.</p>}
+        {azure && cost.difficulty == null && <p>KM ellenőrzése szükséges a próba pontos nehézségéhez.</p>}
         <button className="independent-cast-button" type="button" disabled={!access.allowed || !access.recorded}
           onClick={() => castDialog.current.showModal()}>Varázslás</button>
-        <dialog className={`independent-cast-dialog${scarlet ? " scarlet-cast-dialog" : ""}`} ref={castDialog} aria-labelledby="independent-cast-title">
+        <dialog className={`independent-cast-dialog${scarlet ? " scarlet-cast-dialog" : azure ? " azure-cast-dialog" : ""}`} ref={castDialog} aria-labelledby="independent-cast-title">
           <header><h4 id="independent-cast-title">Varázslás · {spell.name}</h4>
             <button type="button" onClick={() => castDialog.current.close()} aria-label="Varázslási ablak bezárása">×</button>
           </header>
           <div className="independent-cast-body">
             {scarlet && <p>KM ellenőrzése szükséges a célpont ellenállásához, a sebzéshez és az egyedi tűzhatásokhoz.</p>}
+            {azure && <p>A környezeti feltételek, a célpont ellenállása és az egyedi hatások elbírálása a KM feladata.</p>}
             {castControls}
             <p aria-live="polite">{states[result.state]}{result.reasons.length > 0 && ` · ${result.reasons.join(" ")}`}</p>
             {notice && <p role="status">{notice}</p>}
@@ -364,7 +377,9 @@ export default function Magia({ character, onSave, ref }) {
   const hasFreeSkill = skills["Mágiahasználat (szabad)"] > 0;
   const independent = codex === independentCodex && (!gm || selectedForm === "academic");
   const scarlet = codex === scarletCodex && (!gm || selectedForm === "academic");
-  const illustrated = independent || scarlet;
+  const azure = codex === azureCodex && (!gm || selectedForm === "academic");
+  const illustrated = independent || scarlet || azure;
+  const EssenceIcon = azure ? getCodexIcon(azureCodex) : Flame;
   const showAcademic = gm ? selectedForm === "academic" : hasAcademicSkill || illustrated;
   const showSacred = gm ? selectedForm === "sacred" : hasSacredSkill;
   function spellRows(catalog, availableForms) {
@@ -445,8 +460,8 @@ export default function Magia({ character, onSave, ref }) {
     form.dataset.unsaved = String([...new FormData(form).values()].some((value) => value.trim()));
   }
 
-  function renderSpellList(rows, { practical = false, sacred = false, wild = false, free = false, independent = false, scarlet = false } = {}) {
-    const illustrated = independent || scarlet;
+  function renderSpellList(rows, { practical = false, sacred = false, wild = false, free = false, independent = false, scarlet = false, azure = false } = {}) {
+    const illustrated = independent || scarlet || azure;
     rows = rows.filter(({ spell }) => illustrated
       ? (!independentType || independentType === spell.type) && spell.name.toLocaleLowerCase("hu").includes(search)
       : `${spell.name} ${spell.codex} ${spell.type}`.toLocaleLowerCase("hu").includes(search));
@@ -486,7 +501,7 @@ export default function Magia({ character, onSave, ref }) {
           </header>
           {!gm && selected.access.fromScroll && <p>Birtokolt mondóka-pergamen</p>}
           <SpellDetails key={`${selected.form}:${selected.spell.id}-${editing}-${gm}`}
-            spell={selected.spell} form={selected.form} independent={independent} scarlet={scarlet} {...{ character, magic, gm, editing }} onChange={setDraft} />
+            spell={selected.spell} form={selected.form} independent={independent} scarlet={scarlet} azure={azure} {...{ character, magic, gm, editing }} onChange={setDraft} />
         </article>}
       </div>
     );
@@ -504,7 +519,7 @@ export default function Magia({ character, onSave, ref }) {
     <section ref={panel} className="panel magic-panel" data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
       <header className="grimoire-banner">
         <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={29} /> Mágia és varázslatok</h2>
-        <p><Flame aria-hidden="true" size={22} /><span>Felszabadítható esszencia</span><strong>{limits.release} Ep</strong></p>
+        <p><EssenceIcon aria-hidden="true" size={22} /><span>Felszabadítható esszencia</span><strong>{limits.release} Ep</strong></p>
       </header>
       <label className="magic-checkbox">
         <input type="checkbox" checked={gm} onChange={(event) => {
@@ -662,10 +677,13 @@ export default function Magia({ character, onSave, ref }) {
         </>
       )}
       {(!gm || selectedForm === "academic") && <nav className="independent-navigation" aria-label="Varázslatkatalógus nézetei">
-        <button type="button" aria-pressed={independent} onClick={() => { setCodex(independentCodex); setQuery(""); if (scarlet) setIndependentType(""); }}>Kódexfüggetlen</button>
+        <button type="button" aria-pressed={independent} onClick={() => { setCodex(independentCodex); setQuery(""); if (scarlet || azure) setIndependentType(""); }}>Kódexfüggetlen</button>
         {!independent && <button type="button" aria-pressed={scarlet} onClick={() => {
           setCodex(scarletCodex); setQuery(""); setIndependentType("");
         }}>Skarlát Kódex</button>}
+        {!independent && !scarlet && <button type="button" aria-pressed={azure} onClick={() => {
+          setCodex(azureCodex); setQuery(""); setIndependentType("");
+        }}>Azúr Kódex</button>}
         {illustrated && <button type="button" onClick={() => { setCodex(""); setQuery(""); setIndependentType(""); }}>Teljes katalógus</button>}
       </nav>}
       <div className={illustrated ? "independent-filters" : undefined}>
@@ -682,7 +700,7 @@ export default function Magia({ character, onSave, ref }) {
       </label>)}
       {illustrated && <label>Varázslattípus <select value={independentType} onChange={event => setIndependentType(event.target.value)}>
         <option value="">Minden típus</option>
-        {(scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
+        {(azure ? azureTypes : scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
       </select></label>}
       {(codex || search) && (
         <button type="button" onClick={() => { setCodex(""); setQuery(""); setIndependentType(""); }}>
@@ -690,13 +708,14 @@ export default function Magia({ character, onSave, ref }) {
         </button>
       )}
       </div>
-      {showAcademic && <section className={`grimoire-section${independent ? " independent-grimoire" : scarlet ? " independent-grimoire scarlet-grimoire" : ""}`} data-form="academic"
+      {showAcademic && <section className={`grimoire-section${independent ? " independent-grimoire" : scarlet ? " independent-grimoire scarlet-grimoire"
+        : azure ? " independent-grimoire azure-grimoire" : ""}`} data-form="academic"
         data-fire={specialization?.codex === "Skarlát"} aria-labelledby="academic-magic-heading">
-        <GrimoireHeading id="academic-magic-heading" icon={scarlet || (!independent && specialization?.codex === "Skarlát") ? Flame : BookOpen}>
-          {independent ? independentCodex : scarlet ? "Skarlát Kódex" : "Akadémikus mágia"}</GrimoireHeading>
-        {illustrated ? renderSpellList((scarlet ? scarletSpells : independentSpells).map(spell => ({
+        <GrimoireHeading id="academic-magic-heading" icon={azure ? getCodexIcon(azureCodex) : scarlet || (!independent && specialization?.codex === "Skarlát") ? Flame : BookOpen}>
+          {independent ? independentCodex : scarlet ? "Skarlát Kódex" : azure ? "Azúr Kódex" : "Akadémikus mágia"}</GrimoireHeading>
+        {illustrated ? renderSpellList((azure ? azureSpells : scarlet ? scarletSpells : independentSpells).map(spell => ({
           spell, form: "academic", access: spellAccess(character, magic, spell, "academic"),
-        })), { independent, scarlet }) : renderSpellList(codexRows)}
+        })), { independent, scarlet, azure }) : renderSpellList(codexRows)}
       </section>}
       {!illustrated && showSacred && (
         <section className="grimoire-section" data-form="sacred" aria-labelledby="sacred-magic-heading">

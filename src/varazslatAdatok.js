@@ -74,13 +74,13 @@ const records = [
   ["vizfakasztas","Vízfakasztás","Azúr",192,"speciális",1,{"kind":"fixed","amount":3},1,"érintés","szó, mozdulat, anyagi (vízcsepp, kődarab)","8 szegmens","1 perc",null,null,null],
   ["vizteremtes","Vízteremtés","Azúr",192,"speciális",1,{"kind":"fixed","amount":2},2,"speciális","szó, anyagi (vízcsepp)","3 szegmens","maradandó",null,null,null],
   ["viztisztitas","Víztisztítás","Azúr",192,"speciális",1,{"kind":"perUnit","amount":5,"unit":"liter"},4,"1 méter","anyagi (vízcsepp)","5 szegmens","maradandó",null,null,null],
-  ["vizsugar","Vízsugár","Azúr",192,"speciális",2,{"kind":"fixed","amount":5},5,"zóna/2","szó, anyagi (vízcsepp)","3 szegmens","10 szegmens",null,null,null],
+  ["vizsugar","Vízsugár","Azúr",192,"speciális",2,{"kind":"fixed","amount":5},5,"zóna/2","szó, anyagi (vízcsepp)","3 szegmens","10 szegmens",null,null,{"note":"A vízsugár felboríthatja a célpontot, ha az elrontja a Rátermettségpróbát. Közvetlen sebzést nem okoz."}],
   ["oltalom-hidegtol-melegtol","Oltalom hidegtől/melegtől","Azúr",192,"személyre ható",4,{"kind":"variable","label":"2 /1 perc"},18,"érintés","szó, mozdulat, anyagi (vízcsepp)","6 szegmens","1 perc /2 Ep",null,null,null],
-  ["vizfagyasztas-olvasztas","Vízfagyasztás/olvasztás","Azúr",192,"területre ható",3,{"kind":"variable","label":"5 (fejleszthető)"},8,"zóna","mozdulat, anyagi (vízcsepp)","6 szegmens","maradandó",null,null,null],
-  ["varazskulacs","Varázskulacs","Azúr",192,"tárgyra ható","3 (4)",{"kind":"variable","label":"10 /24 óra"},20,"érintés","szó, anyagi (vízcsepp, rézgolyók)","10 perc","24 óra /10 Ep",null,null,null],
+  ["vizfagyasztas-olvasztas","Vízfagyasztás/olvasztás","Azúr",192,"területre ható",3,{"kind":"approvedEp","min":5,"step":5,"label":"Befektetett Ep (5-től, 5 Ep-es lépésekben)"},8,"zóna","mozdulat, anyagi (vízcsepp)","6 szegmens","maradandó",null,null,{"note":"Víz fagyasztására vagy jég olvasztására. Az 5 Ep-es alap 10 cm sugarú gömbre elég, minden további 5 Ep 10 cm-rel növeli a sugarat."}],
+  ["varazskulacs","Varázskulacs","Azúr",192,"tárgyra ható","3 (4)",{"kind":"variable","label":"10 /24 óra"},20,"érintés","szó, anyagi (vízcsepp, rézgolyók)","10 perc","24 óra /10 Ep",null,null,{"note":"KM ellenőrzése szükséges: a könyv 3-as és 4-es nehézséget is feltüntet, a választás feltétele nincs igazolva."}],
   ["savfelho","Savfelhő","Azúr",192,"területre ható",5,{"kind":"fixed","amount":30},20,"zóna","szó, mozdulat, anyagi (vízcsepp, sav)","5 szegmens","100 szegmens",null,null,null],
   ["vizen-jaras","Vízen járás","Azúr",193,"személyre ható",7,{"kind":"fixed","amount":20},30,"érintés","szó, anyagi (vízcsepp, viasz)","6 szegmens","20 szegmens/mágiahasználat szint",null,null,null],
-  ["esoidezes","Esőidézés","Azúr",193,"területre ható",2,{"kind":"variable","label":"6 vagy 50"},"25 vagy 70","zóna","szó, mozdulat, anyagi (vízcsepp)","5 szegmens","1 perc /mágiahasználat szint",null,null,null],
+  ["esoidezes","Esőidézés","Azúr",193,"területre ható",2,{"kind":"epChoice","label":"6 vagy 50 Ep","choices":[{"amount":6,"label":"Csendes eső"},{"amount":50,"label":"Felhőszakadás"}]},"25 vagy 70","zóna","szó, mozdulat, anyagi (vízcsepp)","5 szegmens","1 perc /mágiahasználat szint",null,null,{"note":"A mágusnak nyílt területen kell állnia. Az erő csendes esőnél 25, felhőszakadásnál 70."}],
   ["felhoidezes","Felhőidézés","Azúr",193,"területre ható",3,{"kind":"fixed","amount":45},60,"1 kilométer","szó, mozdulat, anyagi (vízcsepp)","33 szegmens","1 óra /mágiahasználat szint",null,null,null],
   ["vizlegzes","Vízlégzés","Azúr",193,"személyre ható",6,{"kind":"variable","label":"10 /perc"},12,"érintés","szó, mozdulat, anyagi (vízcsepp)","100 szegmens","1 perc /10 Ep",null,null,null],
   ["jegnyil","Jégnyíl","Azúr",193,"személyre ható",2,{"kind":"fixed","amount":5},6,"10 méter","szó, anyagi (vízcsepp)","2 szegmens","azonnali",null,null,null],
@@ -90,7 +90,7 @@ const records = [
   ["jegfal","Jégfal","Azúr",194,"területre ható",6,{"kind":"fixed","amount":20},60,"zóna","szó, mozdulat, anyagi (vízcsepp)","20 szegmens","maradandó",null,null,null],
   ["jegborton","Jégbörtön","Azúr",194,"személyre ható",6,{"kind":"fixed","amount":28},50,"zóna","szó, mozdulat, anyagi (vízcsepp)","17 szegmens","10 perc /mágiahasználat szint",null,null,null],
   ["viztol-vedo-varazs","Víztől védő varázs","Azúr",194,"személyre ható",3,{"kind":"variable","label":"10 /perc"},20,"érintés","szó, mozdulat, anyagi (vízcsepp)","3 szegmens","1 perc /10 Ep",null,null,null],
-  ["dermesztes","Dermesztés","Azúr",194,"személyre ható",6,{"kind":"variable","label":"18 /célpont"},15,"zóna","szó, mozdulat, anyagi (vízcsepp)","8 szegmens","50 szegmens /mágiahasználat szint",null,null,null],
+  ["dermesztes","Dermesztés","Azúr",194,"személyre ható",6,{"kind":"perUnit","amount":18,"unit":"célpont","maxUnits":3},15,"zóna","szó, mozdulat, anyagi (vízcsepp)","8 szegmens","50 szegmens /mágiahasználat szint",null,null,{"note":"Legfeljebb három célpontot dermeszt mozdulatlanná. A fennmaradó érzékelést és a célpontok ellenállását a KM bírálja el."}],
   ["szokoar","Szökőár","Azúr",194,"területre ható",8,{"kind":"fixed","amount":45},60,"200 méter","szó, mozdulat, anyagi (vízcsepp + gyémánt)","80 szegmens","azonnali",null,null,null],
   ["viztaszitas","Víztaszítás","Azúr",194,"önmagára ható",6,{"kind":"fixed","amount":70},40,"önmaga","szó, mozdulat, anyagi (vízcsepp)","5 szegmens","1 óra /mágiahasználat szint",null,null,null],
   ["jegvihar","Jégvihar","Azúr",194,"területre ható",6,{"kind":"variable","label":"28 /100 szegmens"},20,"30 méter","szó, mozdulat, anyagi (vízcsepp)","15 szegmens","100 szegmens /28 Ep",null,null,null],
@@ -99,7 +99,7 @@ const records = [
   ["hutes","Hűtés","Azúr",195,"személyre/tárgyra ható",2,{"kind":"fixed","amount":20},30,"érintés","szó, anyagi (vízcsepp)","10 szegmens","maradandó",null,null,null],
   ["fagyasztas","Fagyasztás","Azúr",195,"tárgyra ható",4,{"kind":"variable","label":"25 (fejleszthető)"},60,"érintés","szó, anyagi (vízcsepp)","60 szegmens","maradandó",null,null,null],
   ["ostest-viz","Őstest (Víz)","Azúr",195,"önmagára ható",10,{"kind":"fixed","amount":80},100,"önmaga","szó, mozdulat, anyagi (vízcsepp)","5 perc","100 szegmens/mágiahasználat szint",null,null,null],
-  ["vizgat","Vízgát","Azúr",195,"személyre ható",6,{"kind":"variable","label":"18 (növelhető)"},"30 (növelhető)","érintés","szó, mozdulat, anyagi (vízcsepp)","10 szegmens","100 szegmens/mágiahasználat szint",null,null,null],
+  ["vizgat","Vízgát","Azúr",195,"személyre ható",6,{"kind":"approvedEp","min":18,"step":2,"label":"Befektetett Ep (18-tól, 2 Ep-es lépésekben)"},"30 (növelhető)","érintés","szó, mozdulat, anyagi (vízcsepp)","10 szegmens","100 szegmens/mágiahasználat szint",null,null,{"note":"A védelem alapereje 30. Minden további 2 Ep egy ponttal növeli."}],
   ["vizkopo","Vízköpő","Azúr",195,"önmagára ható",9,{"kind":"fixed","amount":35},55,"önmaga","szó, mozdulat, anyagi (vízcsepp)","10 szegmens","100 szegmens",null,null,null],
   ["arasztas","Árasztás","Azúr",196,"területre ható",10,{"kind":"fixed","amount":88},70,"5 kilométer","szó, mozdulat, anyagi (vízcsepp)","25 perc","azonnali",null,null,null],
   ["jeghid","Jéghíd","Azúr",196,"területre ható",5,{"kind":"fixed","amount":65},70,"zóna","szó, mozdulat, anyagi (vízcsepp)","60 szegmens","1 perc /mágiahasználat szint",null,null,null],
@@ -344,10 +344,13 @@ function timedCost(ep) {
   return match ? { kind: "perUnit", amount: Number(match[1]), unit: match[2] } : ep;
 }
 
-export const spells = records.map(([id, name, codex, page, type, difficulty, ep, power, range, components, castTime, duration, jp, fp, extra]) => ({
+const catalog = records.map(([id, name, codex, page, type, difficulty, ep, power, range, components, castTime, duration, jp, fp, extra]) => ({
   id: `official:${id}`, origin: "official", name, codex, page, type, difficulty, ep: timedCost(ep),
   power, range, components, castTime, duration, jp, fp, ...extra,
-})).sort((a, b) => a.name.localeCompare(b.name, "hu"));
+}));
+
+export const azureSpells = catalog.filter(spell => spell.codex === "Azúr");
+export const spells = catalog.sort((a, b) => a.name.localeCompare(b.name, "hu"));
 
 export const codices = [...new Set(spells.map((spell) => spell.codex))]
   .filter((codex) => codex !== "Praktikus mágia").sort((a, b) => a.localeCompare(b, "hu"));

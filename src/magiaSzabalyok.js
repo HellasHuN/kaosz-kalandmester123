@@ -166,6 +166,8 @@ export function spellCost(spell, form, { units, target, approvedEp, referenceSpe
   if (form === "academic" && ep?.kind === "approvedEp" && Number.isSafeInteger(approvedEp) &&
       approvedEp >= ep.min && (approvedEp - ep.min) % (ep.step ?? 1) === 0 &&
       (ep.max == null || approvedEp <= ep.max)) amount = approvedEp;
+  if (form === "academic" && ep?.kind === "epChoice" &&
+      ep.choices.some(choice => choice.amount === approvedEp)) amount = approvedEp;
   if (form === "academic" && ep?.kind === "referenceEp") {
     const reference = spellsById.get(referenceSpellId);
     if (reference?.codex === spell.codex && reference.ep?.kind === "fixed") amount = reference.ep.amount;

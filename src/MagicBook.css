@@ -366,3 +366,56 @@
   box-shadow: 0 0 1.3rem #ff641890, 0 1rem 4rem #000c;
 }
 .scarlet-cast-dialog header { background: linear-gradient(#842e18, #3c0c0a); }
+
+.magic-panel:has(.azure-grimoire) {
+  --book-gold: #bedee7;
+  color: #e4f2f3;
+  border-color: #a6d6e2;
+  background: radial-gradient(ellipse at 86% 0%, #285c79, transparent 46%),
+    radial-gradient(ellipse at 6% 95%, #123c55, transparent 48%), #0e202e;
+}
+.magic-panel:has(.azure-grimoire) .grimoire-banner {
+  background: linear-gradient(95deg, #071c2af6 22%, #123854bd 59%, #0e334268),
+    url('/magic-azure/orveny.webp') center 48% / cover;
+  box-shadow: inset 0 0 1rem #a7e6ff76, 0 0 .75rem #4aa8c64d;
+}
+.magic-panel:has(.azure-grimoire) .grimoire-banner strong { color: #baf0ff; }
+.magic-panel:has(.azure-grimoire) .independent-filters {
+  border-color: #8fb9ca;
+  background: #142b3c;
+}
+.magic-panel:has(.azure-grimoire) .independent-navigation button:not(.skills-remove),
+.magic-panel .azure-grimoire .independent-cast-button:not(.skills-remove),
+.magic-panel .azure-cast-dialog button:not(.skills-remove) {
+  border-color: #b0e6f1;
+  color: #e8f9ff;
+  background: linear-gradient(#236078, #14293f);
+  box-shadow: inset 0 0 .65rem #6fc6e360;
+}
+.magic-panel .azure-grimoire {
+  --folio-dark: #102535;
+  --folio-medium: #226382;
+  --folio-light: #bce2ec;
+  --folio-paper: #e0ebe8;
+  border-color: #9bcbd8;
+  background: repeating-radial-gradient(ellipse at 100% 1%, #9adbf226 0 1px, transparent 3px 23px),
+    radial-gradient(ellipse at 83% 0%, #24657d, #102738 78%);
+}
+.azure-grimoire .independent-icon,
+.azure-grimoire .independent-illustration {
+  border-color: #54a1b6;
+  box-shadow: 0 0 .58rem #ceeaff4d;
+}
+.azure-grimoire .independent-condition {
+  background: #e2f1eb;
+  border-color: #578799;
+}
+.magic-panel .azure-cast-dialog {
+  border-color: #a8d9e7;
+  background: url('./assets/pergamen-rostok.png'), radial-gradient(ellipse at 35% 20%, #f1f0dd, #ccdfe3);
+  box-shadow: 0 0 1.35rem #6fc6e388, 0 1rem 4rem #000b;
+}
+.azure-cast-dialog header { background: linear-gradient(#1c556e, #12273f); border-color: #9ac7d8; }
+.azure-cast-dialog::backdrop { background: #091928dc; }
+
+.azure-cast-dialog .independent-cost { color: #254f64; border-color: #729cae; }
