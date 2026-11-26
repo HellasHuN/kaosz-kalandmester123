@@ -1,5 +1,5 @@
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
-import { ArrowUpRight, BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
+import { BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
 import "./teszt/mobileHome.css";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
@@ -669,6 +669,13 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function selectTestMode(mode) {
     if (navigate("test-adventure", null)) setTestMode(mode);
+  }
+
+  function openPlayerCharacter(character) {
+    if (navigate("karakterlap", character)) {
+      setTestMode("player");
+      setAdventureCharacterId(character.id);
+    }
   }
 
   function openAdventureFor(character) {
@@ -1434,6 +1441,7 @@ setAncestry((previous) => ({
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
   );
+  const selectingForPlay = page === "jatek";
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
 
   return (
@@ -1443,24 +1451,21 @@ setAncestry((previous) => ({
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
           <section className="home-content mobile-home" aria-labelledby="home-title">
-            <div className="mobile-home-title">
-              <span className="mobile-home-mark" aria-hidden="true"><Swords size={29} /></span>
+            <header className="mobile-home-title">
               <p className="test-release">TESZT 1.0</p>
-              <h1 id="home-title">Káosz<br /><em>szerepjáték</em></h1>
-            </div>
+              <h1 id="home-title">Káosz szerepjáték</h1>
+            </header>
             <nav className="home-actions" aria-label="Főmenü">
-              <button className="mobile-home-adventure" type="button" onClick={() => navigate("test-adventure", null)}>
-                <Compass aria-hidden="true" size={26} />
-                <span><strong>Kaland kezdete</strong>
-                  <small>Játékos és kalandmester mód</small></span>
-                <ArrowUpRight aria-hidden="true" size={20} />
+              <button type="button" onClick={() => navigate("jatek", null)}><Compass aria-hidden="true" size={20} />Játék</button>
+              <button type="button" onClick={() => navigate("alkotas", null)}><Feather aria-hidden="true" size={20} />Karakteralkotás</button>
+              <button type="button" onClick={() => navigate("karakterek", null)}><BookOpen aria-hidden="true" size={20} />Karakterbetöltés</button>
+              <button type="button" aria-describedby="home-km-release" onClick={() => selectTestMode("km")}>
+                <Swords aria-hidden="true" size={20} />Kalandmester<span id="home-km-release" className="home-menu-release" aria-hidden="true">TESZT</span>
               </button>
-              <div className="mobile-home-grid">
-                <button type="button" onClick={() => navigate("alkotas", null)}><Feather aria-hidden="true" size={20} />Karakteralkotás</button>
-                <button type="button" onClick={() => navigate("karakterek")}><BookOpen aria-hidden="true" size={20} />Karakter betöltése</button>
-                <button type="button" onClick={() => navigate("test-settings", null)}><Settings aria-hidden="true" size={20} />Beállítások</button>
-              </div>
             </nav>
+            <button className="home-settings" type="button" onClick={() => navigate("test-settings", null)}>
+              <Settings aria-hidden="true" size={17} />Beállítások
+            </button>
           </section>
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
@@ -1475,8 +1480,10 @@ setAncestry((previous) => ({
         {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
             if (window.confirm("Visszatérsz a főmenübe?")) {
-              setTestMode(null);
-              navigate("fomenu", null);
+              if (navigate("fomenu", null)) {
+                setTestMode(null);
+                setAdventureCharacterId(null);
+              }
             }
           }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
@@ -1548,9 +1555,11 @@ setAncestry((previous) => ({
             confirmLeaving={confirmLeaving}
           /></Suspense>
         )}
-        {page === "karakterek" && (
+        {(page === "karakterek" || selectingForPlay) && (
           <section className="panel" aria-labelledby="saved-characters-title">
-            <h2 id="saved-characters-title">Karakter betöltése</h2>
+            <h2 id="saved-characters-title">{selectingForPlay ? "Válassz karaktert a játékhoz" : "Karakterbetöltés"}</h2>
+            <p>{selectingForPlay ? "A játékba helyezett karakterek karakterlapja innen nyitható meg."
+              : "A tervezetek a karakteralkotásban szerkeszthetők. A már játékba helyezett karakterek a karakterlapon kezelhetők."}</p>
             {activationFeedback && <p role={activationFeedback.error ? "alert" : "status"}>{activationFeedback.text}</p>}
             {savedCharacters.length === 0 && <p>Nincs mentett karakter.</p>}
             {savedCharacters.map((character) => (
@@ -1560,13 +1569,16 @@ setAncestry((previous) => ({
                 <p>Állapot: <strong>{character.playStatus === "playing" ? "Játékban"
                   : character.playStatus === "draft" ? "Tervezet" : "Régi mentés · besorolásra vár"}</strong></p>
                 {character.playStatus === "draft" && <>
-                  <button className="save" type="button" onClick={() => navigate("alkotas", character)}>Karakter szerkesztése</button>
+                  {!selectingForPlay && <button className="save" type="button" onClick={() => navigate("alkotas", character)}>Karakter szerkesztése</button>}
                   <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Játékba helyezés</button>
                 </>}
                 {character.playStatus === "playing" && <>
-                  <button className="save" type="button" onClick={() => navigate("karakterlap", character)}>Karakterlap megnyitása</button>
-                  <button className="save" type="button" onClick={() => openAdventureFor(character)}>Kaland megnyitása</button>
-                  <button className="save" type="button" onClick={() => startDelete(character)}>Karakter eltávolítása</button>
+                  <button className="save" type="button" onClick={() => selectingForPlay
+                    ? openPlayerCharacter(character) : navigate("karakterlap", character)}>Karakterlap megnyitása</button>
+                  {!selectingForPlay && <>
+                    <button className="save" type="button" onClick={() => openAdventureFor(character)}>Kaland megnyitása</button>
+                    <button className="save" type="button" onClick={() => startDelete(character)}>Karakter eltávolítása</button>
+                  </>}
                 </>}
                 {character.playStatus == null && <>
                   <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>

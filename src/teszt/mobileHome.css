@@ -1,80 +1,90 @@
 .test-app .home-screen {
-  padding: 0;
-  background: #121114;
+  display: grid;
+  place-content: center;
   min-height: 100svh;
+  padding: 1.25rem max(1rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 25%, #54282b, #26181c 62%, #111219);
 }
 
 .test-app .mobile-home {
-  width: min(100%, 42rem);
-  margin: 0 auto;
-  text-align: left;
-  position: relative;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  width: min(100%, 23rem);
+  margin-inline: auto;
+  text-align: center;
 }
 
 .mobile-home-title {
-  box-sizing: border-box;
-  display: grid;
-  align-content: end;
-  min-height: min(47svh, 400px);
-  padding: 1.5rem 1.25rem 1.2rem;
-  background: linear-gradient(0deg, #121114 2%, #12111482 62%, #12111425),
-    url('../assets/hero.png') center 42% / cover;
-  border-radius: 0 0 1rem 1rem;
+  margin-bottom: 1.6rem;
 }
 
 .test-app .mobile-home-title h1 {
-  margin: 0;
-  font-size: clamp(2.5rem, 11vw, 5.25rem);
-  line-height: .93;
-  letter-spacing: -.055em;
-  color: #f6e9d5;
-}
-
-.mobile-home-title .test-release {
-  margin: 0 0 .7rem;
-  font-size: .75rem;
+  margin: .5rem 0 0;
+  color: #f7e5bf;
+  font: 600 clamp(2rem, 6vw, 3.25rem)/1.06 Georgia, serif;
+  text-wrap: balance;
 }
 
 .test-app .mobile-home .home-actions {
-  margin: 0;
-  padding: 0 1rem;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: .65rem;
 }
 
 .test-app .mobile-home .home-actions button {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
   min-width: 0;
   width: 100%;
-  min-height: 3.4rem;
-  margin: 0;
-  padding: .65rem;
-  border: 1px solid #655542;
-  border-radius: .65rem;
-  color: #f4e7d4;
-  background: #242026;
-  font: inherit;
-  text-transform: none;
-}
-
-.test-app .mobile-home .home-actions .mobile-home-adventure {
-  display: grid;
-  justify-items: start;
-  gap: .25rem;
-  padding: .95rem;
+  min-height: 3.35rem;
+  padding: .55rem clamp(.55rem, 3vw, 1rem);
+  border: 3px double #956337;
+  border-radius: .4rem;
+  background: url('../assets/pergamen-rostok.png'), linear-gradient(105deg, #dcb47c, #f7e4b9 39%, #e8c799);
+  box-shadow: inset 0 0 .7rem #88582d55, 0 .18rem .45rem #140b0a88;
+  color: #382018;
   text-align: left;
-  background: #e9c981;
-  color: #201711;
+  font: 700 clamp(1.05rem, 4vw, 1.25rem)/1.2 Georgia, serif;
+  cursor: pointer;
 }
 
-.mobile-home-adventure strong { font-size: 1.2rem; }
-.mobile-home-adventure span { font-size: .9rem; }
-.mobile-home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.test-app .mobile-home .home-actions button:hover {
+  border-color: #6a3523;
+  background-color: #f8e6c5;
+  box-shadow: inset 0 0 .6rem #80512a66, 0 0 .55rem #e5b87066;
+}
 
-@media (min-width: 49rem) {
-  .test-app .home-screen { padding: 1.5rem 0; }
-  .mobile-home-title { min-height: min(49svh, 440px); border-radius: 1rem; padding-inline: 2rem; }
-  .test-app .mobile-home .home-actions { padding-inline: 2rem; }
+.mobile-home button svg { flex: none; }
+
+.home-menu-release {
+  margin-inline-start: auto;
+  padding: .21rem .32rem;
+  border: 1px solid #865a36;
+  border-radius: .2rem;
+  font: 700 .63rem/1 Arial, sans-serif;
+  letter-spacing: .05em;
+}
+
+.test-app .mobile-home .home-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: .4rem .7rem;
+  border: 1px solid transparent;
+  border-radius: .35rem;
+  color: #f3ddb7;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.test-app .mobile-home .home-settings:hover { border-color: #c49a60; }
+
+.test-app .mobile-home button:focus-visible {
+  outline: 2px solid #ffe3a6;
+  outline-offset: 3px;
 }
 
 @media (max-width: 600px) {
@@ -92,65 +102,6 @@
   --kaosz-copy: #f6e9d5;
   --kaosz-surface: #1d1e27;
   --kaosz-line: #61543e;
-}
-
-.test-app .home-screen {
-  background: radial-gradient(ellipse at 50% 0%, #272735, var(--kaosz-ink) 65%);
-}
-
-.test-app .mobile-home { width: min(100%, 69rem); }
-
-.mobile-home-title {
-  isolation: isolate;
-  position: relative;
-  min-height: clamp(20rem, 55svh, 43rem);
-  padding: 2.25rem 1.2rem 1.75rem;
-  background: linear-gradient(180deg, #10111a10, #10111a69 48%, #111219 100%),
-    url('../assets/theme/gate.webp') center 45% / cover;
-}
-
-.mobile-home-mark {
-  display: grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  border: 1px solid #e2bd7690;
-  border-radius: .75rem;
-  color: var(--kaosz-brass);
-  background: #0e1018b8;
-  margin-bottom: 1rem;
-}
-
-.test-app .mobile-home-title h1 {
-  font-family: Georgia, serif;
-  font-weight: 600;
-  font-size: clamp(3rem, 13vw, 7rem);
-  letter-spacing: -.047em;
-}
-.mobile-home-title h1 em { color: var(--kaosz-brass); font-weight: 400; }
-
-.test-app .mobile-home .home-actions { position: relative; margin-top: -.3rem; }
-.test-app .mobile-home .home-actions button {
-  border-color: var(--kaosz-line);
-  background: var(--kaosz-surface);
-}
-.mobile-home-grid button { display: flex; align-items: center; justify-content: flex-start; gap: .55rem; text-align: left; }
-.mobile-home-grid button svg { flex: 0 0 auto; color: var(--kaosz-brass); }
-
-.test-app .mobile-home .home-actions .mobile-home-adventure {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: .85rem;
-  min-height: 4.75rem;
-  background: var(--kaosz-brass);
-  border: 0;
-}
-
-.mobile-home-adventure span { display: grid; gap: .25rem; }
-
-@media (min-width: 49rem) {
-  .test-app .mobile-home .home-actions { grid-template-columns: 1fr 1.25fr; }
-  .mobile-home-title { padding: 3rem; background-position: center 54%; }
 }
 
 .character-cover {
@@ -194,7 +145,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .mobile-home-title, .character-cover { animation: kaosz-reveal .35s ease-out both; }
+  .character-cover { animation: kaosz-reveal .35s ease-out both; }
   .mobile-home button, .online-panel button, .test-panel button { transition: background-color .18s, border-color .18s, color .18s; }
   @keyframes kaosz-reveal { from { opacity: .65; transform: translateY(.3rem); } to { opacity: 1; transform: translateY(0); } }
 }
