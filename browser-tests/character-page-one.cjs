@@ -18,14 +18,14 @@ async function verify(page, width) {
     accept = true;
   });
   const button = name => page.getByRole("button", { name, exact: true });
-  const header = page.locator(".first-page-header");
-  const body = page.locator(".first-page-body");
+  const header = page.locator(".general-hero");
+  const body = page.locator(".general-sheet");
   const read = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek")));
   const resource = name => body.getByRole("spinbutton", { name, exact: true });
   const fp = body.locator('output[aria-label="Aktuális életerő"]');
   const photo = async name => {
     if (process.env.SCREENSHOT_DIR && width !== 320)
-      await page.locator(".first-page-shell").screenshot({ path: path.join(process.env.SCREENSHOT_DIR, `${name}-${width}.png`) });
+      await page.screenshot({ fullPage: true, path: path.join(process.env.SCREENSHOT_DIR, `${name}-${width}.png`) });
   };
   const assertPortrait = async file => {
     const image = await header.evaluate(el => el.style.getPropertyValue("--ancestry-portrait"));
@@ -44,7 +44,7 @@ async function verify(page, width) {
   await body.waitFor();
   await assertPortrait("human-male.webp");
   assert.equal(await button("Mentett karakterek").count(), 0);
-  assert.deepEqual(await body.locator(".first-page-stat output").evaluateAll(els => els.map(el => el.getAttribute("aria-label"))),
+  assert.deepEqual(await body.locator(".general-attribute output").evaluateAll(els => els.map(el => el.getAttribute("aria-label"))),
     ["Fizikum","Erő","Szívósság","Rátermettség","Ügyesség","Reflex","Tudat","Intelligencia","Lelkierő",
       "Esszencia","Varázserő","Esszenciapajzs","Érzékelés","Érzékszerv","Intuíció"]);
   assert.ok(await button("Életerő növelése").isDisabled());

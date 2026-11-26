@@ -135,7 +135,7 @@ async function verify(page) {
   await button('Vissza a főmenübe').click();
   await button('Karakteralkotás').click();
   await page.getByPlaceholder('Karakter neve').fill('Új mágikus próba');
-  await page.locator('.creation-grid').getByLabel(/^Faj/).selectOption('Ember');
+  await page.getByRole('region', { name: 'Karakter adatai' }).getByLabel(/^Faj/).selectOption('Ember');
   await page.getByLabel(/^Életkor/).selectOption('25');
   const redistribute = button('Főértékek újraelosztása a kerethez');
   if (await redistribute.count()) await redistribute.click();

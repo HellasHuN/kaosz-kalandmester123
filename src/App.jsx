@@ -1,5 +1,5 @@
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
-import KarakterlapElsoOldal, { CharacterPageHeader } from "./KarakterlapElsoOldal.jsx";
+import GeneralPage from "./page1/GeneralPage.jsx";
 import { profileError, readProfile } from "./characterProfile.js";
 import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
 import MainMenu from "./teszt/MainMenu.jsx";
@@ -1440,7 +1440,7 @@ setAncestry((previous) => ({
         </section>}
       </>}
     </>;
-    const budget = race && <div className="first-page-budget">
+    const budget = race && <div className="general-budget">
           <dl className="creation-points">
             <div><dt>Rendelkezésre áll</dt><dd>{statBudget ?? "—"}</dd></div>
             <div><dt>Felhasználva</dt><dd>{total}</dd></div>
@@ -1455,7 +1455,12 @@ setAncestry((previous) => ({
             }}>Főértékek újraelosztása a kerethez</button>
           )}
     </div>;
-    return <KarakterlapElsoOldal mode="creation"
+    return <GeneralPage mode="creation"
+      identity={{ name, race, subrace, age, gender }}
+      header={{ actions: selectedCharacterId !== null && <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> }}
+      links={creationEditable ? [["details", "Karakteradatok"], ["skills", "Jártasságok"], ["equipment", "Felszerelés"], ["magic", "Mágia"]].map(
+        ([id, label]) => ({ id, label, current: creationTab === id, onClick: () => openCreationTab(id) })
+      ) : undefined}
       character={{ ...creationCharacter, name, jp: creationBudget == null ? undefined : creationBudget - creationCosts.total }}
       stage={stage} extra={extra} budget={budget} actions={race && actions}
       onChangeHealth={race && calculatedAgeLimits ? (amount) => {
@@ -1481,7 +1486,7 @@ setAncestry((previous) => ({
     </div>
   );
   const creationTabs = (
-    <nav className={creationTab === "details" ? "first-page-tabs creation-first-page-tabs" : "workspace-nav"} aria-label="A karakteralkotás részei">
+    <nav className="workspace-nav" aria-label="A karakteralkotás részei">
       <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
       <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
       <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
@@ -1527,11 +1532,8 @@ setAncestry((previous) => ({
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
         {page === "alkotas" && (
-        <div className={creationTab === "details" ? "creation-workspace compact-creation first-page-shell" : "creation-workspace"} style={ancestryTheme(race, subrace)}>
-          {creationTab === "details"
-            ? <CharacterPageHeader title="Karakteralkotás" character={{ name, race, subrace, age, gender }}
-                actions={selectedCharacterId !== null && <button className="first-page-new" type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button>} />
-            : <header className="character-cover creation-cover">
+        <div className="creation-workspace" style={ancestryTheme(race, subrace)}>
+          {creationTab !== "details" && <header className="character-cover creation-cover">
             <div className="character-cover-art" aria-hidden="true" />
             <div className="character-cover-caption">
               <h2>Karakteralkotás</h2>
@@ -1563,7 +1565,6 @@ setAncestry((previous) => ({
             ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
               onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
           : renderCharacterFields(creationActions)}
-        {creationEditable && creationTab === "details" && creationTabs}
         </div>)}
         {page === "karakterlap" && (
           <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
