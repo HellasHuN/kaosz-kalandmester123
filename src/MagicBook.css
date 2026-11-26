@@ -216,3 +216,11 @@
   outline-offset: 2px;
 }
 .magic-panel.panel .spellbook-folio :focus-visible { outline-color: #843d21; }
+
+.magic-panel .academic-specialization { min-width: 0; margin-block: .85rem; }
+.codex-badge { display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
+.codex-badge svg { flex: none; }
+.spellbook-folio .codex-badge { margin-top: .25rem; color: #4d311e; }
+.spellbook-folio .codex-badge[data-codex="Azúr"] { color: #215370; }
+.spellbook-sigil[data-codex="Azúr"],
+.spellbook-index button:has([data-codex="Azúr"]) > svg { color: #9ee3ff; background: #163e58; border-color: #80c9ed; }

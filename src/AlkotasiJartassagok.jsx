@@ -50,6 +50,7 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                 const editable = creationSkillNames.includes(name) && !character.skillTraining?.[name];
                 const item = specialization(name);
                 const minimum = Math.max(grants[name] ?? 0, specializationLearningRank(name, 0, character) + 1);
+                const limit = creationSkillLimit(character, name);
                 const racial = character.racialSpecializations;
                 const scope = name === "Művészet" && character.subrace === "Erdei elf" ? racial?.artGenre
                   : name === "Vadászat" && racial?.waterHunting ? "vízi vadászat"
@@ -66,12 +67,12 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                     </select>}
                   </th>
                   <td>{relatedAttribute(name) ?? "—"}</td>
-                  <td>{editable ? <select aria-label={`${name} szintje`} value={level}
+                  <td>{editable ? <><select aria-label={`${name} szintje`} value={level}
                     onChange={(event) => change(name, Number(event.target.value))}>
                     {skillPrices(name).map((_, index) => index + 1)
-                      .filter((option) => option >= minimum && (option <= Math.max(minimum, creationSkillLimit(character, name)) || option === level))
+                      .filter((option) => option >= minimum && (option <= Math.max(grants[name] ?? 0, limit) || option === level))
                       .map((option) => <option key={option}>{option}</option>)}
-                  </select> : level}</td>
+                  </select><small>Induló plafon: {Math.max(grants[name] ?? 0, limit)}</small></> : level}</td>
                   <td>{costs.skillJpPaid[name] ?? "—"}{costs.estimatedSkillJp.includes(name) && <small> · hiányos előzmény</small>}</td>
                   <td>{trainingGrants[name] ? `Képzési csomag · ${trainingGrants[name]}. szint` : grants[name] ? "Faji jártasság"
                     : editable ? <button type="button" aria-label={`${name} törlése`} onClick={() => change(name, 0)}>×</button>
@@ -96,12 +97,20 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
           maximum={creationSkillLimit(character, devotionSkill)} onChange={(level, approved) => change(devotionSkill, level, approved)} />}
         <InduloJartassagEngedelyek character={character} onChange={onApprovalsChange} />
         <KepzesiCsomagValaszto character={character} onChange={onPackageChange} />
+        <p>Az induló szinteket a faj, az életkor és a jóváhagyott kivételek határozzák meg.
+          Játékba helyezés után a Jártasságok lapon képzéssel léphetsz tovább.</p>
         <label htmlFor="creation-skill-search">Új jártasság keresése</label>
         <input id="creation-skill-search" type="search" value={query} disabled={remaining == null}
           onChange={(event) => { setQuery(event.target.value); setMessage(""); }} />
         {choices.length > 0 && <ul className="skills-results">
-          {choices.map((name) => <li key={name}><button type="button"
-            onClick={() => change(name, specializationLearningRank(name, 0, character) + 1)}>{name}</button></li>)}
+          {choices.map((name) => {
+            const initial = specializationLearningRank(name, 0, character) + 1;
+            const limit = creationSkillLimit(character, name);
+            return <li key={name}><button type="button" disabled={initial > limit}
+              onClick={() => change(name, initial)}>{name}</button>
+              <small>{initial > limit ? "A szükséges induló szint nem engedélyezett." : `Induló plafon: ${limit}. szint`}</small>
+            </li>;
+          })}
         </ul>}
       </section>
     </div>

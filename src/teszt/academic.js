@@ -1,4 +1,21 @@
 import { codexTheorySkills } from "../jpKoltsegek.js";
+import { codices, spells } from "../varazslatAdatok.js";
+
+export const academicCodices = codices.filter(codex => codex !== "Kódexfüggetlen" && codex !== "Praktikus mágia");
+
+const branchesByCodex = new Map(academicCodices.map(codex => [
+  codex,
+  [...new Set(spells.filter(spell => spell.codex === codex).map(spell => spell.type))]
+    .sort((first, second) => first.localeCompare(second, "hu")),
+]));
+
+export function academicBranchesFor(codex) {
+  return branchesByCodex.get(codex) ?? [];
+}
+
+export function validAcademicSpecialization(specialization) {
+  return specialization === null || academicBranchesFor(specialization?.codex).includes(specialization?.branch);
+}
 
 export const generalTheory = "Mágiaelmélet";
 export const academicUse = "Mágiahasználat (akadémikus)";
