@@ -25,7 +25,7 @@ import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
 import { TEHETSEG, preserveUnchangedSkillCosts, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
 import { lazy, Suspense, useState, useEffect, useRef } from "react";
-import Felszereles from "./Felszereles.jsx";
+import AlkotasiFelszereles from "./AlkotasiFelszereles.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
@@ -531,7 +531,7 @@ function saveCharacter({ notify = true } = {}) {
     ...(creationEditable && creationOriginal),
     ...(creationEditable && creationExtras),
     ...(religion !== savedFields.religion && { religion: religion.trim() }),
-    ...(notes !== savedFields.notes && { equipment: { ...(creationEditable ? creationCharacter.equipment : existingCharacter?.equipment), notes } }),
+    ...(!creationEditable && notes !== savedFields.notes && { equipment: { ...existingCharacter?.equipment, notes } }),
     ...(gender !== savedFields.gender && { gender }),
     id: existingCharacter?.id ?? Date.now(),
     name: name.trim(),
@@ -1521,8 +1521,8 @@ setAncestry((previous) => ({
             original={creationOriginal} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
           {creationActions}</>
           : creationEditable && creationTab === "equipment"
-            ? <><CreationSection key="equipment" Editor={Felszereles} character={creationCharacter}
-              onSave={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
+            ? <><AlkotasiFelszereles equipment={creationCharacter.equipment}
+              onChange={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
           : creationEditable && creationTab === "magic"
             ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
               onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
