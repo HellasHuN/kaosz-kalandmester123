@@ -224,3 +224,112 @@
 .spellbook-folio .codex-badge[data-codex="Azúr"] { color: #215370; }
 .spellbook-sigil[data-codex="Azúr"],
 .spellbook-index button:has([data-codex="Azúr"]) > svg { color: #9ee3ff; background: #163e58; border-color: #80c9ed; }
+
+.magic-panel:has(.independent-grimoire) {
+  border-color: #d5a157;
+  background: radial-gradient(ellipse at 80% 0%, #612418, transparent 42%),
+    repeating-linear-gradient(137deg, #ffffff05 0 1px, transparent 1px 7px), #180d10;
+}
+.magic-panel .independent-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-block: .9rem;
+}
+.magic-panel .independent-navigation button:not(.skills-remove),
+.magic-panel .independent-cast-button:not(.skills-remove),
+.magic-panel .independent-cast-dialog button:not(.skills-remove) {
+  min-height: 44px;
+  padding-inline: .7rem;
+  border: 3px double #e1a05e;
+  border-radius: .42rem;
+  background: linear-gradient(#7a3426, #391319);
+  color: #fff0c9;
+  box-shadow: inset 0 0 .55rem #eb8e544a;
+}
+.magic-panel .independent-navigation button[aria-pressed="true"],
+.magic-panel .independent-cast-button:not(:disabled) {
+  box-shadow: inset 0 0 .7rem #ffa35e9e, 0 0 .4rem #ff8b433d;
+}
+.magic-panel .independent-grimoire {
+  --folio-dark: #2b1012;
+  --folio-medium: #663024;
+  --folio-light: #dba568;
+  --folio-paper: #f3d5a6;
+  border: 4px double #c39455;
+  background: radial-gradient(ellipse at 76% 0%, #5d271b, #1b1011 70%);
+}
+.independent-spread .independent-icon,
+.independent-illustration {
+  display: block;
+  flex: none;
+  object-fit: cover;
+  border: 2px solid #ad7040;
+  border-radius: .32rem;
+  box-shadow: 0 0 .4rem #ac5d3790;
+}
+.independent-spread .independent-icon { width: 2.65rem; height: 2.65rem; }
+.independent-spread .independent-illustration {
+  width: clamp(3.65rem, 15vw, 7.75rem);
+  height: auto;
+  aspect-ratio: 1;
+  border: 4px double #a37147;
+  border-radius: 50%;
+}
+.independent-condition { padding: .55rem; background: #fff2ccaa; border: 1px solid #a77043; border-radius: .3rem; }
+.magic-panel .independent-cast-dialog {
+  box-sizing: border-box;
+  width: min(37rem, calc(100vw - 1.2rem));
+  max-height: calc(100dvh - 1.2rem);
+  padding: 0;
+  color: #362216;
+  border: 5px double #b67a49;
+  border-radius: .85rem;
+  background: url('./assets/pergamen-rostok.png'), radial-gradient(ellipse at center, #ffedc5, #e0b77e);
+  box-shadow: 0 0 1.2rem #df7e4888, 0 1rem 4rem #000a;
+}
+.independent-cast-dialog::backdrop { background: #13080cd9; }
+.independent-cast-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .55rem;
+  padding: .55rem .7rem;
+  background: linear-gradient(#63261f, #331319);
+  border-bottom: 3px double #bd824f;
+}
+.magic-panel .independent-cast-dialog header h4 {
+  margin: 0;
+  color: #fff0c9;
+  font-size: clamp(1.05rem, 4vw, 1.45rem);
+  overflow-wrap: anywhere;
+}
+.independent-cast-body { padding: .7rem; }
+.magic-panel .independent-cast-body label { color: #472719; }
+.independent-cast-body .independent-cost {
+  color: #662923;
+  border-block: 1px solid #a06e45;
+  padding: .45rem .25rem;
+  font-weight: bold;
+}
+.independent-cast-body .spell-roll { background: #fff4d990; }
+.independent-cast-body [data-outcome="critical-failure"] { background: #69251f; color: #fff1d6; border-color: #df9c72; }
+
+.independent-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: .5rem;
+  padding: .6rem;
+  border: 3px double #976238;
+  border-radius: .55rem;
+  background: #2a1516;
+}
+.magic-panel .independent-filters label { margin: 0; min-width: 0; }
+.independent-filters label:first-child { grid-column: 1 / -1; }
+.independent-filters button { justify-self: start; grid-column: 1 / -1; }
+
+@media (min-width: 54rem) {
+  .independent-filters { grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(8rem, 1fr)); }
+  .independent-filters label:first-child { grid-column: auto; }
+}

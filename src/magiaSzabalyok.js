@@ -147,12 +147,24 @@ export function spellAccess(character, magic, spell, form) {
   return { allowed: reasons.length === 0, reasons, recorded, needsAcquisition, fromScroll };
 }
 
-export function spellCost(spell, form, { units, target } = {}) {
+export function readDamageDice(input, expectedDice) {
+  const faces = input.trim().split(/[\s,;]+/u);
+  return faces.length === expectedDice && faces.every(face => /^[1-6]$/u.test(face))
+    ? faces.map(Number) : null;
+}
+
+export function spellCost(spell, form, { units, target, approvedEp, referenceSpellId } = {}) {
   const { ep } = spell;
   let amount;
   if (ep?.kind === "fixed") amount = ep.amount;
   if (ep?.kind === "perUnit" && Number.isSafeInteger(units) && units > 0 &&
       (ep.maxUnits == null || units <= ep.maxUnits)) amount = ep.amount * units;
+  if (form === "academic" && ep?.kind === "approvedEp" && Number.isSafeInteger(approvedEp) &&
+      approvedEp >= ep.min && (ep.max == null || approvedEp <= ep.max)) amount = approvedEp;
+  if (form === "academic" && ep?.kind === "referenceEp") {
+    const reference = spellsById.get(referenceSpellId);
+    if (reference?.codex === spell.codex && reference.ep?.kind === "fixed") amount = reference.ep.amount;
+  }
   if (ep?.kind === "flight" && target) {
     if (target.self) amount = 5;
     else if (target.kg > 0 && target.kg <= 200) amount = target.kg <= 100 ? 10 : target.kg <= 150 ? 20 : 40;

@@ -1,5 +1,5 @@
 import { percentileResult } from "./trials.js";
-import { academicMagicTrial, availableMagicEp, finishSacredSpell, spellCost, spellReadiness } from "../magiaSzabalyok.js";
+import { academicMagicTrial, availableMagicEp, finishSacredSpell, readDamageDice, spellCost, spellReadiness } from "../magiaSzabalyok.js";
 
 export function logSacredCasting(character, magic, spell, context, { id, recordedAt }) {
   if (magic.castingLog?.some(entry => entry.id === id)) return magic;
@@ -12,16 +12,18 @@ export function logSacredCasting(character, magic, spell, context, { id, recorde
   }] };
 }
 
-export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt }) {
+export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt, damageDice }) {
   if (magic.castingLog?.some(entry => entry.id === id) || spell.fp != null ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { ep, difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
   if (percentileResult(target, roll) !== "success" || !Number.isFinite(ep) || ep < 0) return magic;
+  const damage = damageDice && spell.id === "official:sebokozas" && readDamageDice(damageDice.join(" "), context.units);
   const remainingEp = magic.activeEp - ep;
   return { ...magic, activeEp: remainingEp, castingLog: [...(magic.castingLog ?? []), {
     id, recordedAt, spellName: spell.name ?? spell.id, previousEp: magic.activeEp, remainingEp,
     outcome: `sikeres létrehozási próba (${roll} / ${target})`,
+    ...(damage && { consequence: `Sebzés feloldás előtt: ${damage.reduce((sum, die) => sum + die, 0)} Fp (${damage.join(" + ")})` }),
   }] };
 }
 
