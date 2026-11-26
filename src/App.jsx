@@ -251,36 +251,26 @@ useEffect(() => {
   }
 }, [savedCharacters, initialSaves, saveBlocked]);
   const total = stats.reduce((sum, value) => sum + value, 0);
+function traitPrice(trait, value, talentSkills, race) {
+  if (trait.nev === TEHETSEG) {
+    return talentSkills.filter(Boolean).reduce((cost, skill) => cost + talentCost(skill), 0);
+  }
+  return calculateTraitJp(trait.nev, value, race) ??
+    (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
+}
+
 function traitPoints({ advantages, disadvantages, traitValues, talentSkills, race }) {
-const selectedAdvantageJp = advantages.reduce((sum, name) => {
-  if (name === TEHETSEG) {
-    return sum + talentSkills.filter(Boolean).reduce((cost, skill) => cost + talentCost(skill), 0);
+  function sumPrices(names, catalog) {
+    return names.reduce((sum, name) => {
+      const trait = catalog.find((item) => item.nev === name);
+      return trait ? sum + traitPrice(trait, traitValues[name], talentSkills, race) : sum;
+    }, 0);
   }
 
-  const trait = elonyok.find((item) => item.nev === name);
-  if (!trait) return sum;
-
-  const value = traitValues[name];
-  const calculated = calculateTraitJp(name, value, race);
-
-  if (calculated !== null) return sum + calculated;
-
-  return sum + (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
-}, 0);
-
-const selectedDisadvantageJp = disadvantages.reduce((sum, name) => {
-  const trait = hatranyok.find((item) => item.nev === name);
-  if (!trait) return sum;
-
-  const value = traitValues[name];
-  const calculated = calculateTraitJp(name, value, race);
-
-  if (calculated !== null) return sum + calculated;
-
-  return sum + (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
-}, 0);
-
-  return { selectedAdvantageJp, selectedDisadvantageJp };
+  return {
+    selectedAdvantageJp: sumPrices(advantages, elonyok),
+    selectedDisadvantageJp: sumPrices(disadvantages, hatranyok),
+  };
 }
 const { selectedAdvantageJp, selectedDisadvantageJp } = traitPoints({ advantages, disadvantages, traitValues, talentSkills, race });
 const netTraitJp = selectedDisadvantageJp - selectedAdvantageJp;
@@ -885,7 +875,16 @@ function checkCharacter() {
   if (validateCharacter()) alert("A karakter alapadatai érvényesek!");
 }
 
-  function renderTraits() {
+  function renderTraits(compact = false) {
+    function renderTraitPrice(trait, selected, sign) {
+      if (!compact) {
+        return creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>;
+      }
+      if (trait.valtozo && (!selected || traitValueError(trait.nev, traitValues[trait.nev], race))) return null;
+      const price = traitPrice(trait, traitValues[trait.nev], talentSkills, race);
+      return (price > 0 || !trait.valtozo) && <small className="creation-trait-price">{sign}{price} Jp</small>;
+    }
+
     function renderNarratorPrice(trait) {
       const range = creationEditable && narratorTraitPrices[trait.nev];
       if (!range) return null;
@@ -907,8 +906,8 @@ function checkCharacter() {
         disabled={trait.nev === TEHETSEG && !creationEditable}
         onChange={() => toggleTrait(trait, "elony")}
       />
-      {trait.nev}
-      {creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>}
+      {compact ? <span>{trait.nev}</span> : trait.nev}
+      {renderTraitPrice(trait, advantages.includes(trait.nev), "−")}
     </label>
 
     {advantages.includes(trait.nev) && (
@@ -1030,8 +1029,8 @@ function checkCharacter() {
         checked={disadvantages.includes(trait.nev)}
         onChange={() => toggleTrait(trait, "hatrany")}
       />
-      {trait.nev}
-      {creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>}
+      {compact ? <span>{trait.nev}</span> : trait.nev}
+      {renderTraitPrice(trait, disadvantages.includes(trait.nev), "+")}
     </label>
 
     {disadvantages.includes(trait.nev) && (
@@ -1178,8 +1177,8 @@ function checkCharacter() {
   <>
     <h3>Szülők származása</h3>
 
-    <label>Első szülő faja</label>
- <select
+    <label htmlFor="ancestry-parent-one">Első szülő faja</label>
+ <select id="ancestry-parent-one"
   disabled={race.startsWith("Félvér")}
       value={parent1}
       onChange={(event) => {
@@ -1206,8 +1205,8 @@ setAncestry((previous) => ({
   ))}
     </select>
 
-    <label>Második szülő faja</label>
-    <select
+    <label htmlFor="ancestry-parent-two">Második szülő faja</label>
+    <select id="ancestry-parent-two"
       value={parent2}
       onChange={(event) => {
        setParent2(event.target.value);
@@ -1235,8 +1234,8 @@ setAncestry((previous) => ({
   ))}
     </select><h4>Első szülő nagyszülei</h4>
 
-<label>Első nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-one">Első nagyszülő</label>
+<select id="ancestry-grandparent-one"
   value={ancestry.parents[0]?.parents?.[0]?.race || ""}
   onChange={(event) => changeGrandparent(0, 0, event.target.value)}
 >
@@ -1246,8 +1245,8 @@ setAncestry((previous) => ({
   ))}
 </select>
 
-<label>Második nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-two">Második nagyszülő</label>
+<select id="ancestry-grandparent-two"
   value={ancestry.parents[0]?.parents?.[1]?.race || ""}
   onChange={(event) => changeGrandparent(0, 1, event.target.value)}
 >
@@ -1259,8 +1258,8 @@ setAncestry((previous) => ({
 
 <h4>Második szülő nagyszülei</h4>
 
-<label>Harmadik nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-three">Harmadik nagyszülő</label>
+<select id="ancestry-grandparent-three"
   value={ancestry.parents[1]?.parents?.[0]?.race || ""}
   onChange={(event) => changeGrandparent(1, 0, event.target.value)}
 >
@@ -1270,8 +1269,8 @@ setAncestry((previous) => ({
   ))}
 </select>
 
-<label>Negyedik nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-four">Negyedik nagyszülő</label>
+<select id="ancestry-grandparent-four"
   value={ancestry.parents[1]?.parents?.[1]?.race || ""}
   onChange={(event) => changeGrandparent(1, 1, event.target.value)}
 >
@@ -1403,33 +1402,41 @@ setAncestry((previous) => ({
               setAdjustments(characterAdjustments());
             }}>Főértékek újraelosztása a kerethez</button>
           )}
-          <div className="skills-table-container">
-            <table className="skills-table creation-stats">
-              <thead><tr><th>Főérték</th><th>Érték</th><th>Aktív összetevő</th><th>Passzív összetevő</th></tr></thead>
-              <tbody>{attributes.map(([label, active, passive], index) => {
-                const value = stats[index];
-                const adjustment = adjustments[index];
-                const limit = attributeAdjustmentLimit(value);
-                return <tr key={label}>
-                  <th scope="row">{label}<small>{limits[index][0]}–{limits[index][1]}</small></th>
-                  <td><div className="creation-stepper">
-                    <button type="button" aria-label={label + " csökkentése"} disabled={value <= limits[index][0]} onClick={() => changeStat(index, -1)}>−</button>
-                    <output>{effectiveAttribute(creationCharacter, index)}</output>
-                    <button type="button" aria-label={label + " növelése"} disabled={value >= limits[index][1]} onClick={() => changeStat(index, 1)}>+</button>
-                  </div></td>
-                  <td><small>{active}</small><div className="creation-stepper">
-                    <button type="button" aria-label={active + " csökkentése"} disabled={adjustment <= -limit} onClick={() => changeAdjustment(index, -1)}>−</button>
-                    <output>{effectiveAttribute(creationCharacter, index, 1)}</output>
-                    <button type="button" aria-label={active + " növelése"} disabled={adjustment >= limit} onClick={() => changeAdjustment(index, 1)}>+</button>
-                  </div></td>
-                  <td><small>{passive}</small><output>{effectiveAttribute(creationCharacter, index, -1)}</output></td>
-                </tr>;
-              })}</tbody>
-            </table>
-          </div>
+          <ul className="creation-stats">
+            {attributes.map(([label, active, passive], index) => {
+              const value = stats[index];
+              const adjustment = adjustments[index];
+              const limit = attributeAdjustmentLimit(value);
+              const [min, max] = limits[index];
+              return <li className="creation-stat" key={label}>
+                <div className="creation-stat-line">
+                  <div><strong>{label}</strong><small>Határok: {min}–{max}</small></div>
+                  <div className="creation-stepper">
+                    <button type="button" aria-label={label + " csökkentése"} disabled={value <= min} onClick={() => changeStat(index, -1)}>−</button>
+                    <output aria-label={label}>{effectiveAttribute(creationCharacter, index)}</output>
+                    <button type="button" aria-label={label + " növelése"} disabled={value >= max} onClick={() => changeStat(index, 1)}>+</button>
+                  </div>
+                </div>
+                <dl className="creation-stat-components">
+                  <div>
+                    <dt>{active} <small>Aktív</small></dt>
+                    <dd className="creation-stepper">
+                      <button type="button" aria-label={active + " csökkentése"} disabled={adjustment <= -limit} onClick={() => changeAdjustment(index, -1)}>−</button>
+                      <output aria-label={active}>{effectiveAttribute(creationCharacter, index, 1)}</output>
+                      <button type="button" aria-label={active + " növelése"} disabled={adjustment >= limit} onClick={() => changeAdjustment(index, 1)}>+</button>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{passive} <small>Passzív</small></dt>
+                    <dd><output aria-label={passive}>{effectiveAttribute(creationCharacter, index, -1)}</output></dd>
+                  </div>
+                </dl>
+              </li>;
+            })}
+          </ul>
         </section>
         <section className="panel creation-panel creation-traits" aria-label="Előnyök és hátrányok">
-          {renderTraits()}
+          {renderTraits(true)}
         </section>
         {actions}
       </>}
@@ -1493,7 +1500,7 @@ setAncestry((previous) => ({
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
         {page === "alkotas" && (
-        <div className="creation-workspace" style={ancestryTheme(race, subrace)}>
+        <div className={creationTab === "details" ? "creation-workspace compact-creation" : "creation-workspace"} style={ancestryTheme(race, subrace)}>
           <header className="character-cover creation-cover">
             <div className="character-cover-art" aria-hidden="true" />
             <div className="character-cover-caption">

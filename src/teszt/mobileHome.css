@@ -459,3 +459,141 @@
   .test-app .creation-workspace .workspace-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .test-app :is(.creation-workspace, .themed-sheet) .character-cover-caption { margin-inline-start: min(24%, 5rem); }
 }
+
+/* The character details tab uses a narrow, single-column parchment layout. */
+.test-app .compact-creation {
+  width: min(100%, 30rem);
+  margin-inline: auto;
+  padding: clamp(.3rem, 2vw, .65rem);
+}
+
+.test-app .workspace-screen:has(> .compact-creation) > .workspace-nav {
+  width: min(100%, 30rem);
+  margin: .55rem auto;
+  gap: .35rem;
+}
+
+.test-app .compact-creation .creation-cover {
+  min-height: clamp(6rem, 23vw, 9rem);
+  padding: .5rem;
+}
+
+.test-app .compact-creation > .workspace-nav { margin-block: .4rem; }
+
+.compact-creation .panel {
+  margin-block: .45rem;
+  padding: .65rem;
+}
+
+.test-app .compact-creation .creation-panel h3 {
+  margin-bottom: .45rem;
+  padding: .3rem .45rem;
+}
+
+.compact-creation .creation-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: .4rem;
+}
+
+.compact-creation .creation-grid > label,
+.compact-creation .creation-ancestry label {
+  display: grid;
+  gap: .15rem;
+  margin: 0;
+}
+
+.compact-creation .creation-grid > label > :is(input, select) { width: 100%; }
+.compact-creation .creation-grid p { margin: .1rem 0; }
+
+.compact-creation .creation-points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .25rem;
+  font-size: .85rem;
+}
+
+.compact-creation .creation-points div { padding: .3rem; }
+
+.compact-creation .creation-stats {
+  display: grid;
+  gap: .35rem;
+  margin: .45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compact-creation .creation-stat {
+  padding: .25rem .35rem;
+  border: 1px solid #bd9a65;
+  border-radius: .3rem;
+  background: #fff3d6;
+}
+
+.compact-creation .creation-stat-line,
+.compact-creation .creation-stat-components > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 .25rem;
+}
+
+.compact-creation .creation-stat-components {
+  margin: 0;
+  padding-top: .2rem;
+  border-top: 1px solid #d6bb8a;
+}
+
+.compact-creation .creation-stat-components dd { margin: 0; }
+.compact-creation .creation-stat small { color: #654734; }
+.compact-creation .creation-stat-line small { display: block; }
+
+.test-app .compact-creation .creation-stepper button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: .2rem;
+}
+
+.compact-creation .creation-traits .trait-list { display: grid; gap: .2rem; }
+.compact-creation .creation-traits .trait-item { padding-inline: .35rem; }
+
+.compact-creation .creation-traits .trait-item > label:first-child {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: .4rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.compact-creation .creation-trait-price {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  color: #62302e;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.compact-creation .creation-traits .trait-item > label:not(:first-child) { margin: .3rem 0; }
+.compact-creation .creation-traits .trait-summary p { margin: .25rem 0; }
+
+.compact-creation .creation-ancestry > select { margin-bottom: .4rem; }
+.compact-creation .creation-ancestry h4 { margin: .45rem 0 .2rem; }
+.compact-creation .creation-ancestry label:has([type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: .4rem;
+}
+
+.compact-creation .creation-cover-caption h2 { font-size: clamp(1.15rem, 4vw, 1.6rem); }
+
+.test-app .compact-creation > .workspace-nav {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-creation :is(.creation-traits, .creation-ancestry) input[type="checkbox"] {
+  width: auto;
+  flex: none;
+  margin: 0;
+}
