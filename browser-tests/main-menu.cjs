@@ -63,12 +63,19 @@ async function verify(page, width, height) {
   await registry.getByRole("button", { name: /Ködjáró/ }).click();
   await button("Betöltés").click();
   assert.equal(await page.getByPlaceholder("Karakter neve").inputValue(), "Ködjáró");
-  await returnHome();
+  await button("Vissza a főmenübe").click();
   await button("Új karakter létrehozása").click();
   assert.equal(await page.getByPlaceholder("Karakter neve").inputValue(), "");
-  await returnHome();
+  await page.getByPlaceholder("Karakter neve").fill("Mentetlen módosítás");
+  await button("Vissza a főmenübe").click();
+  await registry.getByRole("button", { name: /Ködjáró/ }).click();
   await button("Kódex").click();
-  await page.getByRole("status").filter({ hasText: /Önálló kódexnézet/ }).waitFor();
+  await page.getByRole("status").filter({ hasText: /játékba helyezett karaktert/ }).waitFor();
+  await registry.getByRole("button", { name: /Szentmihályi/ }).click();
+  await button("Kódex").click();
+  await page.getByRole("heading", { name: "Mágia és varázslatok" }).waitFor();
+  assert.equal(await button("Vissza a főmenübe").count(), 0);
+  await returnHome();
   await page.evaluate(() => {
     localStorage.setItem("kaosz-teszt-kaland", JSON.stringify({ notes: "", messages: [
       { recipient: "one", author: "km", text: "Valódi tárolt próbaüzenet", sentAt: "2026-11-26T10:00:00Z" },

@@ -9,10 +9,10 @@ import KarakterlapElsoOldal, { ArmorDiagram } from "./KarakterlapElsoOldal";
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
 
 function Karakterlap({
-  character, stage, initialEditing = false, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
+  character, stage, initialEditing = false, initialPage = 1, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
   onFinalizeCharacterEdit, characterEditor, onChangeHealth, confirmLeaving,
 }) {
-  const [activePage, setActivePage] = React.useState(1);
+  const [activePage, setActivePage] = React.useState(initialPage);
   const [editing, setEditing] = React.useState(initialEditing);
   const editor = React.useRef(null);
   if (!character) {

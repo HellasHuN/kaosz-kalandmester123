@@ -167,6 +167,7 @@ function App() {
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
   const [page, setPage] = useState("fomenu");
+  const [sheetPageOnOpen, setSheetPageOnOpen] = useState(1);
   const [sheetEditingOnOpen, setSheetEditingOnOpen] = useState(false);
   const [adventureTabOnOpen, setAdventureTabOnOpen] = useState("overview");
   const [testMode, setTestMode] = useState(null);
@@ -646,6 +647,7 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     if (nextPage === "alkotas" && character && character.playStatus !== "draft") return;
     if (nextPage === "karakterlap" && character?.playStatus !== "playing") return;
     if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
+    setSheetPageOnOpen(1);
     setSheetEditingOnOpen(false);
     setAdventureTabOnOpen("overview");
     setPage(nextPage);
@@ -653,12 +655,20 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     return true;
   }
 
+  function returnHome() {
+    if (navigate("fomenu", null)) {
+      setTestMode(null);
+      setAdventureCharacterId(null);
+    }
+  }
+
   function selectTestMode(mode) {
     if (navigate("test-adventure", null)) setTestMode(mode);
   }
 
-  function openPlayerCharacter(character) {
+  function openPlayerCharacter(character, initialPage = 1) {
     if (navigate("karakterlap", character)) {
+      setSheetPageOnOpen(initialPage);
       setTestMode("player");
       setAdventureCharacterId(character.id);
     }
@@ -1460,6 +1470,7 @@ setAncestry((previous) => ({
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
   );
+  const inPlayerView = page === "karakterlap" || (page === "test-adventure" && testMode === "player");
   const selectingForPlay = page === "jatek";
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
 
@@ -1472,11 +1483,13 @@ setAncestry((previous) => ({
           <MainMenu characters={savedCharacters} adventure={adventure}
             onNew={() => navigate("alkotas", null)} onLoad={openMenuCharacter}
             onEdit={(character) => openMenuCharacter(character, true)} onDelete={startDelete}
-            onSheet={openPlayerCharacter} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
+            onSheet={openPlayerCharacter} onCodex={(character) => openPlayerCharacter(character, 4)} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
             onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
             onGM={() => selectTestMode("km")} />
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
+            {!inPlayerView && page !== "test-settings" &&
+              <button type="button" onClick={returnHome}>Vissza a főmenübe</button>}
             {page !== "test-settings" && <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
             {testMode && page !== "test-adventure" &&
               <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
@@ -1487,12 +1500,7 @@ setAncestry((previous) => ({
         )}
         {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
-            if (window.confirm("Visszatérsz a főmenübe?")) {
-              if (navigate("fomenu", null)) {
-                setTestMode(null);
-                setAdventureCharacterId(null);
-              }
-            }
+            if (window.confirm("Visszatérsz a főmenübe?")) returnHome();
           }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
@@ -1543,7 +1551,7 @@ setAncestry((previous) => ({
           : renderCharacterFields(creationActions)}
         </div>)}
         {page === "karakterlap" && (
-          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen}
+          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
             character={selectedCharacter}
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}

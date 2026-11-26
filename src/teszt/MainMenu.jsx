@@ -56,7 +56,7 @@ function CharacterPreview({ character, onLoad, onEdit, onDelete }) {
   </section>;
 }
 
-export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit, onDelete, onSheet, onSettings, onChat, onPlay, onSaved, onGM }) {
+export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit, onDelete, onSheet, onCodex, onSettings, onChat, onPlay, onSaved, onGM }) {
   const [selection, setSelection] = useState(null);
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
@@ -70,11 +70,14 @@ export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit,
     else setMessage("A helyi chathez válassz játékba helyezett karaktert.");
   }
 
-  const openCodex = () => setMessage("Önálló kódexnézet még nincs. A varázslatok a karakterlap Mágia fülén érhetők el.");
+  function openCodex() {
+    if (selected?.playStatus === "playing") onCodex(selected);
+    else setMessage("A Kódexhez válassz játékba helyezett karaktert.");
+  }
   return <section className="main-menu" aria-labelledby="main-menu-title">
     <header className="menu-masthead">
       <div className="menu-corner-left">
-        <button type="button" aria-label="Kódex súgó" onClick={openCodex}><BookOpen aria-hidden="true" /></button>
+        <button type="button" aria-label="Kódex megnyitása" onClick={openCodex}><BookOpen aria-hidden="true" /></button>
         <button type="button" aria-label={unread ? `Értesítések · ${unread} olvasatlan üzenet` : "Értesítések"}
           onClick={() => unread ? openChat() : setMessage("A kiválasztott karakternek nincs olvasatlan helyi üzenete.")}>
           <Bell aria-hidden="true" />{unread > 0 && <span className="menu-badge" aria-hidden="true">{unread}</span>}
