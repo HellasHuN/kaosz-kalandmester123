@@ -6,7 +6,7 @@ import { characterSpeed } from "./gyorsasag.js";
 import figure from "./assets/theme/pancelzat-karakter-referencia.webp";
 import "./KarakterlapElsoOldal.css";
 import "./CharacterPage.css";
-import { Brain, Eye, Flame, HeartPulse, Shield, Sparkles, Swords, UserRound } from "lucide-react";
+import { Award, Brain, Eye, Flame, Hourglass, Shield, Skull, Swords, UserRound } from "lucide-react";
 import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
 import { profileFields, readProfile } from "./characterProfile.js";
 
@@ -78,7 +78,19 @@ function TraitList({ items }) {
   return <ul className="parchment-traits">{items.map((item, index) => <li key={index}>{item.name ?? item}</li>)}</ul>;
 }
 
-const attributeIcons = [HeartPulse, Swords, Brain, Flame, Eye];
+const attributeIcons = [Shield, Swords, Brain, Flame, Eye];
+
+const identityIcons = [Shield, UserRound, Hourglass];
+
+function IdentityLine({ character }) {
+  const items = [[character.race, character.subrace].filter(Boolean).join(" · "), character.gender, character.age && `${character.age} év`];
+  if (!items.some(Boolean)) return <p>Válassz fajt a karakterhez</p>;
+  return <p>{items.map((item, index) => {
+    if (!item) return null;
+    const Icon = identityIcons[index];
+    return <span key={index}><Icon aria-hidden="true" />{item}</span>;
+  })}</p>;
+}
 
 export function CharacterPageHeader({ character, title, actions }) {
   return <header className="first-page-header" style={pageAncestryTheme(character.race, character.subrace, character.gender)}>
@@ -87,7 +99,7 @@ export function CharacterPageHeader({ character, title, actions }) {
     <div className="first-page-banner-label">Általános</div>
     <div className="first-page-identity">
       <h1>{character.name || "Új karakter"}</h1>
-      <p>{[character.race, character.subrace, character.gender, character.age && `${character.age} év`].filter(Boolean).join(" · ") || "Válassz fajt a karakterhez"}</p>
+      <IdentityLine character={character} />
     </div>
     {actions}
   </header>;
@@ -98,7 +110,7 @@ function EleteroPanel({ current, maximum, savedMaximum, onChange, canIncrease })
   const level = woundLevel(fp, maximum);
   return <section className="first-page-frame first-page-health" aria-label="Életerő">
     <div className="first-page-health-top">
-      <h3><HeartPulse aria-hidden="true" />Életerő</h3>
+      <h3><span className="first-page-heart" aria-hidden="true" />Életerő</h3>
       <button type="button" aria-label="Életerő csökkentése" disabled={!onChange || fp <= 0 || fp - 1 > maximum} onClick={() => onChange(-1)}>−</button>
       <div className="first-page-health-value"><output aria-label="Aktuális életerő">{fp}</output> / <span aria-label="Maximális életerő">{maximum}</span></div>
       <button type="button" aria-label="Életerő növelése" disabled={!onChange || !canIncrease || fp < 0 || fp >= maximum} onClick={() => onChange(1)}>+</button>
@@ -158,11 +170,11 @@ export default function KarakterlapElsoOldal({ character, stage, edit, mode = "p
       {edit && mode !== "creation" && <p>Hátralévő főértékpont: {edit.remaining ?? empty} · Elkölthető Jp: {character.jp ?? 0}</p>}
     </section>
     <EleteroPanel current={edit?.health ?? character.currentFp} maximum={maxHealth(displayed)} savedMaximum={maxHealth(character)}
-      onChange={onChangeHealth} canIncrease={mode === "gm" || Boolean(edit && mode !== "creation")} />
+      onChange={onChangeHealth} canIncrease={mode === "gm" || Boolean(edit)} />
     <dl className="first-page-resources">
-      <div><dt><Flame aria-hidden="true" />Aktuális aktív Ep</dt><dd>{edit?.resourceFields?.("activeEp", limits.activeEp) ?? `${magic.activeEp ?? empty} / ${limits.activeEp}`}</dd></div>
-      <div><dt><Sparkles aria-hidden="true" />Felszabadítható esszencia</dt><dd>{limits.release} Ep</dd></div>
-      <div><dt><Shield aria-hidden="true" />Aktuális Esszenciapajzs</dt><dd>{edit?.resourceFields?.("shield", limits.shield) ?? `${magic.shield ?? empty} / ${limits.shield}`}</dd></div>
+      <div data-essence="flame"><dt>Aktuális aktív Ep</dt><dd>{edit?.resourceFields?.("activeEp", limits.activeEp) ?? `${magic.activeEp ?? empty} / ${limits.activeEp}`}</dd></div>
+      <div data-essence="vortex"><dt>Felszabadítható esszencia</dt><dd>{limits.release} Ep</dd></div>
+      <div data-essence="shield"><dt>Aktuális Esszenciapajzs</dt><dd>{edit?.resourceFields?.("shield", limits.shield) ?? `${magic.shield ?? empty} / ${limits.shield}`}</dd></div>
     </dl>
     <section className="first-page-frame first-page-details" aria-label="Karakter adatai">
       <h3><UserRound aria-hidden="true" />Karakter adatai</h3>
@@ -189,8 +201,8 @@ export default function KarakterlapElsoOldal({ character, stage, edit, mode = "p
     </section>
     {extra}
     <div className="first-page-traits">
-      {[[ "Előnyök", edit?.advantages ?? character.advantages], ["Hátrányok", edit?.disadvantages ?? character.disadvantages]].map(([label, values]) =>
-        <details className="first-page-frame" key={label}><summary>{label} ({values?.length ?? 0})</summary><TraitList items={values} /></details>)}
+      {[["Előnyök", edit?.advantages ?? character.advantages, Award], ["Hátrányok", edit?.disadvantages ?? character.disadvantages, Skull]].map(([label, values, Icon]) =>
+        <details className="first-page-frame" key={label}><summary><Icon aria-hidden="true" />{label} ({values?.length ?? 0})</summary><TraitList items={values} /></details>)}
     </div>
     {edit?.renderTraits && <details className="first-page-frame"><summary>Előnyök és hátrányok szerkesztése</summary>{edit.renderTraits(mode === "creation")}</details>}
     {actions}

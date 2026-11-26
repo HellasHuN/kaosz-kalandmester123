@@ -1458,8 +1458,13 @@ setAncestry((previous) => ({
     return <KarakterlapElsoOldal mode="creation"
       character={{ ...creationCharacter, name, jp: creationBudget == null ? undefined : creationBudget - creationCosts.total }}
       stage={stage} extra={extra} budget={budget} actions={race && actions}
+      onChangeHealth={race && calculatedAgeLimits ? (amount) => {
+        const currentFp = healthDraft ?? selectedCharacter?.currentFp ?? maxHealth(creationCharacter);
+        const updated = changeCurrentHealth({ ...creationCharacter, currentFp }, amount);
+        if (updated.currentFp !== currentFp) setHealthDraft(updated.currentFp);
+      } : undefined}
       edit={{
-        stats, adjustments, limits, profile, setProfile: updateProfile, changeStat, changeAdjustment,
+        stats, adjustments, limits, profile, setProfile: updateProfile, changeStat, changeAdjustment, health: healthDraft,
         name: <input aria-label="Karakter neve" value={name} placeholder="Karakter neve" onChange={event => setName(event.target.value)} />,
         race: <label>Faj{renderRaceSelector()}</label>,
         age: race && calculatedAgeLimits ? <label>Életkor{renderAgeSelector()}</label> : null,

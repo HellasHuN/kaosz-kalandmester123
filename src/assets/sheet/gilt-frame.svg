@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+ <defs>
+  <linearGradient id="gold" x2=".18" y2="1" gradientUnits="objectBoundingBox">
+   <stop stop-color="#fff3bc"/><stop offset=".18" stop-color="#9a581c"/><stop offset=".34" stop-color="#fce39a"/><stop offset=".51" stop-color="#a15b21"/><stop offset=".73" stop-color="#e8a544"/><stop offset=".91" stop-color="#ffecad"/><stop offset="1" stop-color="#814619"/>
+  </linearGradient>
+  <g id="corner" fill="none">
+   <path d="M2 30Q8 20 8 13L15 8Q23 8 30 2M4 22 22 4M9 18q5 0 6-4l3-5" stroke="#ffe9a6" stroke-width="1.25"/>
+   <path d="M2 20 6 14 14 6 20 2M9 23 23 9" stroke="#b77732" stroke-width=".7"/>
+   <path d="m11 12 2 2-2 2-2-2Z" fill="#fff4c4"/>
+  </g>
+ </defs>
+ <path d="M13 1h70l12 12v70L83 95H13L1 83V13Z" fill="none" stroke="#2c1608" stroke-width="2"/>
+ <path d="M13 2h70l11 11v70L83 94H13L2 83V13Z" fill="none" stroke="url(#gold)" stroke-width="2.2"/>
+ <path d="M16 5h64l11 11v64L80 91H16L5 80V16Z" fill="none" stroke="#674020" stroke-width="2"/>
+ <path d="M17 7h62l10 10v62L79 89H17L7 79V17Z" fill="none" stroke="#ecc47a" stroke-opacity=".86" stroke-width=".9"/>
+ <use href="#corner"/><use href="#corner" transform="rotate(90 48 48)"/>
+ <use href="#corner" transform="rotate(180 48 48)"/><use href="#corner" transform="rotate(270 48 48)"/>
+</svg>

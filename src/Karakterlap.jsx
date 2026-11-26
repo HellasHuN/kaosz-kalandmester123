@@ -1,4 +1,4 @@
-import { Backpack, Bell, BookOpen, MessageCircle, ScrollText, Settings, Sparkles } from "lucide-react";
+import { Backpack, Bell, BookOpen, MessageCircle, Pencil, ScrollText, Settings, Sparkles, Swords, UserRound } from "lucide-react";
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
 import React from "react";
 import Felszereles from "./Felszereles";
@@ -7,6 +7,7 @@ import Magia from "./Magia";
 import KarakterlapElsoOldal, { ArmorDiagram, CharacterPageHeader } from "./KarakterlapElsoOldal";
 
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
+const generalPageIcons = [UserRound, Swords, Backpack, BookOpen];
 
 function Karakterlap({
   character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
@@ -54,15 +55,15 @@ function Karakterlap({
   const tabs = general ? [1, 2, 4, 3] : [1, 2, 3, 4];
   const labels = [general ? "Általános" : "Karakter", "Jártasságok", "Felszerelés", "Mágia"];
   const editActions = <div className="character-sheet-actions">
-      <button type="button" disabled={editing} onClick={startEditing}>Szerkesztés</button>
-      <button type="button" disabled={!editing} onClick={finalizeEditing}>Véglegesítés</button>
+      <button type="button" disabled={editing} onClick={startEditing}>{general && <Pencil aria-hidden="true" />}Szerkesztés</button>
+      {(!general || editing) && <button type="button" disabled={!editing} onClick={finalizeEditing}>Véglegesítés</button>}
       {editing && <button type="button" onClick={cancelEditing}>Mégse</button>}
     </div>;
   const toolbar = <div className={general ? "first-page-toolbar" : "character-sheet-toolbar"}>
     {general && editActions}
     <nav className={general ? "first-page-tabs" : "karakterlap-nav"} aria-label="Karakterlap oldalai">
       {tabs.map((page) => {
-        const Icon = pageIcons[page - 1];
+        const Icon = (general ? generalPageIcons : pageIcons)[page - 1];
         return <button key={page} type="button" aria-current={activePage === page ? "page" : undefined}
           onClick={() => openPage(page)}><Icon aria-hidden="true" size={19} />{labels[page - 1]}</button>;
       })}

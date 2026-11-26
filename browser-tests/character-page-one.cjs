@@ -77,6 +77,12 @@ async function verify(page, width) {
   await race.selectOption("Ember");
   await body.getByLabel("Nem", { exact: true }).selectOption("Nő");
   await assertPortrait("human-female.webp");
+  const startingHealth = Number(await fp.innerText());
+  await button("Életerő csökkentése").click();
+  assert.equal(Number(await fp.innerText()), startingHealth - 1);
+  assert.equal((await read())[0].currentFp, 41);
+  await button("Életerő növelése").click();
+  assert.equal(Number(await fp.innerText()), startingHealth);
   const phys = body.locator('output[aria-label="Fizikum"]');
   const before = Number(await phys.innerText());
   await button("Fizikum csökkentése").click();
