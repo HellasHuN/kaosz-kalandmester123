@@ -1,92 +1,3 @@
-.test-app .home-screen {
-  display: grid;
-  place-content: center;
-  min-height: 100svh;
-  padding: 1.25rem max(1rem, env(safe-area-inset-right))
-    max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
-  background: radial-gradient(ellipse at 50% 25%, #54282b, #26181c 62%, #111219);
-}
-
-.test-app .mobile-home {
-  width: min(100%, 23rem);
-  margin-inline: auto;
-  text-align: center;
-}
-
-.mobile-home-title {
-  margin-bottom: 1.6rem;
-}
-
-.test-app .mobile-home-title h1 {
-  margin: .5rem 0 0;
-  color: #f7e5bf;
-  font: 600 clamp(2rem, 6vw, 3.25rem)/1.06 Georgia, serif;
-  text-wrap: balance;
-}
-
-.test-app .mobile-home .home-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: .65rem;
-}
-
-.test-app .mobile-home .home-actions button {
-  display: flex;
-  align-items: center;
-  gap: .65rem;
-  min-width: 0;
-  width: 100%;
-  min-height: 3.35rem;
-  padding: .55rem clamp(.55rem, 3vw, 1rem);
-  border: 3px double #956337;
-  border-radius: .4rem;
-  background: url('../assets/pergamen-rostok.png'), linear-gradient(105deg, #dcb47c, #f7e4b9 39%, #e8c799);
-  box-shadow: inset 0 0 .7rem #88582d55, 0 .18rem .45rem #140b0a88;
-  color: #382018;
-  text-align: left;
-  font: 700 clamp(1.05rem, 4vw, 1.25rem)/1.2 Georgia, serif;
-  cursor: pointer;
-}
-
-.test-app .mobile-home .home-actions button:hover {
-  border-color: #6a3523;
-  background-color: #f8e6c5;
-  box-shadow: inset 0 0 .6rem #80512a66, 0 0 .55rem #e5b87066;
-}
-
-.mobile-home button svg { flex: none; }
-
-.home-menu-release {
-  margin-inline-start: auto;
-  padding: .21rem .32rem;
-  border: 1px solid #865a36;
-  border-radius: .2rem;
-  font: 700 .63rem/1 Arial, sans-serif;
-  letter-spacing: .05em;
-}
-
-.test-app .mobile-home .home-settings {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  min-height: 44px;
-  margin-top: 1rem;
-  padding: .4rem .7rem;
-  border: 1px solid transparent;
-  border-radius: .35rem;
-  color: #f3ddb7;
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
-}
-
-.test-app .mobile-home .home-settings:hover { border-color: #c49a60; }
-
-.test-app .mobile-home button:focus-visible {
-  outline: 2px solid #ffe3a6;
-  outline-offset: 3px;
-}
-
 @media (max-width: 600px) {
   .test-app .workspace-screen { padding-inline: .6rem; }
   .test-app .workspace-nav button,
@@ -146,7 +57,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .character-cover { animation: kaosz-reveal .35s ease-out both; }
-  .mobile-home button, .online-panel button, .test-panel button { transition: background-color .18s, border-color .18s, color .18s; }
+  .online-panel button, .test-panel button { transition: background-color .18s, border-color .18s, color .18s; }
   @keyframes kaosz-reveal { from { opacity: .65; transform: translateY(.3rem); } to { opacity: 1; transform: translateY(0); } }
 }
 

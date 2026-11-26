@@ -1,7 +1,7 @@
 import { ancestryTheme } from "./teszt/ancestryTheme.js";
-import { BookOpen, Compass, Feather, Settings, Swords } from "lucide-react";
+import MainMenu from "./teszt/MainMenu.jsx";
 import "./teszt/mobileHome.css";
-import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
+import { markConversationRead, readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
 import { persistCharacterStatus, planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
@@ -167,6 +167,8 @@ function App() {
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
   const [page, setPage] = useState("fomenu");
+  const [sheetEditingOnOpen, setSheetEditingOnOpen] = useState(false);
+  const [adventureTabOnOpen, setAdventureTabOnOpen] = useState("overview");
   const [testMode, setTestMode] = useState(null);
   const [adventureCharacterId, setAdventureCharacterId] = useState(null);
   const [activationFeedback, setActivationFeedback] = useState(null);
@@ -644,6 +646,8 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     if (nextPage === "alkotas" && character && character.playStatus !== "draft") return;
     if (nextPage === "karakterlap" && character?.playStatus !== "playing") return;
     if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
+    setSheetEditingOnOpen(false);
+    setAdventureTabOnOpen("overview");
     setPage(nextPage);
     window.scrollTo(0, 0);
     return true;
@@ -658,6 +662,22 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
       setTestMode("player");
       setAdventureCharacterId(character.id);
     }
+  }
+
+  function openMenuCharacter(character, edit = false) {
+    if (character.playStatus === "draft") navigate("alkotas", character);
+    else if (character.playStatus === "playing") {
+      if (navigate("karakterlap", character)) setSheetEditingOnOpen(edit);
+    } else navigate("karakterek", null);
+  }
+
+  function openMenuChat(character) {
+    if (!navigate("test-adventure", null)) return;
+    setTestMode("player");
+    setAdventureCharacterId(character.id);
+    setAdventureTabOnOpen("messages");
+    const next = markConversationRead(adventure, character.id, "player");
+    if (next !== adventure) updateAdventure(next);
   }
 
   function openAdventureFor(character) {
@@ -1449,23 +1469,12 @@ setAncestry((previous) => ({
         {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
-          <section className="home-content mobile-home" aria-labelledby="home-title">
-            <header className="mobile-home-title">
-              <p className="test-release">TESZT 1.0</p>
-              <h1 id="home-title">Káosz szerepjáték</h1>
-            </header>
-            <nav className="home-actions" aria-label="Főmenü">
-              <button type="button" onClick={() => navigate("jatek", null)}><Compass aria-hidden="true" size={20} />Játék</button>
-              <button type="button" onClick={() => navigate("alkotas", null)}><Feather aria-hidden="true" size={20} />Karakteralkotás</button>
-              <button type="button" onClick={() => navigate("karakterek", null)}><BookOpen aria-hidden="true" size={20} />Karakterbetöltés</button>
-              <button type="button" aria-describedby="home-km-release" onClick={() => selectTestMode("km")}>
-                <Swords aria-hidden="true" size={20} />Kalandmester<span id="home-km-release" className="home-menu-release" aria-hidden="true">TESZT</span>
-              </button>
-            </nav>
-            <button className="home-settings" type="button" onClick={() => navigate("test-settings", null)}>
-              <Settings aria-hidden="true" size={17} />Beállítások
-            </button>
-          </section>
+          <MainMenu characters={savedCharacters} adventure={adventure}
+            onNew={() => navigate("alkotas", null)} onLoad={openMenuCharacter}
+            onEdit={(character) => openMenuCharacter(character, true)} onDelete={startDelete}
+            onSheet={openPlayerCharacter} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
+            onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
+            onGM={() => selectTestMode("km")} />
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
             {page !== "test-settings" && <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
@@ -1487,7 +1496,7 @@ setAncestry((previous) => ({
           }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
-          <TestMode key={testMode} mode={testMode} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
+          <TestMode key={testMode} mode={testMode} initialTab={adventureTabOnOpen} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
             ? playingCharacters : [...playingCharacters, sampleCharacter]}
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
@@ -1534,7 +1543,7 @@ setAncestry((previous) => ({
           : renderCharacterFields(creationActions)}
         </div>)}
         {page === "karakterlap" && (
-          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId}
+          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen}
             character={selectedCharacter}
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}
