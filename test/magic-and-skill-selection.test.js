@@ -5,7 +5,7 @@ import { getCodexIcon } from "../src/codexIcons.js";
 import { academicBranchesFor, validAcademicSpecialization } from "../src/teszt/academic.js";
 import { codices, spells } from "../src/varazslatAdatok.js";
 import { readCharacters, writeCharacters } from "../src/karakterMentes.js";
-import { creationSkillLimit, updateCreationSkill } from "../src/alkotasiJartassagok.js";
+import { creationSkillCosts, creationSkillLimit, invalidCreationSkill, quoteCreationSkill, updateCreationSkill } from "../src/alkotasiJartassagok.js";
 import { startingApprovalContext } from "../src/induloJartassagEngedelyek.js";
 import { completeTraining, serializeSkills, skillRows, trainingQuote } from "../src/jartassagFejlesztes.js";
 import { skillPrices } from "../src/jpSzamitas.js";
@@ -34,19 +34,41 @@ test("specialization options reflect the catalog and a valid choice survives sto
   assert.deepEqual(readCharacters(storage).characters, characters);
 });
 
-test("ordinary starting caps still apply and age, race, or approved exceptions raise them", () => {
+test("ordinary creation permits rank ten regardless of race, age and old approvals", () => {
   const name = "Nyomolvasás";
   const elf = { race: "Elf", age: 60, creationStage: "adultus", stats: [65, 65, 65, 65, 65], skills: { [name]: 3 } };
-  assert.equal(creationSkillLimit(elf, name), 3);
-  assert.equal(updateCreationSkill(elf, 50000, name, 4), elf.skills);
-  assert.equal(creationSkillLimit({ ...elf, race: "Ember" }, name), 4);
-  assert.equal(creationSkillLimit({ ...elf, creationStage: "senius" }, name), 6);
-  const approved = { ...elf, startingSkillApprovals: { exceptions: { [name]: {
+  const approved = { ...elf, creationStage: "senius", startingSkillApprovals: { exceptions: { [name]: {
     approved: true, source: "individual", reason: "Egyedi engedély", level: 5, context: startingApprovalContext(elf),
   } } } };
-  assert.equal(creationSkillLimit(approved, name), 5);
-  assert.equal(updateCreationSkill(approved, 50000, name, 5)[name], 5);
-  assert.equal(updateCreationSkill(approved, 50000, name, 6), elf.skills);
+  for (const character of [elf, { ...elf, race: "Ember" }, approved]) {
+    assert.equal(creationSkillLimit(character, name), 10);
+    assert.equal(updateCreationSkill(character, 50000, name, 10)[name], 10);
+    assert.equal(updateCreationSkill(character, 0, name, 10), character.skills);
+    assert.equal(updateCreationSkill(character, 50000, name, 11), character.skills);
+  }
+});
+
+test("creation quotes price a pending skill without changing skills or historical payments", () => {
+  const character = {
+    race: "Ember", stats: [65, 65, 65, 65, 65],
+    skills: { Esés: 2, Ugrás: 2, Zsonglőrködés: 2, "Elhivatottság*": 1 },
+    skillJpByLevel: { Esés: [111, 111], "Elhivatottság*": [400] },
+    skillJpPaid: { Esés: 222, "Elhivatottság*": 400 },
+  };
+  const before = structuredClone(character);
+  const budget = 50000;
+  const name = "Akrobatika";
+  const quoted = quoteCreationSkill(character, budget, name, 2, character);
+  assert.ok(quoted.cost > 0);
+  assert.deepEqual(character, before);
+  assert.equal(quoted.skills[name], 2);
+  assert.match(quoteCreationSkill(character, budget, name, 3, character).error, /előfeltétele/);
+  const acquired = { ...character, skills: quoted.skills };
+  assert.equal(invalidCreationSkill(acquired, character, {}), undefined);
+  const removed = updateCreationSkill(acquired, budget, name, 0, character);
+  assert.deepEqual(removed, character.skills);
+  assert.deepEqual(creationSkillCosts({ ...character, skills: removed }, character),
+    creationSkillCosts(character, character));
 });
 
 test("training advances sequentially from rank 3 to the pricing table maximum", () => {

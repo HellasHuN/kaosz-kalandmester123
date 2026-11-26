@@ -107,9 +107,3 @@ export function racialWeaponCost(character, attributeModifier) {
   }
   return cost;
 }
-
-// Alapkönyv, 37. o. A természethez kapcsolódó kör nincs tételesen felsorolva.
-export const suggestedElfNatureSkills = [
-  "Állatismeret", "Állattenyésztés", "Gyógynövény ismeret", "Halászat",
-  "Idomítás", "Nyomolvasás", "Solymászat", "Tájékozódás", "Vadászat",
-];

@@ -36,10 +36,10 @@ test("clarifying a generic weapon preserves its recorded Jp and rejects ambiguou
   assert.equal(clarifySpecialization({ skills: { Fegyverforgatás: 2 } }, "Fegyverforgatás", sword), null);
 });
 
-test("gilf free-magic purchase needs matching free theory and respects starting caps", () => {
+test("gilf free-magic purchase needs matching free theory and uses the full rank table", () => {
   const gilf = { ...human, race: "Gilf", skills: { [gilfFreeTheory]: 3 } };
-  assert.equal(creationSkillLimit(gilf, gilfFreeTheory), 4);
-  assert.equal(creationSkillLimit(gilf, "Esszenciafelszabadítás"), 2);
+  assert.equal(creationSkillLimit(gilf, gilfFreeTheory), 10);
+  assert.equal(creationSkillLimit(gilf, "Esszenciafelszabadítás"), 10);
   assert.equal(updateCreationSkill(gilf, 10000, freeMagicUse, 4), gilf.skills);
   assert.equal(updateCreationSkill(gilf, 10000, freeMagicUse, 3)[freeMagicUse], 3);
   assert.equal(creationSkillLimit(human, gilfFreeTheory), 0);

@@ -11,15 +11,15 @@ import VallasValaszto from "./VallasValaszto.jsx";
 import AlkotasiJartassagok from "./AlkotasiJartassagok.jsx";
 import { clarifySpecialization } from "./jartassagSzakosodasok.js";
 import { gilfFreeTheory } from "./gilfMagia.js";
-import { combineCreationGrants, creationGrantedSkills, creationSkillCosts, invalidStartingSkill, purchasedCreationSkills,
-  savedCreationSkillTotal, skillsUnderRacialGrant, updateCreationSkill } from "./alkotasiJartassagok.js";
+import { combineCreationGrants, creationGrantedSkills, creationSkillCosts, invalidCreationSkill, purchasedCreationSkills,
+  savedCreationSkillTotal, skillsUnderRacialGrant, quoteCreationSkill } from "./alkotasiJartassagok.js";
 import { racialAbilities, racialAbilityCost, racialRuleNotes, racialSelectionError, subraces } from "./fajiSzabalyok.js";
 import { activeRacialChoices, specializationError, specializationStatCost } from "./fajiSzakosodasok.js";
 import { addTrainingPackage, packageError, packageGrants, removeTrainingPackage } from "./kepzesiCsomagok.js";
 import FajiSzakosodasValaszto from "./FajiSzakosodasValaszto.jsx";
 import { currentInheritance } from "./felverOrokles.js";
 import OroklesPanel from "./OroklesPanel.jsx";
-import { firstInvalidSkillChange, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
+import { firstInvalidSkillChange } from "./jartassagElofeltetelek.js";
 import { calculateTraitJp, fingerPrices, narratorTraitPrices, traitConflict, traitValueError } from "./karakterTulajdonsagok.js";
 import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
@@ -383,16 +383,8 @@ const calculatedAgeLimits =
   function changeCreationSkill(name, level, devotionApproved = false) {
     if (!creationEditable) return "Csak még nem játszott karakter jártasságai módosíthatók itt.";
     if (creationOriginal?.skillTraining?.[name]) return "Ehhez a jártassághoz már folyamatban lévő fejlesztés tartozik.";
-    if (level > (effectiveCreationSkills[name] ?? 0)) {
-      const error = skillPrerequisiteMessage(effectiveCreationSkills, name, level, creationCharacter);
-      if (error) return error;
-    }
-    if (name === devotionSkill) {
-      const error = devotionError(creationCharacter, level, devotionApproved);
-      if (error) return error;
-    }
-    const skills = updateCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
-    if (skills === effectiveCreationSkills) return "A szinthez nincs elég elkölthető Jp, vagy a választás meghaladja az induló szintkorlátot.";
+    const { error } = quoteCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
+    if (error) return error;
     if (name === devotionSkill) setDevotionApproval({ level, religion });
     setCreationSkills((previous) => {
       const next = { ...previous };
@@ -800,7 +792,7 @@ function validateCharacter() {
     creationCharacter, creationOriginal, trainingGrants);
   const trainingError = creationEditable && Object.entries(trainingPackages ?? {})
     .map(([id, record]) => packageError(creationCharacter, id, record)).find(Boolean);
-  const invalidStart = creationEditable && invalidStartingSkill(creationCharacter, creationOriginal &&
+  const invalidSkill = creationEditable && invalidCreationSkill(creationCharacter, creationOriginal &&
     { ...creationOriginal, ...originalFields, creationStage: originalAgeStage }, creationGrants);
   const selectedTraits = [...advantages, ...disadvantages];
   const originalSelected = [...(creationOriginal?.advantages ?? []), ...(creationOriginal?.disadvantages ?? [])];
@@ -858,8 +850,8 @@ function validateCharacter() {
     message = trainingError;
   } else if (skillError) {
     message = skillError;
-  } else if (invalidStart) {
-    message = `A következő jártasság meghaladja az érvényes induló szintkorlátot: ${invalidStart}. Ellenőrizd a szintet vagy a mesélői engedélyt.`;
+  } else if (invalidSkill) {
+    message = `A következő jártasság szintje meghaladja a megengedett maximumot: ${invalidSkill}.`;
   } else if (total !== statBudget) {
     message = `A főértékek összege pontosan ${statBudget} kell legyen!`;
   } else if (!stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
@@ -1524,10 +1516,9 @@ setAncestry((previous) => ({
           </nav>
         )}
         {creationEditable && creationTab === "skills"
-          ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants}
+          ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
-            onChange={changeCreationSkill} onClarify={clarifyCreationSkill}
-            onApprovalsChange={(startingSkillApprovals) => setCreationExtras((previous) => ({ ...previous, startingSkillApprovals }))} />
+            original={creationOriginal} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
           {creationActions}</>
           : creationEditable && creationTab === "equipment"
             ? <><CreationSection key="equipment" Editor={Felszereles} character={creationCharacter}

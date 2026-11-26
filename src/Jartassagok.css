@@ -214,3 +214,47 @@
   .skills-reference-page .karakterlap-nav { margin-inline: 0; }
   .skills-reference h2 { width: min(85%, 22rem); margin-bottom: 1rem; }
 }
+
+/* Creation has its own compact search, purchase controls and acquired list. */
+.skills-reference-page.creation-skills {
+  width: min(100%, 44rem);
+  margin-inline: auto;
+  padding: .25rem;
+}
+
+.creation-skills .skills-reference { padding: .5rem; }
+.creation-skills .skills-reference h2 { margin: 0 auto .45rem; }
+.creation-skills .skills-reference :is(p, label) { margin: .35rem 0; }
+.creation-skills .skills-reference :is(button, input, select) { min-height: 44px; }
+.creation-skills .skills-reference button { margin: 0; }
+
+.creation-skills .skills-results {
+  display: grid;
+  gap: .2rem;
+  list-style: none;
+  padding: 0;
+  margin: .25rem 0;
+}
+
+.creation-skills .skills-results button { width: 100%; text-align: start; }
+.creation-skills .creation-skill-pending {
+  padding: .45rem;
+  margin-block: .35rem;
+  border: 1px solid #a1713b;
+  border-radius: .35rem;
+  background: #ffecc1;
+}
+
+.creation-skills .creation-skill-pending h3 { margin: 0; }
+.creation-skills .creation-skill-controls { display: flex; flex-wrap: wrap; gap: .35rem; }
+.creation-skills .skills-reference-scroll { max-height: none; margin-block: .45rem; }
+.creation-skills .skills-reference table { min-width: 0; }
+.creation-skills .skills-reference :is(th, td) { padding: .25rem; overflow-wrap: anywhere; }
+.creation-skills .skills-reference thead th { font-size: .85rem; white-space: normal; }
+.creation-skills .skills-reference tr { height: auto; }
+.creation-skills .skills-reference :is(th, td):first-child { width: 48%; }
+.creation-skills .skills-reference :is(th, td):nth-child(2) { width: 25%; }
+.creation-skills .skills-reference td select { padding-inline: .25rem; }
+.creation-skills .skills-reference td button { display: block; min-width: 44px; margin-top: .2rem; }
+.creation-skills tbody small { display: block; font-weight: normal; }
+.creation-skills .creation-devotion { border-top: 1px solid #a1713b; margin-top: .45rem; }

@@ -58,10 +58,14 @@ test("segment timeline is ordered, keeps ties and hides unrevealed opponents", a
   assert.equal(addSegment(entries, { id: "new", name: "Hibás", segment: 0 }), entries);
 });
 
-test("the elf nature selector offers explicit relevant skills rather than the whole catalog", async () => {
-  const { suggestedElfNatureSkills } = await import("../src/fajiSzakosodasok.js");
-  assert.ok(suggestedElfNatureSkills.includes("Nyomolvasás"));
-  assert.ok(!suggestedElfNatureSkills.includes("Mágiahasználat (akadémikus)"));
+test("legacy elf nature approvals are preserved without limiting skill purchases", async () => {
+  const { activeRacialChoices } = await import("../src/fajiSzakosodasok.js");
+  const { creationSkillLimit } = await import("../src/alkotasiJartassagok.js");
+  const race = "Elf";
+  const choices = { approvedNatureSkills: ["Nyomolvasás"] };
+  const racialSpecializations = activeRacialChoices(race, "Erdei elf", choices);
+  assert.deepEqual(racialSpecializations.approvedNatureSkills, choices.approvedNatureSkills);
+  assert.equal(creationSkillLimit({ race, racialSpecializations }, "Nyomolvasás"), 10);
 });
 
 test("message unread counters are independent for each role and recipient", async () => {
