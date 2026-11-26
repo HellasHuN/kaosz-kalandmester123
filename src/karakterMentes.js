@@ -114,6 +114,14 @@ export function writeCharacters(storage, characters, previousRaw) {
   }
 }
 
+export function persistCharacterStatus(storage, characters, previousRaw, characterId, nextStatus) {
+  const character = characters.find(({ id }) => id === characterId);
+  if (!character || !["draft", "playing"].includes(nextStatus) ||
+      (character.playStatus != null && !(character.playStatus === "draft" && nextStatus === "playing"))) return null;
+  const updated = characters.map((saved) => saved === character ? { ...saved, playStatus: nextStatus } : saved);
+  return writeCharacters(storage, updated, previousRaw) ? updated : null;
+}
+
 export function planCharacterImport(raw, current, allowedRaces) {
   const imported = parseCharacters(raw, allowedRaces);
   if (imported.blocked) return { error: "A fájl érvénytelen vagy ismétlődő karaktereket tartalmaz." };

@@ -2,7 +2,7 @@ import { ArrowUpRight, BookOpen, Compass, Feather, Settings, Swords } from "luci
 import "./teszt/mobileHome.css";
 import { readAdventure, sampleCharacter, writeAdventure } from "./teszt/localAdventure.js";
 import "./teszt/testMode.css";
-import { planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
+import { persistCharacterStatus, planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { ancestryValidation, creationGenderOptions, fixedParentRace, getBreedingStatus } from "./szarmazas.js";
 import { speedByRace } from "./gyorsasag.js";
@@ -167,6 +167,8 @@ function App() {
   const [inheritedTraits, setInheritedTraits] = useState({});
   const [page, setPage] = useState("fomenu");
   const [testMode, setTestMode] = useState(null);
+  const [adventureCharacterId, setAdventureCharacterId] = useState(null);
+  const [activationFeedback, setActivationFeedback] = useState(null);
   const [adventure, setAdventure] = useState(() => readAdventure({
     getItem: (key) => window.localStorage.getItem(key),
   }));
@@ -240,7 +242,7 @@ const [deletingCharacter, setDeletingCharacter] = useState(null);
 const [deleteStep, setDeleteStep] = useState(0);
 const [farewellMessage, setFarewellMessage] = useState("");
 useEffect(() => {
-  if (saveBlocked || savedCharacters === initialSaves.characters) return;
+  if (saveBlocked || savedCharacters === initialSaves.characters || JSON.stringify(savedCharacters) === previousSave.current) return;
   if (writeCharacters(() => window.localStorage, savedCharacters, previousSave.current)) {
     previousSave.current = JSON.stringify(savedCharacters);
   } else {
@@ -656,17 +658,20 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function navigate(nextPage, character) {
     if (!confirmLeaving()) return;
-    if (nextPage === "alkotas" && character &&
-        (page !== "visszatoltes" || character.playStatus !== "draft")) return;
+    if (nextPage === "alkotas" && character && character.playStatus !== "draft") return;
     if (nextPage === "karakterlap" && character?.playStatus !== "playing") return;
     if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
     setPage(nextPage);
     window.scrollTo(0, 0);
+    return true;
   }
 
   function selectTestMode(mode) {
-    setTestMode(mode);
-    navigate("test-adventure", null);
+    if (navigate("test-adventure", null)) setTestMode(mode);
+  }
+
+  function openAdventureFor(character) {
+    if (navigate("test-adventure", null)) setAdventureCharacterId(character.id);
   }
 
   function updateAdventure(next) {
@@ -703,17 +708,25 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   }
 
   function setPlayStatus(character, nextStatus) {
-    const legacy = nextStatus === "draft";
-    if (legacy ? character.playStatus != null : character.playStatus === "playing") return;
-    const message = legacy
+    const message = nextStatus === "draft"
       ? `Megerősíted, hogy ${character.name} még soha nem került játékba?`
       : character.playStatus == null
-        ? `Megerősíted, hogy ${character.name} már játékban volt? Ezután a Karakter betöltése listában jelenik meg.`
+        ? `Megerősíted, hogy ${character.name} már játékban volt?`
         : `Játékba helyezed ${character.name} karaktert? Ezután nem tölthető vissza a karakteralkotásba.`;
+    setActivationFeedback(null);
     if (!window.confirm(message)) return;
-    setSavedCharacters((previous) => previous.map((saved) =>
-      saved.id === character.id && (legacy ? saved.playStatus == null : saved.playStatus !== "playing")
-        ? { ...saved, playStatus: nextStatus } : saved));
+
+    const updated = !saveBlocked && persistCharacterStatus(() => window.localStorage, savedCharacters,
+      previousSave.current, character.id, nextStatus);
+    if (!updated) {
+      setActivationFeedback({ error: true, text: "Az állapot mentése sikertelen. A karakter állapota nem változott." });
+      return;
+    }
+    previousSave.current = JSON.stringify(updated);
+    setSavedCharacters(updated);
+    setActivationFeedback({ text: nextStatus === "playing"
+      ? `${character.name} játékba került, és választható a kalandban.`
+      : `${character.name} szerkeszthető tervezetként van mentve.` });
   }
 
   function openCreationTab(nextTab) {
@@ -1420,9 +1433,7 @@ setAncestry((previous) => ({
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
   );
-  const restorableCharacters = savedCharacters.filter((character) => character.playStatus === "draft");
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
-  const unclassifiedCharacters = savedCharacters.filter((character) => character.playStatus == null);
 
   return (
     <div className="app test-app">
@@ -1455,9 +1466,7 @@ setAncestry((previous) => ({
             {page !== "test-settings" && <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
             {testMode && page !== "test-adventure" &&
               <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
-            {!testMode && page === "karakterek" &&
-              <button type="button" onClick={() => navigate("visszatoltes", null)}>Félkész karakterek</button>}
-            {page === "karakterlap" && (
+            {page !== "karakterek" && (
               <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
             )}
           </nav>
@@ -1471,7 +1480,7 @@ setAncestry((previous) => ({
           }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
-          <TestMode key={testMode} mode={testMode} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
+          <TestMode key={testMode} mode={testMode} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
             ? playingCharacters : [...playingCharacters, sampleCharacter]}
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
@@ -1533,65 +1542,34 @@ setAncestry((previous) => ({
             confirmLeaving={confirmLeaving}
           /></Suspense>
         )}
-        {page === "visszatoltes" && (
-          <section className="panel" aria-labelledby="restore-title">
-            <h2 id="restore-title">Karakter visszatöltése</h2>
-            {restorableCharacters.length === 0 && <p>Nincs visszatölthető karakter.</p>}
-            {restorableCharacters.map((character) => (
-              <div key={character.id} className="attribute">
+        {page === "karakterek" && (
+          <section className="panel" aria-labelledby="saved-characters-title">
+            <h2 id="saved-characters-title">Karakter betöltése</h2>
+            {activationFeedback && <p role={activationFeedback.error ? "alert" : "status"}>{activationFeedback.text}</p>}
+            {savedCharacters.length === 0 && <p>Nincs mentett karakter.</p>}
+            {savedCharacters.map((character) => (
+              <article key={character.id} className="attribute">
                 <h3>{character.name}</h3>
-                <p>{character.race} – {character.age} éves</p>
-                <button className="save" type="button" onClick={() => navigate("alkotas", character)}>
-                  Visszatöltés karakteralkotásba
-                </button>
-                <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>
-                  Játékba helyezés
-                </button>
-              </div>
+                <p>{[character.race, character.age != null && `${character.age} éves`].filter(Boolean).join(" · ")}</p>
+                <p>Állapot: <strong>{character.playStatus === "playing" ? "Játékban"
+                  : character.playStatus === "draft" ? "Tervezet" : "Régi mentés · besorolásra vár"}</strong></p>
+                {character.playStatus === "draft" && <>
+                  <button className="save" type="button" onClick={() => navigate("alkotas", character)}>Karakter szerkesztése</button>
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Játékba helyezés</button>
+                </>}
+                {character.playStatus === "playing" && <>
+                  <button className="save" type="button" onClick={() => navigate("karakterlap", character)}>Karakterlap megnyitása</button>
+                  <button className="save" type="button" onClick={() => openAdventureFor(character)}>Kaland megnyitása</button>
+                  <button className="save" type="button" onClick={() => startDelete(character)}>Karakter eltávolítása</button>
+                </>}
+                {character.playStatus == null && <>
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Már játékban volt</button>
+                </>}
+              </article>
             ))}
           </section>
         )}
-      {page === "karakterek" && (
-  <section className="panel">
-    <h2>Karakter betöltése</h2>
-
-    {playingCharacters.length === 0 ? (
-      <p>Nincs játékba került karakter.</p>
-    ) : (
-      playingCharacters.map((character) => (
-        <div key={character.id} className="attribute">
-          <h3>{character.name}</h3>
-          <p>{character.race} – {character.age} éves</p>
-          <button
-            className="save"
-            onClick={() => navigate("karakterlap", character)}
-          >
-            Karakter betöltése
-          </button>
-          <button
-  className="save"
-  onClick={() => startDelete(character)}
->
-  Karakter eltávolítása
-</button>
-        </div>
-      ))
-    )}
-  </section>
-  )}
-{(page === "visszatoltes" || page === "karakterek") && unclassifiedCharacters.length > 0 && (
-  <section className="panel" aria-labelledby="legacy-status-title">
-    <h2 id="legacy-status-title">Régi mentések állapotának megadása</h2>
-    {unclassifiedCharacters.map((character) => (
-      <div key={character.id} className="attribute">
-        <h3>{character.name}</h3>
-        <p>{character.race} – {character.age} éves</p>
-        <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>
-        <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Már játékban volt</button>
-      </div>
-    ))}
-  </section>
-)}
 {deletingCharacter && (
   <div className="modal-overlay">
     <section className="modal-panel">

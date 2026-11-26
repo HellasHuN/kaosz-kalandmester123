@@ -12,9 +12,9 @@ const quickMessages = [
   "A következő cselekvésed előtt várd meg a KM jelzését.",
 ];
 
-export default function TestMode({ mode, characters, adventure, onChange, onSelectMode, onOpenCharacter }) {
+export default function TestMode({ mode, initialCharacterId, characters, adventure, onChange, onSelectMode, onOpenCharacter }) {
   const [tab, setTab] = useState("overview");
-  const [recipient, setRecipient] = useState("");
+  const [recipient, setRecipient] = useState(() => String(initialCharacterId ?? ""));
   const [text, setText] = useState("");
   if (!mode) return (
     <section className="test-panel">
