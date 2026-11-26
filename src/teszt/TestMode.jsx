@@ -46,9 +46,12 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
     }
   }
 
-  return <section className="test-panel">
-    <h2 className="test-heading">{km ? "Kalandmester mód" : "Játékos mód"}</h2>
-    <nav className="test-actions" aria-label="Tesztkaland">
+  return <section className={`test-panel adventure-desk${km ? " adventure-desk-km" : ""}`}>
+    <header className="adventure-desk-heading">
+      <h2 className="test-heading">{km ? "Kalandmesteri irányítópult" : "Játékos mód"}</h2>
+    </header>
+    <div className="adventure-desk-layout">
+    <nav className="test-actions adventure-desk-navigation" aria-label="Tesztkaland">
       <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}><Compass aria-hidden="true" size={16} />Kaland áttekintése</button>
       <button type="button" aria-pressed={tab === "messages"} onClick={() => {
         setTab("messages");
@@ -62,6 +65,7 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
       {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}><ClipboardList aria-hidden="true" size={16} />Felülbírálások</button>}
       {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><ScrollText aria-hidden="true" size={16} />KM-jegyzetek</button>}
     </nav>
+    <div className="adventure-desk-content">
     {((tab === "notes" && !km) || tab === "overview") && <>
       <h3>Mintahelyzet · A ködbe veszett fogadó</h3>
       <p>Egy kihűlt fogadó ablakában lámpa ég. A csapat nyomokat kereshet, vagy bekopoghat.</p>
@@ -110,5 +114,7 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
         <button type="submit" disabled={!selected || !text.trim()}>Küldés</button>
       </form>
     </>}
+    </div>
+    </div>
   </section>;
 }

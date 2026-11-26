@@ -75,7 +75,7 @@ function Karakterlap({
     </div>
     </div>
     {activePage === 1 && <KarakterlapElsoOldal character={character} stage={stage}
-      edit={editing ? characterEditor : null} onChangeHealth={onChangeHealth} />}
+      edit={editing ? characterEditor : null} onChangeHealth={onChangeHealth} onOpenSkills={() => openPage(2)} />}
     {activePage === 2 && <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />}
     {activePage === 3 && (
       <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />

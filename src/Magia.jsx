@@ -1,4 +1,4 @@
-import { BookOpen, Feather, Flame, Sparkles, Sun, Zap } from "lucide-react";
+import { BookOpen, Dice5, Feather, Flame, Sparkles, Sun, Zap } from "lucide-react";
 import "./MagicBook.css";
 import { readPercentileRoll, rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
@@ -15,6 +15,8 @@ import {
 function GrimoireHeading({ id, icon: Icon, children }) {
   return <h3 id={id} className="grimoire-heading"><Icon aria-hidden="true" size={22} />{children}</h3>;
 }
+
+const formIcons = { academic: Flame, sacred: Sun, practical: Feather, wild: Zap, free: Sparkles };
 
 const states = {
   overflow: "Túlcsordulás",
@@ -88,9 +90,10 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
   }
 
   return (
-    <details open={gm}>
+    <details className="spell-details" open>
       <summary>{gm ? states[result.state] : "Varázslat adatai"}</summary>
-      <dl>
+      <dl className="spell-values">
+        <dt>Típus</dt><dd>{spell.type ?? "—"}</dd>
         <dt>Alapnehézség</dt><dd>{spell.difficulty ?? "—"}</dd>
         <dt>Alap Ep-igény</dt><dd>{costLabel(spell.ep)}</dd>
         {spell.jp != null && <><dt>Tanulás költsége</dt><dd>{spell.jp} Jp</dd></>}
@@ -165,51 +168,54 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
         </>
       )}
       {form === "academic" && access.allowed && access.recorded && trial?.target != null && <>
-        <p>Próba · Ep: {cost.ep ?? "KM-ellenőrzés"} · Nehézség: {cost.difficulty}</p>
-        <label>Kézi k100 (00 = 100)
-          <input type="text" inputMode="numeric" maxLength={3} value={manualRoll} onChange={event => setManualRoll(event.target.value)} />
-        </label>
-        <button type="button" onClick={() => rollAcademic(true)}>Digitális k100</button>
-        <button type="button" onClick={() => rollAcademic(false)}>Kézi dobás elbírálása</button>
-        {trialResult?.signature === trialSignature && <p role="status">{
-          trialResult.outcome === "invalid" ? "Adj meg 1–100 közötti dobást." :
-            `${trialResult.roll} / ${trial.target} · ${({
-              success: "Sikeres létrehozási próba", failure: "Sikertelen létrehozási próba",
-              "critical-failure": "Katasztrofális rontás",
-            })[trialResult.outcome]}. A célpont ellenállása és az Ep elszámolása külön ellenőrzendő.`
-        }</p>}
-        {gm && editing && trialResult?.signature === trialSignature &&
-          ["failure", "critical-failure"].includes(trialResult.outcome) && (
-          <form key={trialResult.id} onSubmit={event => {
-            event.preventDefault();
-            const fields = new FormData(event.currentTarget);
-            const operation = { id: trialResult.id, roll: trialResult.roll, epLoss: Number(fields.get("epLoss")),
-              consequence: fields.get("consequence"), recordedAt: new Date().toISOString() };
-            const next = logAcademicFailure(character, magic, spell, context, operation);
-            if (next === magic) {
-              setNotice("Ellenőrizd a feltételeket, a szabad Ep-keretet és a következményt.");
-              return;
-            }
-            setNotice("");
-            onChange(previous => logAcademicFailure(character, previous, spell, context, operation));
-          }}>
-            <label>KM által megállapított Ep-veszteség
-              <input name="epLoss" type="number" min="0" step="any" required />
-            </label>
-            <label>A kudarc következménye <textarea name="consequence" maxLength={1000} required /></label>
-            <button type="submit" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}>
-              Kudarc és következmény rögzítése
-            </button>
-          </form>
-        )}
-        {gm && editing && trialResult?.signature === trialSignature && trialResult.outcome === "success" && spell.fp == null && (
-          <button type="button" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}
-            onClick={() => {
-              if (!window.confirm("Rögzíted a sikeres létrehozást és az Ep-levonást? A célpont ellenállása külön próba.")) return;
-              const operation = { id: trialResult.id, roll: trialResult.roll, recordedAt: new Date().toISOString() };
-              onChange(previous => logAcademicCasting(character, previous, spell, context, operation));
-            }}>Sikeres elmondás és Ep-levonás rögzítése</button>
-        )}
+        <div className="spell-roll">
+          <h4><Dice5 aria-hidden="true" size={20} /> Létrehozási próba</h4>
+          <p>Próba · Ep: {cost.ep ?? "KM-ellenőrzés"} · Nehézség: {cost.difficulty}</p>
+          <label>Kézi k100 (00 = 100)
+            <input type="text" inputMode="numeric" maxLength={3} value={manualRoll} onChange={event => setManualRoll(event.target.value)} />
+          </label>
+          <button type="button" onClick={() => rollAcademic(true)}>Digitális k100</button>
+          <button type="button" onClick={() => rollAcademic(false)}>Kézi dobás elbírálása</button>
+          {trialResult?.signature === trialSignature && <p className="spell-outcome" data-outcome={trialResult.outcome} role="status">{
+            trialResult.outcome === "invalid" ? "Adj meg 1–100 közötti dobást." :
+              `${trialResult.roll} / ${trial.target} · ${({
+                success: "Sikeres létrehozási próba", failure: "Sikertelen létrehozási próba",
+                "critical-failure": "Katasztrofális rontás",
+              })[trialResult.outcome]}. A célpont ellenállása és az Ep elszámolása külön ellenőrzendő.`
+          }</p>}
+          {gm && editing && trialResult?.signature === trialSignature &&
+            ["failure", "critical-failure"].includes(trialResult.outcome) && (
+            <form key={trialResult.id} onSubmit={event => {
+              event.preventDefault();
+              const fields = new FormData(event.currentTarget);
+              const operation = { id: trialResult.id, roll: trialResult.roll, epLoss: Number(fields.get("epLoss")),
+                consequence: fields.get("consequence"), recordedAt: new Date().toISOString() };
+              const next = logAcademicFailure(character, magic, spell, context, operation);
+              if (next === magic) {
+                setNotice("Ellenőrizd a feltételeket, a szabad Ep-keretet és a következményt.");
+                return;
+              }
+              setNotice("");
+              onChange(previous => logAcademicFailure(character, previous, spell, context, operation));
+            }}>
+              <label>KM által megállapított Ep-veszteség
+                <input name="epLoss" type="number" min="0" step="any" required />
+              </label>
+              <label>A kudarc következménye <textarea name="consequence" maxLength={1000} required /></label>
+              <button type="submit" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}>
+                Kudarc és következmény rögzítése
+              </button>
+            </form>
+          )}
+          {gm && editing && trialResult?.signature === trialSignature && trialResult.outcome === "success" && spell.fp == null && (
+            <button type="button" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}
+              onClick={() => {
+                if (!window.confirm("Rögzíted a sikeres létrehozást és az Ep-levonást? A célpont ellenállása külön próba.")) return;
+                const operation = { id: trialResult.id, roll: trialResult.roll, recordedAt: new Date().toISOString() };
+                onChange(previous => logAcademicCasting(character, previous, spell, context, operation));
+              }}>Sikeres elmondás és Ep-levonás rögzítése</button>
+          )}
+        </div>
       </>}
       {gm && <p aria-live="polite">{states[result.state]}{result.reasons.length > 0 && ` · ${result.reasons.join(" ")}`}</p>}
       {gm && editing && ((form === "practical") === (spell.codex === "Praktikus mágia")) && (
@@ -260,7 +266,7 @@ export default function Magia({ character, onSave, ref }) {
   const freeEp = availableMagicEp(character, magic);
   const unresolved = unresolvedSacredReservations(magic);
   const search = query.trim().toLocaleLowerCase("hu");
-  const catalogForms = Object.keys(forms).filter((form) => form !== "practical");
+  const catalogForms = Object.keys(forms);
   const skills = character.skills ?? {};
   const theoryRank = academicTheoryRank(skills);
   const specialization = magic.academicSpecialization;
@@ -349,46 +355,36 @@ export default function Magia({ character, onSave, ref }) {
 
   function renderSpellList(rows, { practical = false, sacred = false, wild = false, free = false } = {}) {
     rows = rows.filter(({ spell }) => `${spell.name} ${spell.codex} ${spell.type}`.toLocaleLowerCase("hu").includes(search));
-    return rows.length > 0 ? (
-      <div className="skills-table-container">
-        <table className="skills-table">
-          <thead><tr>
-            <th scope="col">Varázslat</th>
-            <th scope="col">{practical || wild || free ? "Típus" : "Kódex"}</th>
-            {gm ? <><th scope="col">Hozzáférés</th><th scope="col">Megszerezve</th></> : <th scope="col">Mágiaforma</th>}
-            {sacred && <th scope="col">Kikérés állapota</th>}
-            <th scope="col">{gm ? "Használat" : "Adatok"}</th>
-          </tr></thead>
-          <tbody>
-            {rows.map(({ spell, form, access }) => (
-              <tr key={`${spell.id}-${form}`}>
-                <th scope="row">{spell.name}</th>
-                <td>{practical || wild || free ? spell.type : `${spell.codex} · ${spell.type}`}</td>
-                {gm ? <>
-                    <td>{access.allowed ? "Elérhető" : access.reasons.join(" ")}</td>
-                  <td>{access.recorded ? forms[form].acquisition : access.needsAcquisition ? "Nincs rögzítve" : spell.evilPrayer ? "Külön kikérés nélkül" : "Minta"}</td>
-                </> : <td>{forms[form].label}</td>}
-                {sacred && <td>{sacredStatus(spell, access)}</td>}
-                <td>
-                  {!gm ? (
-                        <SpellDetails {...{ spell, character, magic, form, editing }} />
-                  ) : selectedSpell === spell.id ? (
-                    <>
-                      <button type="button" onClick={() => setSelectedSpell(null)}>Bezárás</button>
-                      <SpellDetails key={`${spell.id}-${form}-${editing}-${gm}`}
-                        {...{ spell, character, magic, form, gm, editing }} onChange={setDraft} />
-                    </>
-                  ) : (
-                    <button type="button" onClick={() => setSelectedSpell(spell.id)}
-                      aria-label={`${spell.name} kiválasztása`}>Kiválasztás</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    if (!rows.length) return <p>Nincs megjeleníthető találat.</p>;
+    const selected = rows.find(({ spell, form }) => selectedSpell === `${form}:${spell.id}`);
+    const SelectedIcon = selected && formIcons[selected.form];
+    return (
+      <div className="spellbook-spread">
+        <ul className="spellbook-index">
+          {rows.map(({ spell, form, access }) => {
+            const key = `${form}:${spell.id}`;
+            const Icon = formIcons[form];
+            const active = selectedSpell === key;
+            return <li key={key}>
+              <button type="button" aria-pressed={active} aria-label={`${spell.name} kiválasztása`}
+                onClick={() => setSelectedSpell(active ? null : key)}>
+                <Icon aria-hidden="true" size={23} />
+                <span><strong>{spell.name}</strong><small>{practical || wild || free ? spell.type : spell.codex}</small></span>
+              </button>
+              {gm && <small className="spellbook-access">{sacred ? sacredStatus(spell, access)
+                : access.recorded ? forms[form].acquisition
+                : access.allowed ? "Elérhető" : access.reasons.join(" ")}</small>}
+            </li>;
+          })}
+        </ul>
+        {selected && <article className="spellbook-folio">
+          <header><span className="spellbook-sigil" aria-hidden="true"><SelectedIcon size={34} /></span><h4>{selected.spell.name}</h4></header>
+          {!gm && selected.access.fromScroll && <p>Birtokolt mondóka-pergamen</p>}
+          <SpellDetails key={`${selectedSpell}-${editing}-${gm}`}
+            spell={selected.spell} form={selected.form} {...{ character, magic, gm, editing }} onChange={setDraft} />
+        </article>}
       </div>
-    ) : <p>Nincs megjeleníthető találat.</p>;
+    );
   }
 
   function sacredStatus(spell, access) {
@@ -401,7 +397,10 @@ export default function Magia({ character, onSave, ref }) {
 
   return (
     <section ref={panel} className="panel magic-panel" data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
-      <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={26} /> Mágia és varázslatok</h2>
+      <header className="grimoire-banner">
+        <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={29} /> Mágia és varázslatok</h2>
+        <p><Flame aria-hidden="true" size={22} /><span>Felszabadítható esszencia</span><strong>{limits.release} Ep</strong></p>
+      </header>
       <label className="magic-checkbox">
         <input type="checkbox" checked={gm} onChange={(event) => {
           if (panel.current.querySelector('form[data-unsaved="true"]') &&
@@ -470,7 +469,8 @@ export default function Magia({ character, onSave, ref }) {
       {!validResources && <p role="alert">Az aktuális értékeknek a megadott határokon belül kell lenniük.</p>}
       {hasAcademicSkill && <p>Általános Mágiaelmélet: {theoryRank}. szint{specialization?.branch ? ` · ${specialization.branch}` : ""}</p>}
       {gm && editing && (
-        <>
+        <details className="grimoire-settings">
+          <summary>Akadémikus és szakrális beállítások</summary>
           {hasAcademicSkill && <fieldset>
             <legend>Akadémikus szakosodás · TESZT háziszabály</legend>
             <label>Alapkódex <select value={specialization?.codex ?? ""} onChange={event => {
@@ -517,16 +517,27 @@ export default function Magia({ character, onSave, ref }) {
               </label>
             ))}
           </fieldset>
-        </>
+        </details>
       )}
       {gm && <h3>Varázslatkatalógus</h3>}
       {gm && (
         <>
-          <label>Mágiaforma
-            <select value={selectedForm} onChange={(event) => { setSelectedForm(event.target.value); setCodex(""); setSelectedSpell(null); }}>
-              {catalogForms.map((type) => <option key={type} value={type}>{forms[type].label}</option>)}
-            </select>
-          </label>
+          <nav className="grimoire-navigation" aria-label="Mágiaformák">
+            {catalogForms.map((type) => {
+              const Icon = formIcons[type];
+              return <button key={type} type="button" data-form={type} aria-pressed={selectedForm === type}
+                onClick={() => {
+                  if (selectedForm === type) return;
+                  if (panel.current.querySelector('form[data-unsaved="true"]') &&
+                      !window.confirm("A még nem rögzített űrlap adatai elvesznek. Folytatod?")) return;
+                  setSelectedForm(type);
+                  setCodex("");
+                  setSelectedSpell(null);
+                }}>
+                <Icon size={21} aria-hidden="true" />{forms[type].label}
+              </button>;
+            })}
+          </nav>
           <p>{forms[selectedForm].description}</p>
           {formRequirements(character, magic, selectedForm).map((reason) => <p key={reason}>{reason}</p>)}
         </>
@@ -559,12 +570,12 @@ export default function Magia({ character, onSave, ref }) {
           {renderSpellList(sacredRows, { sacred: true })}
         </section>
       )}
-      {(gm || practicalRows.length > 0) && <section className="grimoire-section" data-form="practical" aria-labelledby="practical-magic-heading">
+      {(gm ? selectedForm === "practical" : practicalRows.length > 0) && <section className="grimoire-section" data-form="practical" aria-labelledby="practical-magic-heading">
         <GrimoireHeading id="practical-magic-heading" icon={Feather}>Praktikus mágia</GrimoireHeading>
         {gm && <p>{forms.practical.description}</p>}
         {renderSpellList(practicalRows, { practical: true })}
       </section>}
-      {(gm || wildAvailable) && (
+      {(gm ? selectedForm === "wild" : wildAvailable) && (
         <section className="grimoire-section" data-form="wild" aria-labelledby="wild-magic-heading">
           <GrimoireHeading id="wild-magic-heading" icon={Zap}>Vadmágia</GrimoireHeading>
           <p>{forms.wild.description} Az Esszenciakontroll szintjét a Smaragd Táblán kell a hatás nehézségével összevetni.</p>
@@ -602,7 +613,7 @@ export default function Magia({ character, onSave, ref }) {
           </>}
         </section>
       )}
-      {(hasFreeSkill || (gm && selectedForm === "free")) && (
+      {(gm ? selectedForm === "free" : hasFreeSkill) && (
         <section className="grimoire-section" data-form="free" aria-labelledby="free-magic-heading">
           <GrimoireHeading id="free-magic-heading" icon={Sparkles}>Szabad mágia</GrimoireHeading>
           <p>{forms.free.description} A minták végleges hatását a Mesélő állapítja meg. A Szabad mágia anyagi komponens nélkül működik.</p>

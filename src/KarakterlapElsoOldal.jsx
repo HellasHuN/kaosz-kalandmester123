@@ -108,7 +108,7 @@ function EleteroPanel({ current, maximum, savedMaximum, onChange }) {
   );
 }
 
-export default function KarakterlapElsoOldal({ character, stage, edit, onChangeHealth }) {
+export default function KarakterlapElsoOldal({ character, stage, edit, onChangeHealth, onOpenSkills }) {
   const stats = edit?.stats ?? characterStats(character);
   const adjustments = edit?.adjustments ?? characterAdjustments(character);
   const displayed = { ...character, stats, adjustments };
@@ -116,6 +116,9 @@ export default function KarakterlapElsoOldal({ character, stage, edit, onChangeH
   const limits = magicLimits(edit ? { ...character, stats, adjustments } : character);
   const parents = character.ancestry?.parents?.map(({ race }) => race).filter(Boolean) ?? [];
   const origin = (parents.length ? parents : [character.parent1, character.parent2].filter(Boolean)).join(" / ");
+  const featuredSkills = Object.entries(character.skills ?? {})
+    .filter(([, rank]) => Number.isFinite(rank) && rank > 0)
+    .sort((first, second) => second[1] - first[1]).slice(0, 5);
   const info = [
     ["Név", edit?.name ?? character.name],
     ["Faj", edit?.race ?? character.race],
@@ -128,36 +131,7 @@ export default function KarakterlapElsoOldal({ character, stage, edit, onChangeH
 
   return (
     <div className="parchment-sheet" data-unsaved={edit?.changed ?? false}>
-      <section className="parchment-card sheet-attributes">
-        <h3>Főértékek</h3>
-        <table>
-          <thead><tr><th scope="col">Főérték</th><th scope="col">Érték</th><th scope="col">Aktív</th><th scope="col">Passzív</th></tr></thead>
-          <tbody>
-            {attributes.map(([name, active, passive], index) => {
-              const base = stats[index];
-              const adjustment = adjustments[index];
-              return <tr key={name}>
-                <th scope="row"><span className="attribute-name"><AttributeIcon position={attributeIconPositions[index]} />{name}</span></th>
-                <td>{edit && <button type="button" aria-label={`${name} csökkentése`} disabled={!edit.limits[index] || base <= edit.limits[index][0]} onClick={() => edit.changeStat(index, -1)}>−</button>}
-                  {effectiveAttribute(displayed, index)}
-                  {edit && <button type="button" aria-label={`${name} növelése`} disabled={!edit.limits[index] || base >= edit.limits[index][1]} onClick={() => edit.changeStat(index, 1)}>+</button>}
-                </td>
-                <td><strong>{effectiveAttribute(displayed, index, 1)}</strong><small>{active}</small>
-                  {edit && <div className="sheet-split-controls">
-                    <button type="button" aria-label={`${active} csökkentése`} disabled={adjustment <= -attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
-                    <button type="button" aria-label={`${active} növelése`} disabled={adjustment >= attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
-                  </div>}
-                </td>
-                <td><strong>{effectiveAttribute(displayed, index, -1)}</strong><small>{passive}</small></td>
-              </tr>;
-            })}
-          </tbody>
-        </table>
-        {edit && <p>Hátralévő főértékpont: {edit.remaining ?? empty}</p>}
-        <dl className="sheet-data"><div><dt>Elkölthető Jp</dt><dd>{character.jp ?? 0}</dd></div></dl>
-        <div className="sheet-landscape" aria-hidden="true" />
-      </section>
-      <div className="sheet-center">
+      <div className="sheet-left">
         <section className="parchment-card sheet-identity">
           <h3>Karakter adatai</h3>
           <div className="identity-layout">
@@ -167,9 +141,37 @@ export default function KarakterlapElsoOldal({ character, stage, edit, onChangeH
           {edit?.ancestry && <details><summary>Származás szerkesztése</summary>{edit.ancestry}</details>}
           {edit?.ageOptions}
         </section>
-        <ArmorDiagram character={edit ? { ...character, race: edit.race, stats, adjustments } : character} />
+        <section className="parchment-card sheet-attributes">
+          <h3>Főértékek</h3>
+          <table>
+            <thead><tr><th scope="col">Főérték</th><th scope="col">Érték</th><th scope="col">Aktív</th><th scope="col">Passzív</th></tr></thead>
+            <tbody>
+              {attributes.map(([name, active, passive], index) => {
+                const base = stats[index];
+                const adjustment = adjustments[index];
+                return <tr key={name}>
+                  <th scope="row"><span className="attribute-name"><AttributeIcon position={attributeIconPositions[index]} />{name}</span></th>
+                  <td>{edit && <button type="button" aria-label={`${name} csökkentése`} disabled={!edit.limits[index] || base <= edit.limits[index][0]} onClick={() => edit.changeStat(index, -1)}>−</button>}
+                    {effectiveAttribute(displayed, index)}
+                    {edit && <button type="button" aria-label={`${name} növelése`} disabled={!edit.limits[index] || base >= edit.limits[index][1]} onClick={() => edit.changeStat(index, 1)}>+</button>}
+                  </td>
+                  <td><strong>{effectiveAttribute(displayed, index, 1)}</strong><small>{active}</small>
+                    {edit && <div className="sheet-split-controls">
+                      <button type="button" aria-label={`${active} csökkentése`} disabled={adjustment <= -attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
+                      <button type="button" aria-label={`${active} növelése`} disabled={adjustment >= attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
+                    </div>}
+                  </td>
+                  <td><strong>{effectiveAttribute(displayed, index, -1)}</strong><small>{passive}</small></td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+          {edit && <p>Hátralévő főértékpont: {edit.remaining ?? empty}</p>}
+          <dl className="sheet-data"><div><dt>Elkölthető Jp</dt><dd>{character.jp ?? 0}</dd></div></dl>
+          <div className="sheet-landscape" aria-hidden="true" />
+        </section>
       </div>
-      <div className="sheet-right">
+      <div className="sheet-center">
         <EleteroPanel current={character.currentFp} maximum={maxHealth(displayed)} savedMaximum={maxHealth(character)} onChange={onChangeHealth} />
         <section className="parchment-card">
           <h3>Esszencia</h3>
@@ -182,6 +184,15 @@ export default function KarakterlapElsoOldal({ character, stage, edit, onChangeH
           </table>
           {magic.shield == null && <p className="armor-caption">Az aktuális pajzsérték nincs rögzítve a Mágia oldalon.</p>}
         </section>
+        <ArmorDiagram character={edit ? { ...character, race: edit.race, stats, adjustments } : character} />
+      </div>
+      <div className="sheet-right">
+        {featuredSkills.length > 0 && <section className="parchment-card sheet-featured">
+          <h3>Kiemelt jártasságok</h3>
+          <dl className="sheet-data">{featuredSkills.map(([name, rank]) =>
+            <div key={name}><dt>{name}</dt><dd>{rank}</dd></div>)}</dl>
+          <button type="button" onClick={onOpenSkills}>Összes jártasság</button>
+        </section>}
         <section className="parchment-card">
           <h3>Egyéb jellemzők</h3>
           <h4>Előnyök</h4><TraitList items={character.advantages} />
