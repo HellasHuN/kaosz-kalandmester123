@@ -43,6 +43,7 @@ async function verify(page, width) {
   await button("Betöltés").click();
   await body.waitFor();
   await assertPortrait("human-male.webp");
+  assert.equal(await button("Mentett karakterek").count(), 0);
   assert.deepEqual(await body.locator(".first-page-stat output").evaluateAll(els => els.map(el => el.getAttribute("aria-label"))),
     ["Fizikum","Erő","Szívósság","Rátermettség","Ügyesség","Reflex","Tudat","Intelligencia","Lelkierő",
       "Esszencia","Varázserő","Esszenciapajzs","Érzékelés","Érzékszerv","Intuíció"]);

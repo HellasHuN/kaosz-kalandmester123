@@ -16,5 +16,10 @@
  <path d="M62 46Q81 42 98 17l91-5 11-10 11 10 91 5q17 25 36 29-19 5-36 29l-91 5-11 10-11-10-91-5Q81 51 62 46Z" fill="url(#red)" stroke="#381705" stroke-width="6"/>
  <path d="M62 46Q81 42 98 17l91-5 11-10 11 10 91 5q17 25 36 29-19 5-36 29l-91 5-11 10-11-10-91-5Q81 51 62 46Z" fill="url(#red)" stroke="url(#gold)" stroke-width="3"/>
  <path d="M80 46q16-13 22-24l90-6 8-7 8 7 90 6q6 11 22 24-16 13-22 24l-90 6-8 7-8-7-90-6Q96 59 80 46Z" fill="none" stroke="#ffc773" stroke-opacity=".7"/>
+ <g fill="none" stroke="#d58f39" stroke-width=".8" opacity=".8">
+  <path d="M85 46q14-2 24-16m-24 16q14 2 24 16m206-16q-14-2-24-16m24 16q-14 2-24 16"/>
+  <path d="m114 24 17-2 5 2m150 0-17-2-5 2M114 68l17 2 5-2m150 0-17 2-5-2"/>
+ </g>
+ <path d="M154 76h29l17 7 17-7h29" fill="none" stroke="#ff8c2b" stroke-width="1.5"/>
  <path d="m200 74 3 5 7 1-7 2-3 5-3-5-7-2 7-1Z" fill="#fff3ad"/>
 </svg>

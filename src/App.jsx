@@ -1507,12 +1507,12 @@ setAncestry((previous) => ({
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
             {!inPlayerView && page !== "test-settings" &&
-              <button type="button" onClick={returnHome}>Vissza a főmenübe</button>}
+              <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
             {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
             {testMode && page !== "test-adventure" &&
               <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
             {page !== "karakterek" && (
-              <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
+              <button className="workspace-saved" type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
             )}
           </nav>
         )}
