@@ -6,7 +6,7 @@ import { characterSpeed } from "./gyorsasag.js";
 import figure from "./assets/theme/pancelzat-karakter-referencia.webp";
 import "./KarakterlapElsoOldal.css";
 import "./CharacterPage.css";
-import { Award, Brain, Eye, Flame, Hourglass, Shield, Skull, Swords, UserRound } from "lucide-react";
+import { Award, BookOpen, Crosshair, Eye, Feather, Hand, Hourglass, ScanEye, Shield, ShieldCheck, Skull, Sparkles, Sun, UserRound } from "lucide-react";
 import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
 import { profileFields, readProfile } from "./characterProfile.js";
 
@@ -78,7 +78,13 @@ function TraitList({ items }) {
   return <ul className="parchment-traits">{items.map((item, index) => <li key={index}>{item.name ?? item}</li>)}</ul>;
 }
 
-const attributeIcons = [Shield, Swords, Brain, Flame, Eye];
+const attributeIcons = [
+  [Hand, ShieldCheck],
+  [Feather, Crosshair],
+  [BookOpen, Sun],
+  [Sparkles, Shield],
+  [Eye, ScanEye],
+];
 
 const identityIcons = [Shield, UserRound, Hourglass];
 
@@ -146,22 +152,22 @@ export default function KarakterlapElsoOldal({ character, stage, edit, mode = "p
           const base = stats[index];
           const adjustment = adjustments[index];
           const bounds = edit?.limits[index];
-          const Icon = attributeIcons[index];
+          const [ActiveIcon, PassiveIcon] = attributeIcons[index];
           return <li className="creation-stat first-page-stat" key={name} data-stat={index}>
             <div className="first-page-stat-base">
-              <span><Icon aria-hidden="true" /><span>{name}{bounds && <small className="first-page-bounds">{bounds.join("–")}</small>}</span></span>
+              <span><i className="first-page-stat-medallion" aria-hidden="true" /><span>{name}{bounds && <small className="first-page-bounds">{bounds.join("–")}</small>}</span></span>
               {bounds && <button type="button" aria-label={`${name} csökkentése`} disabled={base <= bounds[0]} onClick={() => edit.changeStat(index, -1)}>−</button>}
               <output aria-label={name}>{effectiveAttribute(displayed, index)}</output>
               {bounds && <button type="button" aria-label={`${name} növelése`} disabled={base >= bounds[1]} onClick={() => edit.changeStat(index, 1)}>+</button>}
             </div>
             <div className="first-page-stat-split">
-              <div><span>{active}</span><output aria-label={active}>{effectiveAttribute(displayed, index, 1)}</output>
+              <div><span><ActiveIcon aria-hidden="true" />{active}</span><output aria-label={active}>{effectiveAttribute(displayed, index, 1)}</output>
                 {bounds && <span className="first-page-adjust">
                   <button type="button" aria-label={`${active} csökkentése`} disabled={adjustment <= -attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
                   <button type="button" aria-label={`${active} növelése`} disabled={adjustment >= attributeAdjustmentLimit(base)} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
                 </span>}
               </div>
-              <div><span>{passive}</span><output aria-label={passive}>{effectiveAttribute(displayed, index, -1)}</output></div>
+              <div><span><PassiveIcon aria-hidden="true" />{passive}</span><output aria-label={passive}>{effectiveAttribute(displayed, index, -1)}</output></div>
             </div>
           </li>;
         })}

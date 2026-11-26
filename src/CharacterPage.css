@@ -352,3 +352,104 @@
   .first-page-shell .first-page-basics:not(:has(input,select)) { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .first-page-basics:not(:has(input,select)) > div + div { border-inline-start: 1px solid #9b713f; }
 }
+
+/* Keep the portrait intact below the title while the landscape fills the banner. */
+.test-app .first-page-shell .first-page-header {
+  min-height: clamp(9.5rem, 43vw, 19rem);
+  background: linear-gradient(0deg,#04090f 1%,transparent 53%),
+    var(--ancestry-background) right 43% / cover no-repeat, var(--sheet-shade);
+}
+.first-page-header-art {
+  background: radial-gradient(ellipse at 74% 65%,#07090d4a,transparent 70%);
+}
+.first-page-header-art::before {
+  inset: clamp(1.05rem, 5vw, 2.3rem) auto 0 2%;
+  width: 46%;
+  background: var(--ancestry-portrait) left bottom / auto 100% no-repeat;
+  mask-image: linear-gradient(90deg,transparent 0,#000 8% 73%,transparent 100%);
+  filter: brightness(1.14) contrast(1.04);
+}
+.first-page-header-art::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 44%;
+  content: "";
+  background: linear-gradient(0deg,#04080ea3,transparent);
+}
+.first-page-header h2 { width: min(80%,34rem); }
+.first-page-identity { width: min(65%,34rem); }
+.first-page-identity h1 {
+  text-shadow: 0 2px 2px #000, 0 0 .55rem #170d03, 0 0 .8rem #170d03;
+}
+.first-page-header::after,.first-page-tabs::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: auto 6% 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent,#d68a3e 34%,#fff6bf 50%,#d68a3e 66%,transparent);
+  filter: drop-shadow(0 0 4px #ff6b22);
+}
+
+.test-app .first-page-shell .first-page-stat { gap: .19rem; }
+.first-page-stats { gap: .17rem; }
+.test-app .first-page-shell :is(.first-page-stat-base,.first-page-stat-split) {
+  border-image: url("./assets/sheet/stat-frame.svg") 24 / 8px / 0 stretch;
+  min-height: clamp(2.14rem, 9vw, 3.05rem);
+  padding: .04rem .12rem;
+  background: linear-gradient(179deg,#c4a86c24,#0a1015eb 47%,#08090cf5 55%,#52331158),var(--sheet-stone);
+}
+.first-page-stat[data-stat="0"] { --medallion: url("./assets/sheet/stat-physique.svg"); --stat-light: #ff713a; }
+.first-page-stat[data-stat="1"] { --medallion: url("./assets/sheet/stat-agility.svg"); --stat-light: #a3e430; }
+.first-page-stat[data-stat="2"] { --medallion: url("./assets/sheet/stat-mind.svg"); --stat-light: #4ad4ff; }
+.first-page-stat[data-stat="3"] { --medallion: url("./assets/sheet/stat-essence.svg"); --stat-light: #df62ff; }
+.first-page-stat[data-stat="4"] { --medallion: url("./assets/sheet/stat-senses.svg"); --stat-light: #ffbd3e; }
+.first-page-stat-base > span {
+  gap: .18rem;
+  font-size: clamp(.67rem,3.25vw,1.3rem);
+  color: #fff1c3;
+}
+.first-page-stat-medallion {
+  flex: none;
+  width: clamp(1.58rem,7.4vw,2.65rem);
+  aspect-ratio: 64 / 56;
+  background: var(--medallion) center / contain no-repeat;
+  filter: drop-shadow(0 0 .18rem color-mix(in srgb,var(--stat-light) 64%,transparent));
+}
+.first-page-stat-base output {
+  padding: .08rem .25rem;
+  color: #fff4cf;
+  background: radial-gradient(ellipse at 50% 0,#923615,#230807 75%);
+  box-shadow: inset 0 0 .36rem #f88e3170;
+  border: 1px solid #e1a352;
+  border-radius: .08rem;
+}
+.first-page-stat-split > div > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: .11rem;
+}
+.first-page-shell .first-page-stat-split > div > span > svg {
+  color: #ffd16e;
+  width: 1.04em;
+  height: 1.04em;
+  filter: drop-shadow(0 1px 1px #a34b13);
+}
+.first-page-stat-split output { font-size: clamp(.78rem,3.28vw,1.14rem); }
+.first-page-tabs::after { inset: -2px 7% auto; }
+.test-app .first-page-shell .first-page-toolbar .character-sheet-actions button:first-child:not(:disabled) {
+  background: radial-gradient(ellipse at 50% 102%,#f6a12b95,transparent 40%),linear-gradient(#25190f,#0a0d10 56%,#412506);
+  box-shadow: inset 0 0 .43rem #f7aa45b8,0 0 .42rem #e08c3c75;
+}
+@media (max-width: 31rem) {
+  .first-page-header-actions button { background-color: #090d13; }
+  .first-page-header-art::before { left: 3%; }
+}
+@media (max-width: 23rem) {
+  .first-page-stat-split > div > span > svg { display: none; }
+}
+
+.first-page-shell .first-page-info > div { text-align: left; }
+.first-page-shell .first-page-info :is(dt,dd) { line-height: 1.18; }
+.first-page-shell .first-page-info dd { margin-block: .12rem; }
