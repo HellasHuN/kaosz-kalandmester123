@@ -4,7 +4,8 @@ import { useState } from "react";
 import { attributes } from "../karakterFoeertekek.js";
 import { jpKoltsegek } from "../jpKoltsegek.js";
 import { readPercentileRoll, rollDie } from "./dice.js";
-import { attributeTarget, investigationContest, percentileResult, skillTarget } from "./trials.js";
+import { effectiveTrialTarget, trialOverride } from "./trialOverrides.js";
+import { investigationContest, percentileResult, skillTarget } from "./trials.js";
 
 const weapons = specializationNames.filter(name => {
   const item = specialization(name);
@@ -35,7 +36,7 @@ const outcomeLabels = {
   narrator: "Azonos kimenetel. A KM dönt.", discovered: "Az álcázás lelepleződött.", hidden: "Az álcázás megmaradt.",
 };
 
-export function SecretTrials({ characters, history, onRecord }) {
+export function SecretTrials({ characters, history, overrides, onRecord }) {
   const [kind, setKind] = useState("skill");
   const [response, setResponse] = useState(null);
   return <section>
@@ -58,7 +59,7 @@ export function SecretTrials({ characters, history, onRecord }) {
       const contest = kind === "contest";
       const name = contest ? "Információgyűjtés" : fields.get("name");
       const modifier = Number(fields.get("modifier"));
-      const target = attribute ? attributeTarget(character, name, modifier)
+      const target = attribute ? effectiveTrialTarget(overrides, character, name, modifier)
         : skillTarget(character.skills?.[name] ?? 0, Number(fields.get("difficulty")) + modifier);
       const digital = fields.has("digital");
       const roll = digital ? rollDie(100) : readPercentileRoll(fields.get("roll"));
@@ -69,8 +70,9 @@ export function SecretTrials({ characters, history, onRecord }) {
       const defenseTarget = disguise && skillTarget(disguise.skills?.["Álcázás"] ?? 0, Number(fields.get("defenseDifficulty")));
       const defenseRoll = contest ? (digital ? rollDie(100) : readPercentileRoll(fields.get("defenseRoll"))) : null;
       const outcome = contest ? investigationContest(result, percentileResult(defenseTarget, defenseRoll)) : result;
+      const approval = attribute && trialOverride(overrides, character.id, name);
       const record = { id: crypto.randomUUID(), actor: character.name, name, target, roll, outcome,
-        ...(followUp ? { followUp } : {}), ...(contest ? { opponent: disguise?.name ?? "", defenseTarget, defenseRoll } : {}) };
+        ...(approval ? { overrideId: approval.id } : {}), ...(followUp ? { followUp } : {}), ...(contest ? { opponent: disguise?.name ?? "", defenseTarget, defenseRoll } : {}) };
       setResponse(record);
       if (!["invalid", "follow-up"].includes(outcome)) onRecord(record);
     }}>
@@ -95,6 +97,7 @@ export function SecretTrials({ characters, history, onRecord }) {
       <button type="submit">Próba elbírálása</button>
     </form>
     {response && <p role="status">{outcomeLabels[response.outcome]} Célszám: {response.target ?? "—"} · Dobás: {response.roll || "—"}
+      {response.overrideId && " · KM által jóváhagyott célszám"}
       {response.followUp ? ` · Második dobás: ${response.followUp}` : ""}
       {response.opponent && ` · Álcázás: ${response.defenseRoll} / ${response.defenseTarget}`}</p>}
     <BlindCombat characters={characters} />

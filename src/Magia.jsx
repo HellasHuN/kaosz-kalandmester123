@@ -2,7 +2,7 @@ import { BookOpen, Feather, Flame, Sparkles, Sun, Zap } from "lucide-react";
 import "./MagicBook.css";
 import { readPercentileRoll, rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
-import { logAcademicCasting, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
+import { logAcademicCasting, logAcademicFailure, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
 import { academicTheoryRank } from "./teszt/academic.js";
 import { codices, spells } from "./varazslatAdatok.js";
@@ -178,6 +178,30 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
               "critical-failure": "Katasztrofális rontás",
             })[trialResult.outcome]}. A célpont ellenállása és az Ep elszámolása külön ellenőrzendő.`
         }</p>}
+        {gm && editing && trialResult?.signature === trialSignature &&
+          ["failure", "critical-failure"].includes(trialResult.outcome) && (
+          <form key={trialResult.id} onSubmit={event => {
+            event.preventDefault();
+            const fields = new FormData(event.currentTarget);
+            const operation = { id: trialResult.id, roll: trialResult.roll, epLoss: Number(fields.get("epLoss")),
+              consequence: fields.get("consequence"), recordedAt: new Date().toISOString() };
+            const next = logAcademicFailure(character, magic, spell, context, operation);
+            if (next === magic) {
+              setNotice("Ellenőrizd a feltételeket, a szabad Ep-keretet és a következményt.");
+              return;
+            }
+            setNotice("");
+            onChange(previous => logAcademicFailure(character, previous, spell, context, operation));
+          }}>
+            <label>KM által megállapított Ep-veszteség
+              <input name="epLoss" type="number" min="0" step="any" required />
+            </label>
+            <label>A kudarc következménye <textarea name="consequence" maxLength={1000} required /></label>
+            <button type="submit" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}>
+              Kudarc és következmény rögzítése
+            </button>
+          </form>
+        )}
         {gm && editing && trialResult?.signature === trialSignature && trialResult.outcome === "success" && spell.fp == null && (
           <button type="button" disabled={result.state !== "ready" || magic.castingLog?.some(entry => entry.id === trialResult.id)}
             onClick={() => {
@@ -214,9 +238,9 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange }) 
               Elvarázsol · szakrális kikérés
             </button>
           )}
-          {notice && <p role="status">{notice}</p>}
         </>
       )}
+      {notice && <p role="status">{notice}</p>}
     </details>
   );
 }
@@ -433,6 +457,7 @@ export default function Magia({ character, onSave, ref }) {
           <ol>{magic.castingLog.map(record => <li key={record.id}>
             {record.spellName} · {record.previousEp - record.remainingEp} Ep · {record.outcome} ·{" "}
             <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time>
+            {record.consequence && <p>{record.consequence}</p>}
           </li>)}</ol>
           {gm && editing && <button type="button" disabled={undoSacredCasting(magic) === magic} onClick={() => {
             if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és az esetleges szakrális kikérést?")) setDraft(undoSacredCasting);

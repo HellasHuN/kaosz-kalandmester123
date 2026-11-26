@@ -107,3 +107,25 @@ test("manual percentile dice accept the 00 face without treating empty or invali
     assert.ok(Number.isNaN(readPercentileRoll(value)));
   }
 });
+
+test("academic critical failure records the KM consequence and only the approved Ep loss", async () => {
+  const { logAcademicFailure, undoSacredCasting } = await import("../src/teszt/sacredCasting.js");
+  const { readMagic } = await import("../src/magiaSzabalyok.js");
+  const character = { stats: [50, 50, 50, 60, 60], skills: { Mágiaelmélet: 3,
+    "Mágiahasználat (akadémikus)": 3, Esszenciafelszabadítás: 5 } };
+  const spell = { id: "academic", name: "Próba", codex: "Smaragd", difficulty: 2, ep: { kind: "fixed", amount: 6 } };
+  const magic = readMagic({ magic: { activeEp: 20, acquisitions: [
+    { form: "academic", spellId: "academic" }, { form: "sacred", spellId: "other", ep: 10 },
+  ] } });
+  const operation = { id: "failure", recordedAt: "2026-11-26T05:00:00Z", roll: 100, epLoss: 4, consequence: "A fény kialszik." };
+  const context = { conditionsConfirmed: true };
+  assert.equal(logAcademicFailure(character, magic, spell, context, { ...operation, epLoss: 11 }), magic);
+  assert.equal(logAcademicFailure(character, magic, spell, context, { ...operation, roll: 1 }), magic);
+  const cast = logAcademicFailure(character, magic, spell, context, operation);
+  assert.equal(cast.activeEp, 16);
+  assert.deepEqual(cast.acquisitions, magic.acquisitions);
+  assert.match(cast.castingLog[0].outcome, /katasztrofális rontás/);
+  assert.equal(cast.castingLog[0].consequence, operation.consequence);
+  assert.equal(logAcademicFailure(character, cast, spell, context, operation), cast);
+  assert.deepEqual(undoSacredCasting(cast), { ...magic, castingLog: [] });
+});

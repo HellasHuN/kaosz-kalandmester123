@@ -77,7 +77,7 @@ export default function TestMode({ mode, characters, adventure, onChange, onSele
     </>}
     {km && tab === "overrides" && <Overrides characters={characters} entries={adventure.overrides ?? []}
       onChange={overrides => onChange({ ...adventure, overrides })} />}
-    {km && tab === "trials" && <SecretTrials characters={characters} history={adventure.trials ?? []}
+    {km && tab === "trials" && <SecretTrials characters={characters} history={adventure.trials ?? []} overrides={adventure.overrides ?? []}
       onRecord={record => onChange({ ...adventure, trials: [...(adventure.trials ?? []), record] })} />}
     {km && tab === "map" && <MapTool markers={adventure.markers ?? []}
       onChange={markers => onChange({ ...adventure, markers })} />}

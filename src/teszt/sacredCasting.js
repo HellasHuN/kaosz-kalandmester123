@@ -1,5 +1,5 @@
 import { percentileResult } from "./trials.js";
-import { academicMagicTrial, finishSacredSpell, spellCost, spellReadiness } from "../magiaSzabalyok.js";
+import { academicMagicTrial, availableMagicEp, finishSacredSpell, spellCost, spellReadiness } from "../magiaSzabalyok.js";
 
 export function logSacredCasting(character, magic, spell, context, { id, recordedAt }) {
   if (magic.castingLog?.some(entry => entry.id === id)) return magic;
@@ -22,6 +22,23 @@ export function logAcademicCasting(character, magic, spell, context, { id, roll,
   return { ...magic, activeEp: remainingEp, castingLog: [...(magic.castingLog ?? []), {
     id, recordedAt, spellName: spell.name ?? spell.id, previousEp: magic.activeEp, remainingEp,
     outcome: `sikeres létrehozási próba (${roll} / ${target})`,
+  }] };
+}
+
+export function logAcademicFailure(character, magic, spell, context, { id, roll, epLoss, consequence, recordedAt }) {
+  if (magic.castingLog?.some(entry => entry.id === id) ||
+      spellReadiness(character, magic, spell, "academic", context).state !== "ready" ||
+      !Number.isFinite(epLoss) || epLoss < 0 || epLoss > availableMagicEp(character, magic) ||
+      !consequence?.trim() || consequence.length > 1000) return magic;
+  const { difficulty } = spellCost(spell, "academic", context);
+  const { target } = academicMagicTrial(character, magic, spell, difficulty);
+  const outcome = percentileResult(target, roll);
+  if (outcome !== "failure" && outcome !== "critical-failure") return magic;
+  const remainingEp = magic.activeEp - epLoss;
+  const label = outcome === "failure" ? "sikertelen létrehozási próba" : "katasztrofális rontás";
+  return { ...magic, activeEp: remainingEp, castingLog: [...(magic.castingLog ?? []), {
+    id, recordedAt, spellName: spell.name ?? spell.id, previousEp: magic.activeEp, remainingEp,
+    outcome: `${label} (${roll} / ${target})`, consequence: consequence.trim(),
   }] };
 }
 
