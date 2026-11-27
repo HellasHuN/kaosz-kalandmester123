@@ -1,3 +1,4 @@
+import { academicTheoryRank, generalTheory, legacyTheoryNames } from "./teszt/academic.js";
 import { codexTheorySkills } from "./jpKoltsegek.js";
 import { gilfStartingSkillCap } from "./gilfMagia.js";
 import { baseSkillName, specialization, specializationNames, weaponTrainingRestriction } from "./jartassagSzakosodasok.js";
@@ -8,7 +9,7 @@ const shield = "Esszenciapajzs-aktivizálás";
 const anatomy = "Anatómia/Élettan";
 const healing = { Diagnózis: 3, Orvoslás: 3, Regenerálás: 3, Sebkötözés: 3, [anatomy]: 3, Ápolás: 3 };
 const weapons = (label, levels, group) => ({ label, levels, group });
-const theory = (level, forbidBlack = false) => ({ label: "Mágiaelmélet kódexe", level, kind: "theory", forbidBlack });
+const theory = (level, forbidBlack = false) => ({ label: "Oktatott kódex", level, kind: "theory", forbidBlack });
 
 export const trainingPackages = {
   yennon: { name: "Mark’yhennon Dicsősége Egyház", price: 1200, pages: "64", church: true,
@@ -67,7 +68,7 @@ export const trainingPackages = {
 };
 
 export function packageChoiceOptions(choice) {
-  if (choice.kind === "theory") return Object.values(codexTheorySkills).filter((name) => !choice.forbidBlack || !/fekete/i.test(name));
+  if (choice.kind === "theory") return Object.keys(codexTheorySkills).filter((name) => !choice.forbidBlack || name !== "Fekete");
   return specializationNames.filter((name) => {
     const item = specialization(name);
     if (choice.kind === "art") return item.base === "Művészet";
@@ -78,13 +79,22 @@ export function packageChoiceOptions(choice) {
   });
 }
 
+function legacyTheoryChoice(choice, value) {
+  return choice.kind === "theory" && packageChoiceOptions(choice).some(codex => codexTheorySkills[codex] === value);
+}
+
+function validPackageChoice(choice, value) {
+  return packageChoiceOptions(choice).includes(value) || legacyTheoryChoice(choice, value);
+}
+
 export function packageSkills(id, record) {
   const entry = trainingPackages[id];
   const result = { ...entry?.skills };
   for (const [index, choice] of (entry?.choices ?? []).entries()) {
     const name = record?.choices?.[index];
-    if (!packageChoiceOptions(choice).includes(name)) continue;
-    if (!choice.levels) result[name] = choice.level;
+    if (!validPackageChoice(choice, name)) continue;
+    if (choice.kind === "theory") result[legacyTheoryChoice(choice, name) ? name : generalTheory] = choice.level;
+    else if (!choice.levels) result[name] = choice.level;
     else if (choice.levels.length === 1) result[`${choice.group} – ${name.split(" – ")[1]}`] = choice.levels[0];
     else {
       result[name] = 1;
@@ -101,7 +111,7 @@ export function packageError(character, id, record) {
   if (!entry || (entry.women && character.gender !== "Nő")) return "A karakter nem felel meg a csomag belépési feltételeinek.";
   if (record.approved !== true) return "A képzést és a belépési feltételeket a Mesélőnek jóvá kell hagynia.";
   const choices = entry.choices ?? [];
-  if (choices.some((choice, index) => !packageChoiceOptions(choice).includes(record.choices?.[index]))) return "Minden szakosodást válassz ki.";
+  if (choices.some((choice, index) => !validPackageChoice(choice, record.choices?.[index]))) return "Minden szakosodást válassz ki.";
   const weapons = choices.flatMap((choice, index) => choice.levels?.length === 2 ? [record.choices[index]] : []);
   if (new Set(weapons).size !== weapons.length) return "A két fegyver különböző legyen.";
   if (choices.some((choice, index) => choice.levels?.length === 1 && !weapons.includes(record.choices[index]))) {
@@ -151,8 +161,12 @@ export function removeTrainingPackage(packages, id, purchased) {
   const next = { ...packages };
   delete next[id];
   const retained = packageGrants(next);
-  if (Object.entries(packageSkills(id, packages[id])).some(([name, level]) =>
-    purchased[name] > level && (retained[name] ?? 0) < level)) {
+  if (Object.entries(packageSkills(id, packages[id])).some(([name, level]) => {
+    if (legacyTheoryNames.has(name) && purchased[generalTheory] > level) {
+      return Math.max(academicTheoryRank({ ...purchased, [generalTheory]: 0 }), academicTheoryRank(retained)) < level;
+    }
+    return purchased[name] > level && (retained[name] ?? 0) < level;
+  })) {
     return { error: "Előbb rendezd a csomagszintre épülő, külön vásárolt fejlesztést." };
   }
   return { packages: next };

@@ -25,6 +25,8 @@ export default function OroklesPanel({ ancestry, records, onChange }) {
                   disabled={!modifier && !selected.note?.trim()}
                   onChange={(event) => update({ ...selected, approved: event.target.checked })} />
                   {selected.approved ? "KM által jóváhagyva" : "Jóváhagyásra vár"}</label>
+                {!selected.approved && <button type="button" disabled={!modifier && !selected.note?.trim()}
+                  onClick={() => update({ ...selected, approved: true, approvalSource: "test" })}>KM jóváhagyása (TESZT)</button>}
               </>}
             </td>
           </tr>;

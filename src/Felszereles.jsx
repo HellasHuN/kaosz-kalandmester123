@@ -1,65 +1,10 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 
-const emptyEquipment = { items: [], notes: "" };
-const catalog = new Map(felszereles.map((item) => [item.id, item]));
-const labels = {
-  speed: "Gyorsaság", preparation: "Előkészítés (szegmens)", strength: "Erő",
-  rangeM: "Lőtáv (m)", massKg: "Tömeg (kg)", armorLevel: "Vértszint", protection: "Védett testrész",
-  speedModifier: "GyM", minDamageSp: "Minimális sebzés (Sp)",
-  conditionalStrength: "Feltételes fegyvererő", meleeSpeedModifier: "Közelharci GyM",
-  oneHandMinStrength: "Egykezes használathoz szükséges Erő", requiredStrength: "Szükséges Erő",
-};
-const numberFormat = new Intl.NumberFormat("hu-HU");
+import { catalog, labels, formatStat, readEquipment, variableStats, statOptions, equipmentDetails,
+  validQuantity, validEquipmentStat } from "./felszerelesSzerkesztes.js";
 
-function formatStat(value) {
-  return typeof value === "number" ? numberFormat.format(value) : value;
-}
-
-function readEquipment(equipment = emptyEquipment) {
-  if (Array.isArray(equipment.items)) return equipment;
-
-  return {
-    ...equipment,
-    items: Object.entries(equipment.items ?? {}).map(([catalogId, quantity]) => ({
-      id: catalogId, catalogId, quantity, values: {},
-    })),
-  };
-}
-
-function variableStats(item) {
-  return Object.entries(item?.stats ?? {}).filter(([, value]) => Array.isArray(value));
-}
-
-function statOptions(min, max, currentValue) {
-  const values = [min, ...Array.from(
-    { length: Math.max(0, Math.ceil(max) - Math.floor(min) - 1) },
-    (_, index) => Math.floor(min) + index + 1
-  ), max];
-
-  // Earlier versions accepted fractional weights. Keep the saved value selectable.
-  const current = Number(currentValue);
-  if (currentValue != null && currentValue !== "" && current >= min && current <= max) {
-    values.push(current);
-  }
-  return [...new Set(values)].sort((first, second) => first - second);
-}
-
-function equipmentDetails(item, entry) {
-  const stats = Object.entries(item.stats ?? {}).map(([key, value]) =>
-    `${labels[key]}: ${Array.isArray(value)
-      ? (entry ? formatStat(entry.values[key] ?? "Pontosítandó") : value.map(formatStat).join("–"))
-      : formatStat(value)}`
-  );
-  const enteredMass = entry?.values.massKg;
-  const mass = enteredMass != null && enteredMass !== "" ? Number(enteredMass) : item.stats?.massKg;
-  if (typeof mass === "number" && Number(entry?.quantity) > 1) {
-    stats.push(`Össztömeg: ${formatStat(mass * Number(entry.quantity))} kg`);
-  }
-  return stats.join(" · ") || "—";
-}
-
-export default function Felszereles({ character, onSave, ref }) {
+export default function Felszereles({ character, onSave, ref, kmMode = false }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState(null);
@@ -118,7 +63,7 @@ export default function Felszereles({ character, onSave, ref }) {
     const items = [];
     for (const entry of draft.items) {
       const quantity = Number(entry.quantity);
-      if (!Number.isSafeInteger(quantity) || quantity < 1) {
+      if (!validQuantity(quantity)) {
         window.alert("A felszerelés darabszáma pozitív egész szám legyen.");
         return false;
       }
@@ -127,8 +72,9 @@ export default function Felszereles({ character, onSave, ref }) {
       for (const [key, [min, max]] of variableStats(catalog.get(entry.catalogId))) {
         const raw = values[key];
         const value = Number(raw);
-        if (raw == null || raw === "" || !Number.isFinite(value) || value < min || value > max ||
-            (key !== "massKg" && !Number.isInteger(value))) {
+        const existing = saved.items.find(item => item.id === entry.id)?.values[key];
+        const preserved = character.gmOverrides && raw != null && raw === existing;
+        if (!preserved && !(kmMode ? raw !== "" && raw != null && Number.isFinite(value) : validEquipmentStat(key, raw, min, max))) {
           window.alert("Add meg a tárgy minden pontosítandó értékét a megengedett tartományból.");
           return false;
         }
@@ -196,7 +142,11 @@ export default function Felszereles({ character, onSave, ref }) {
                       {editing && variableStats(item).map(([key, [min, max]], index) => (
                         <label className="equipment-stat" key={key}>
                           {labels[key]} ({formatStat(min)}–{formatStat(max)})
-                          <select
+                          {kmMode ? <input type="number" step="any" value={entry.values[key] ?? ""}
+                            onChange={event => {
+                              const value = event.target.value;
+                              updateItem(entry.id, current => ({ ...current, values: { ...current.values, [key]: value } }));
+                            }} /> : <select
                             ref={entry.id === newEntryId && index === 0 ? newStatInput : undefined}
                             required
                             value={entry.values[key] ?? ""}
@@ -212,7 +162,7 @@ export default function Felszereles({ character, onSave, ref }) {
                               ? saved.items.find((item) => item.id === entry.id)?.values[key]
                               : undefined)
                               .map((value) => <option key={value} value={value}>{formatStat(value)}</option>)}
-                          </select>
+                          </select>}
                         </label>
                       ))}
                     </td>

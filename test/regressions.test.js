@@ -40,12 +40,12 @@ test("character creation requires specific KM approval for paid devotion", () =>
   assert.ok(formRequirements(novice, magic, "sacred").length);
 });
 
-test("base creation budget and gilf starting limits are protected", () => {
+test("base creation budget and gilf price-table maxima are respected", () => {
   assert.equal(statPoints(), 270);
   assert.equal(attributes.length, 5);
   const gilf = { ...priest, race: "Gilf" };
-  assert.equal(creationSkillLimit(gilf, "Mágiahasználat (szabad)"), 4);
-  assert.equal(creationSkillLimit(gilf, "Esszenciafelszabadítás"), 2);
+  assert.equal(creationSkillLimit(gilf, "Mágiahasználat (szabad)"), 10);
+  assert.equal(creationSkillLimit(gilf, "Esszenciafelszabadítás"), 10);
 });
 
 test("malformed storage starts safely and is never overwritten by a later save", async () => {

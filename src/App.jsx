@@ -1,53 +1,46 @@
-import { readCharacters, writeCharacters } from "./karakterMentes.js";
+import { ancestryTheme } from "./teszt/ancestryTheme.js";
+import GeneralPage from "./page1/GeneralPage.jsx";
+import { profileError, readProfile } from "./characterProfile.js";
+import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
+import MainMenu from "./teszt/MainMenu.jsx";
+import "./teszt/mobileHome.css";
+import { markConversationRead, readAdventure, sampleCharacter, unreadMessages, writeAdventure } from "./teszt/localAdventure.js";
+import "./teszt/testMode.css";
+import { persistCharacterStatus, planCharacterImport, readCharacters, writeCharacters } from "./karakterMentes.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { ancestryValidation, creationGenderOptions, fixedParentRace, getBreedingStatus } from "./szarmazas.js";
 import { speedByRace } from "./gyorsasag.js";
 import VallasValaszto from "./VallasValaszto.jsx";
 import AlkotasiJartassagok from "./AlkotasiJartassagok.jsx";
 import { clarifySpecialization } from "./jartassagSzakosodasok.js";
-import { gilfFreeTheory } from "./gilfMagia.js";
-import { combineCreationGrants, creationGrantedSkills, creationSkillCosts, invalidStartingSkill, purchasedCreationSkills,
-  savedCreationSkillTotal, skillsUnderRacialGrant, updateCreationSkill } from "./alkotasiJartassagok.js";
+import { legacyTheoryNames, selectAcademicCodex, validAcademicSpecialization } from "./teszt/academic.js";
+import { combineCreationGrants, creationGrantedSkills, creationSkillCosts, invalidCreationSkill, purchasedCreationSkills,
+  savedCreationSkillTotal, skillsUnderRacialGrant, quoteCreationSkill } from "./alkotasiJartassagok.js";
 import { racialAbilities, racialAbilityCost, racialRuleNotes, racialSelectionError, subraces } from "./fajiSzabalyok.js";
 import { activeRacialChoices, specializationError, specializationStatCost } from "./fajiSzakosodasok.js";
 import { addTrainingPackage, packageError, packageGrants, removeTrainingPackage } from "./kepzesiCsomagok.js";
 import FajiSzakosodasValaszto from "./FajiSzakosodasValaszto.jsx";
 import { currentInheritance } from "./felverOrokles.js";
 import OroklesPanel from "./OroklesPanel.jsx";
-import { firstInvalidSkillChange, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
+import { firstInvalidSkillChange } from "./jartassagElofeltetelek.js";
 import { calculateTraitJp, fingerPrices, narratorTraitPrices, traitConflict, traitValueError } from "./karakterTulajdonsagok.js";
-import Karakterlap from "./Karakterlap";
 import { changeCurrentHealth, maxHealth } from "./eletero.js";
 import { roundPercentageResult } from "./kerekites.js";
 import { TEHETSEG, preserveUnchangedSkillCosts, talentCost, talentEligibleSkills } from "./jpSzamitas.js";
-import { useState, useEffect, useRef } from "react";
-import Felszereles from "./Felszereles.jsx";
-import Magia from "./Magia.jsx";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
+import AlkotasiFelszereles from "./AlkotasiFelszereles.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
-  ageOptions, ageStage, attributeAdjustmentLimit, attributes, BASE_STAT_POINTS, characterAdjustments, characterStats,
-  clampAttributeAdjustment, effectiveAttribute,
-  PERCEPTION_POINTS, statLimits, statPoints,
+  ageOptions, ageStage, allocateStartingStats, races, attributeAdjustmentLimit, LEGACY_PERCEPTION, characterAdjustments, characterStats,
+  clampAttributeAdjustment,
+  perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
-const races = {
-  Elf: [[20, 70], [50, 90], [55, 90], [30, 85]],
-  Ember: [[30, 80], [30, 80], [25, 80], [35, 90]],
-  Gennymanó: [[15, 45], [60, 100], [20, 85], [20, 70]],
-  Gilf: [[35, 85], [35, 85], [35, 85], [30, 100]],
-  Gnóm: [[30, 60], [45, 85], [60, 90], [20, 70]],
-  Gyíklény: [[30, 70], [35, 85], [20, 75], [20, 70]],
-  Manó: [[15, 50], [30, 70], [20, 65], [15, 65]],
-  Ogár: [[55, 95], [25, 70], [15, 60], [10, 60]],
-  Ork: [[30, 90], [25, 75], [25, 70], [20, 70]],
-  Törpe: [[45, 85], [25, 70], [25, 75], [20, 70]],
-  Tündérke: [[10, 30], [40, 100], [25, 80], [25, 80]],
-  "Félvér elf": [[35, 75], [45, 85], [35, 80], [25, 80]],
-  "Félvér gilf": [[35, 80], [30, 75], [30, 80], [25, 85]],
-  "Félvér ogár": [[50, 90], [30, 75], [20, 70], [20, 75]],
-  Szürkemanó: [[15, 100], [15, 100], [15, 100], [10, 100]],
-  "Félvér ork": [[45, 85], [30, 80], [25, 80], [15, 75]],
-};
+const Karakterlap = lazy(() => import("./Karakterlap.jsx"));
+const Magia = lazy(() => import("./Magia.jsx"));
+const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
+const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
+
 const ageLimits = {
   Elf: [33, 300, 350, 550],
   Ember: [13, 70, 90, 110],
@@ -110,29 +103,6 @@ function getAncestryAgeLimits(node) {
     )
   );
 }
-function initialStats(limits, budget) {
-  const values = [...limits.slice(0, 4).map((limit) => limit[0]), PERCEPTION_POINTS];
-  let remaining = budget - values.reduce((sum, value) => sum + value, 0);
-  values[4] = Math.max(0, PERCEPTION_POINTS + Math.min(remaining, 0));
-  remaining = budget - values.reduce((sum, value) => sum + value, 0);
-
-  while (remaining > 0) {
-    let changed = false;
-
-    const count = values.slice(0, 4).some((value, index) => value < limits[index][1]) ? 4 : values.length;
-    for (let i = 0; i < count && remaining > 0; i++) {
-      if (values[i] < limits[i][1]) {
-        values[i]++;
-        remaining--;
-        changed = true;
-      }
-    }
-
-    if (!changed) break;
-  }
-
-  return values;
-}
 const INITIAL_JP = 10_000;
 
 function creationFields(character) {
@@ -158,6 +128,7 @@ function creationFields(character) {
     religion: character?.religion ?? character?.magic?.patron ?? "",
     gender: character?.gender ?? "",
     notes: character?.equipment?.notes ?? "",
+    profile: readProfile(character),
   };
 }
 
@@ -181,11 +152,26 @@ function App() {
   const [selectedRacialAbilities, setSelectedRacialAbilities] = useState([]);
   const [racialSpecializations, setRacialSpecializations] = useState({});
   const [inheritedTraits, setInheritedTraits] = useState({});
+  const [profile, setProfile] = useState(() => readProfile());
+  const [healthDraft, setHealthDraft] = useState(null);
+  const [resourceDraft, setResourceDraft] = useState({});
   const [page, setPage] = useState("fomenu");
+  const [sheetPageOnOpen, setSheetPageOnOpen] = useState(1);
+  const [sheetEditingOnOpen, setSheetEditingOnOpen] = useState(false);
+  const [adventureTabOnOpen, setAdventureTabOnOpen] = useState("overview");
+  const [testMode, setTestMode] = useState(null);
+  const [adventureCharacterId, setAdventureCharacterId] = useState(null);
+  const [activationFeedback, setActivationFeedback] = useState(null);
+  const [adventure, setAdventure] = useState(() => readAdventure({
+    getItem: (key) => window.localStorage.getItem(key),
+  }));
+  const [adventureWriteFailed, setAdventureWriteFailed] = useState(false);
   const [name, setName] = useState("");
   const [religion, setReligion] = useState("");
   const [gender, setGender] = useState("");
   const [notes, setNotes] = useState("");
+  const [componentDraft, setComponentDraft] = useState([]);
+  const [jpDraft, setJpDraft] = useState(null);
   const [age, setAge] = useState("");
   const [parent1, setParent1] = useState("");
 const [parent2, setParent2] = useState("");
@@ -198,6 +184,7 @@ const [ancestry, setAncestry] = useState({
 const [advantages, setAdvantages] = useState([]);
 const [disadvantages, setDisadvantages] = useState([]);
 const [approvedTraits, setApprovedTraits] = useState(false);
+const [traitApprovalSource, setTraitApprovalSource] = useState(null);
 const [traitValues, setTraitValues] = useState({});
 const [talentSkills, setTalentSkills] = useState([]);
   // Az aktív érték eltérése az alap főértéktől.
@@ -214,14 +201,14 @@ const [talentSkills, setTalentSkills] = useState([]);
     return;
   }
 
-  if (advantages.length + disadvantages.length >= 4 && !approvedTraits) {
+  if (!kmSheet && advantages.length + disadvantages.length >= 4 && !approvedTraits) {
     alert("Legfeljebb 4 előny és hátrány választható!");
     return;
   }
 
   const selected = [...advantages, ...disadvantages];
   const existingConflicts = ["Kimagasló sebgyógyulás", "Vérzékenység", "Kimagasló mágikus ellenállás", "Rossz mágikus ellenállás"];
-  if ((creationEditable || existingConflicts.includes(trait.nev)) && traitConflict(trait.nev, selected)) {
+  if (!kmSheet && (creationEditable || existingConflicts.includes(trait.nev)) && traitConflict(trait.nev, selected)) {
     alert("Ez a tulajdonság nem választható a már kiválasztott mellé!");
     return;
   }
@@ -246,12 +233,13 @@ const [creationSkills, setCreationSkills] = useState({});
 const [creationClarifications, setCreationClarifications] = useState({});
 const [creationExtras, setCreationExtras] = useState({});
 const selectedCharacter = savedCharacters.find((character) => character.id === selectedCharacterId);
+const kmSheet = page === "karakterlap" && testMode === "km";
 const creationEditable = page === "alkotas" && (selectedCharacterId === null || selectedCharacter?.playStatus === "draft");
 const [deletingCharacter, setDeletingCharacter] = useState(null);
 const [deleteStep, setDeleteStep] = useState(0);
 const [farewellMessage, setFarewellMessage] = useState("");
 useEffect(() => {
-  if (saveBlocked || savedCharacters === initialSaves.characters) return;
+  if (saveBlocked || savedCharacters === initialSaves.characters || JSON.stringify(savedCharacters) === previousSave.current) return;
   if (writeCharacters(() => window.localStorage, savedCharacters, previousSave.current)) {
     previousSave.current = JSON.stringify(savedCharacters);
   } else {
@@ -259,36 +247,26 @@ useEffect(() => {
   }
 }, [savedCharacters, initialSaves, saveBlocked]);
   const total = stats.reduce((sum, value) => sum + value, 0);
+function traitPrice(trait, value, talentSkills, race) {
+  if (trait.nev === TEHETSEG) {
+    return talentSkills.filter(Boolean).reduce((cost, skill) => cost + talentCost(skill), 0);
+  }
+  return calculateTraitJp(trait.nev, value, race) ??
+    (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
+}
+
 function traitPoints({ advantages, disadvantages, traitValues, talentSkills, race }) {
-const selectedAdvantageJp = advantages.reduce((sum, name) => {
-  if (name === TEHETSEG) {
-    return sum + talentSkills.filter(Boolean).reduce((cost, skill) => cost + talentCost(skill), 0);
+  function sumPrices(names, catalog) {
+    return names.reduce((sum, name) => {
+      const trait = catalog.find((item) => item.nev === name);
+      return trait ? sum + traitPrice(trait, traitValues[name], talentSkills, race) : sum;
+    }, 0);
   }
 
-  const trait = elonyok.find((item) => item.nev === name);
-  if (!trait) return sum;
-
-  const value = traitValues[name];
-  const calculated = calculateTraitJp(name, value, race);
-
-  if (calculated !== null) return sum + calculated;
-
-  return sum + (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
-}, 0);
-
-const selectedDisadvantageJp = disadvantages.reduce((sum, name) => {
-  const trait = hatranyok.find((item) => item.nev === name);
-  if (!trait) return sum;
-
-  const value = traitValues[name];
-  const calculated = calculateTraitJp(name, value, race);
-
-  if (calculated !== null) return sum + calculated;
-
-  return sum + (Number(value ?? (Array.isArray(trait.jp) ? 0 : trait.jp)) || 0);
-}, 0);
-
-  return { selectedAdvantageJp, selectedDisadvantageJp };
+  return {
+    selectedAdvantageJp: sumPrices(advantages, elonyok),
+    selectedDisadvantageJp: sumPrices(disadvantages, hatranyok),
+  };
 }
 const { selectedAdvantageJp, selectedDisadvantageJp } = traitPoints({ advantages, disadvantages, traitValues, talentSkills, race });
 const netTraitJp = selectedDisadvantageJp - selectedAdvantageJp;
@@ -324,14 +302,16 @@ const calculatedAgeLimits =
   const sameSavedAllocation = sameSavedAge && selectedCharacter.ageAllocation?.stats === statPercent;
   const previousBudget = sameSavedAllocation && statPercent != null && statPercent < 100 &&
     savedGross !== statPoints(statPercent) && (
-      savedGross === Math.floor(BASE_STAT_POINTS * statPercent / 100) + PERCEPTION_POINTS ||
-      savedGross === Math.floor((BASE_STAT_POINTS + PERCEPTION_POINTS) * statPercent / 100)
+      savedGross === Math.floor((STAT_POINTS - LEGACY_PERCEPTION) * statPercent / 100) + LEGACY_PERCEPTION ||
+      savedGross === Math.floor(STAT_POINTS * statPercent / 100)
     );
   const grossStatBudget = legacyAllocation || previousBudget || (selectedCharacter && stage === "extrém")
     ? savedGross
     : statPercent == null ? null : statPoints(statPercent);
   const statBudget = grossStatBudget == null ? null : grossStatBudget - abilityCost;
-  const limits = race ? statLimits(races[race], stage === "senius" ? statPercent : 100).map(([min, max], index) =>
+  const perception = perceptionLimits[race];
+  const limits = race ? statLimits(races[race], stage === "senius" ? statPercent : 100, perception?.range).map(([min, max], index) =>
+    (index === 4 && selectedCharacter?.race === race && selectedCharacter.statAllocationVersion !== 1) ||
     legacyAllocation || (sameSavedAllocation && stage === "senius") || (selectedCharacter && stage === "extrém")
       ? [Math.min(min, savedStats[index]), Math.max(max, savedStats[index])] : [min, max]) : [];
   const remaining = statBudget == null ? null : statBudget - total;
@@ -399,17 +379,9 @@ const calculatedAgeLimits =
   function changeCreationSkill(name, level, devotionApproved = false) {
     if (!creationEditable) return "Csak még nem játszott karakter jártasságai módosíthatók itt.";
     if (creationOriginal?.skillTraining?.[name]) return "Ehhez a jártassághoz már folyamatban lévő fejlesztés tartozik.";
-    if (level > (effectiveCreationSkills[name] ?? 0)) {
-      const error = skillPrerequisiteMessage(effectiveCreationSkills, name, level, creationCharacter);
-      if (error) return error;
-    }
-    if (name === devotionSkill) {
-      const error = devotionError(creationCharacter, level, devotionApproved);
-      if (error) return error;
-    }
-    const skills = updateCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
-    if (skills === effectiveCreationSkills) return "A szinthez nincs elég elkölthető Jp, vagy a választás meghaladja az induló szintkorlátot.";
-    if (name === devotionSkill) setDevotionApproval({ level, religion });
+    const { error } = quoteCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
+    if (error) return error;
+    if (name === devotionSkill) setDevotionApproval({ level, religion, source: "test" });
     setCreationSkills((previous) => {
       const next = { ...previous };
       if (level > (creationGrants[name] ?? 0)) next[name] = level;
@@ -419,7 +391,23 @@ const calculatedAgeLimits =
     return "";
   }
 
+  function allocateForAge(percent, ageClass) {
+    const nextLimits = statLimits(races[race], ageClass === "senius" ? percent : 100, perception.range);
+    setStats(allocateStartingStats(nextLimits, statPoints(percent) - abilityCost, perception.suggested));
+  }
+
+  function changeAge(value) {
+    setAge(value);
+    if (!creationEditable || selectedCharacter || !value) return;
+    const nextStage = ageStage(value, calculatedAgeLimits);
+    const fixedPercent = nextStage === "adultus" ? 100
+      : Number(value) === calculatedAgeLimits?.[1] ? 80
+        : Number(value) === calculatedAgeLimits?.[2] ? 50 : null;
+    if (fixedPercent != null && fixedPercent !== statPercent) allocateForAge(fixedPercent, nextStage);
+  }
+
   function chooseAgeAllocation(key, value) {
+    if (creationEditable && !selectedCharacter && key === "stats" && value !== "") allocateForAge(Number(value), stage);
     setAgeAllocation((previous) => ({
       ...(previous.stage === stage ? previous : { stage }),
       [key]: value === "" ? undefined : Number(value),
@@ -428,27 +416,27 @@ const calculatedAgeLimits =
 
 function changeRace(value) {
   setRace(value);
-  if (creationEditable) {
+  if (creationEditable || kmSheet) {
     setSubrace("");
     setSelectedRacialAbilities([]);
     setRacialSpecializations({});
     setInheritedTraits({});
   }
-  if (creationEditable && !creationGenderOptions(value).includes(gender)) setGender("");
+  if ((creationEditable || kmSheet) && !creationGenderOptions(value).includes(gender)) setGender("");
     setAncestry({
     race: value,
     parents: [],
   });
-  setAge("");
+  if (!kmSheet) setAge("");
   setAgeAllocation({});
   setParent1("");
   setParent2("");
 
-  if (value) {
-    setStats(initialStats(statLimits(races[value]), statPoints()));
+  if (value && !kmSheet) {
+    setStats(allocateStartingStats(statLimits(races[value], 100, perceptionLimits[value].range), statPoints(), perceptionLimits[value].suggested));
   }
 
-  setAdjustments(characterAdjustments());
+  if (!kmSheet) setAdjustments(characterAdjustments());
   const fixedParent = fixedParentRace[value];
   if (fixedParent) {
   setParent1(fixedParent);
@@ -469,8 +457,8 @@ function changeRace(value) {
     const next = [...stats];
     const newValue = next[index] + amount;
 
-    if ((amount < 0 && newValue < limits[index][0]) ||
-        (amount > 0 && newValue > limits[index][1])) {
+    if (!Number.isSafeInteger(newValue) || (!kmSheet && ((amount < 0 && newValue < limits[index][0]) ||
+        (amount > 0 && newValue > limits[index][1])))) {
       return;
     }
 
@@ -481,7 +469,7 @@ function changeRace(value) {
     const nextAdjustments = [...adjustments];
     nextAdjustments[index] = creationEditable
       ? clampAttributeAdjustment(newValue, adjustments[index])
-      : 0;
+      : kmSheet ? adjustments[index] : 0;
     setAdjustments(nextAdjustments);
   }
 
@@ -490,7 +478,7 @@ function changeRace(value) {
     const next = [...adjustments];
     const newValue = next[index] + amount;
 
-    if (Math.abs(newValue) > limit) return;
+    if (!Number.isSafeInteger(newValue) || (!kmSheet && Math.abs(newValue) > limit)) return;
 
     next[index] = newValue;
     setAdjustments(next);
@@ -540,6 +528,29 @@ function saveCharacter({ notify = true } = {}) {
     return false;
   }
 
+  const profileMessage = profileError(profile, savedFields.profile);
+  const profileChanges = Object.entries(profile).filter(([key, value]) => value !== savedFields.profile[key]);
+  if (profileMessage) { alert(profileMessage); return false; }
+  const updatedCharacter = { ...existingCharacter, stats, adjustments, componentOverrides: componentDraft };
+  if (!kmSheet && healthDraft != null && healthDraft > maxHealth(updatedCharacter)) {
+    alert("Az életerő nem haladhatja meg a módosított maximumot.");
+    return false;
+  }
+  const originalMagic = readMagic(existingCharacter ?? {});
+  const nextMagic = { ...originalMagic, ...resourceDraft };
+  if (Object.keys(resourceDraft).length) {
+    const maximum = magicLimits(updatedCharacter);
+    const available = availableMagicEp(updatedCharacter, nextMagic);
+    const previousAvailable = availableMagicEp(existingCharacter, originalMagic);
+    if (Object.entries(resourceDraft).some(([key, value]) =>
+      value != null && (!Number.isFinite(value) || value < 0 || (!kmSheet && value > maximum[key]))) ||
+      (!kmSheet && resourceDraft.activeEp != null && resourceDraft.activeEp < (originalMagic.activeEp ?? 0) &&
+        (unresolvedSacredReservations(nextMagic).length || (available != null && available < Math.min(0, previousAvailable ?? 0))))) {
+      alert("A módosított esszenciaérték vagy a szakrális foglalás kívül esik a megengedett kereten.");
+      return false;
+    }
+  }
+
   const selectedTalents = advantages.includes(TEHETSEG) ? talentSkills.filter(Boolean) : [];
   if (creationEditable && advantages.includes(TEHETSEG) && !selectedTalents.length) {
     alert("Válassz legalább egy jártasságot a Született tehetség előnyhöz!");
@@ -555,16 +566,25 @@ function saveCharacter({ notify = true } = {}) {
     ...(creationEditable && creationOriginal),
     ...(creationEditable && creationExtras),
     ...(religion !== savedFields.religion && { religion: religion.trim() }),
-    ...(notes !== savedFields.notes && { equipment: { ...(creationEditable ? creationCharacter.equipment : existingCharacter?.equipment), notes } }),
+    ...(!creationEditable && notes !== savedFields.notes && { equipment: { ...existingCharacter?.equipment, notes } }),
     ...(gender !== savedFields.gender && { gender }),
+    ...(profileChanges.length > 0 && {
+      profile: { ...existingCharacter?.profile, ...Object.fromEntries(profileChanges.map(([key, value]) => [key, value.trim()])) },
+    }),
+    ...(healthDraft != null && { currentFp: healthDraft }),
+    ...(Object.keys(resourceDraft).length > 0 && { magic: nextMagic }),
     id: existingCharacter?.id ?? Date.now(),
     name: name.trim(),
     age,
     race,
-    jp: creationEditable ? creationBudget - creationCosts.total : existingCharacter.jp,
+    jp: creationEditable ? creationBudget - creationCosts.total : jpDraft ?? existingCharacter.jp,
+    ...(kmSheet && { gmOverrides: true, componentOverrides: componentDraft }),
+    ...(kmSheet && { subrace, racialAbilities: selectedRacialAbilities, racialSpecializations }),
     ...(creationEditable && {
       playStatus: "draft",
+      ...(!existingCharacter && { statAllocationVersion: 1 }),
       skills: effectiveCreationSkills,
+      ...(devotionApproval && { devotionApproval }),
       skillEffectBaseline: creationCharacter.skillEffectBaseline,
       ...(subrace || existingCharacter?.subrace ? { subrace: subrace || undefined } : {}),
       ...(selectedRacialAbilities.length || existingCharacter?.racialAbilities ? { racialAbilities: selectedRacialAbilities } : {}),
@@ -591,6 +611,7 @@ function saveCharacter({ notify = true } = {}) {
     traitValues,
     talentSkills: selectedTalents,
     approvedTraits,
+    ...(traitApprovalSource && { traitApprovalSource }),
     parent1,
 parent2,
 ancestry: JSON.parse(JSON.stringify(ancestry)),
@@ -612,12 +633,14 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   setCreationClarifications({});
   setInheritedTraits(character.inheritedTraits ?? {});
   setCreationExtras({});
+  setHealthDraft(null);
+  setResourceDraft({});
 
   if (notify) alert(saveBlocked ? "A karakter az aktuális munkamenetben frissült." : "A karakter sikeresen elmentve!");
   return true;
 }
   function loadCharacter(character, forCreation = false) {
-    setDevotionApproval(null);
+    setDevotionApproval(character?.devotionApproval ?? null);
     setCreationTab("details");
     setCreationSkills(forCreation ? purchasedCreationSkills(character) : {});
     setCreationClarifications({});
@@ -641,18 +664,24 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     setTraitValues(fields.traitValues);
     setTalentSkills(fields.talentSkills);
     setApprovedTraits(fields.approvedTraits);
+    setTraitApprovalSource(character?.traitApprovalSource ?? null);
     setAdjustments(fields.adjustments);
     setReligion(fields.religion);
     setGender(fields.gender);
     setNotes(fields.notes);
+    setProfile(fields.profile);
+    setHealthDraft(null);
+    setJpDraft(null);
+    setComponentDraft(character?.componentOverrides ?? []);
+    setResourceDraft({});
   }
 
   const characterFieldsChanged = JSON.stringify({
     name, age: String(age), race, subrace, racialAbilities: selectedRacialAbilities, racialSpecializations,
     parent1, parent2, ancestry, inheritedTraits, stats, ageAllocation,
     advantages, disadvantages, traitValues, talentSkills, approvedTraits, adjustments,
-    religion, gender, notes,
-  }) !== JSON.stringify(creationFields(selectedCharacter));
+    religion, gender, notes, profile,
+  }) !== JSON.stringify(creationFields(selectedCharacter)) || JSON.stringify(componentDraft) !== JSON.stringify(selectedCharacter?.componentOverrides ?? []) || jpDraft != null || healthDraft != null || Object.keys(resourceDraft).length > 0;
 
   function confirmLeaving() {
     const hasChanges = (page === "alkotas" && (characterFieldsChanged ||
@@ -664,26 +693,109 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function navigate(nextPage, character) {
     if (!confirmLeaving()) return;
-    if (nextPage === "alkotas" && character &&
-        (page !== "visszatoltes" || character.playStatus !== "draft")) return;
+    if (nextPage === "alkotas" && character && character.playStatus !== "draft") return;
     if (nextPage === "karakterlap" && character?.playStatus !== "playing") return;
     if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
+    setSheetPageOnOpen(1);
+    setSheetEditingOnOpen(false);
+    setAdventureTabOnOpen("overview");
     setPage(nextPage);
     window.scrollTo(0, 0);
+    return true;
+  }
+
+  function returnHome() {
+    if (navigate("fomenu", null)) {
+      setTestMode(null);
+      setAdventureCharacterId(null);
+    }
+  }
+
+  function selectTestMode(mode) {
+    if (navigate("test-adventure", null)) setTestMode(mode);
+  }
+
+  function openPlayerCharacter(character, initialPage = 1) {
+    if (navigate("karakterlap", character)) {
+      setSheetPageOnOpen(initialPage);
+      setTestMode("player");
+      setAdventureCharacterId(character.id);
+    }
+  }
+
+  function openMenuCharacter(character, edit = false) {
+    if (character.playStatus === "draft") navigate("alkotas", character);
+    else if (character.playStatus === "playing") {
+      if (navigate("karakterlap", character)) setSheetEditingOnOpen(edit);
+    } else navigate("karakterek", null);
+  }
+
+  function openMenuChat(character) {
+    if (!navigate("test-adventure", null)) return;
+    setTestMode("player");
+    setAdventureCharacterId(character.id);
+    setAdventureTabOnOpen("messages");
+    const next = markConversationRead(adventure, character.id, "player");
+    if (next !== adventure) updateAdventure(next);
+  }
+
+  function openAdventureFor(character) {
+    if (navigate("test-adventure", null)) setAdventureCharacterId(character.id);
+  }
+
+  function updateAdventure(next) {
+    setAdventure(next);
+    setAdventureWriteFailed(!writeAdventure({ setItem: (key, raw) => window.localStorage.setItem(key, raw) }, next));
+  }
+
+  function exportCharacters() {
+    const raw = saveBlocked && previousSave.current != null ? previousSave.current : JSON.stringify(savedCharacters, null, 2);
+    const url = URL.createObjectURL(new Blob([raw], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "kaosz-karakterek.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function importCharacters(raw) {
+    if (saveBlocked) return "A meglévő helyi mentés megőrzése érdekében az importálás most nem elérhető.";
+    const result = planCharacterImport(raw, savedCharacters, Object.keys(races));
+    if (result.error) return result.error;
+    if (result.added && window.confirm(`${result.added} új karakter hozzáadása?`)) {
+      setSavedCharacters(previous => planCharacterImport(raw, previous, Object.keys(races)).characters);
+      return `Hozzáadva: ${result.added}. Már meglévő azonosító miatt kihagyva: ${result.conflicts}.`;
+    }
+    return result.added ? "Az importálást megszakítottad." : "A fájl nem tartalmaz új karaktert.";
+  }
+
+  function openTestCharacter(character) {
+    if (!savedCharacters.some(({ id }) => String(id) === String(character.id))) {
+      setSavedCharacters(previous => previous.some(({ id }) => String(id) === String(character.id)) ? previous : [...previous, character]);
+    }
+    navigate("karakterlap", character);
   }
 
   function setPlayStatus(character, nextStatus) {
-    const legacy = nextStatus === "draft";
-    if (legacy ? character.playStatus != null : character.playStatus === "playing") return;
-    const message = legacy
+    const message = nextStatus === "draft"
       ? `Megerősíted, hogy ${character.name} még soha nem került játékba?`
       : character.playStatus == null
-        ? `Megerősíted, hogy ${character.name} már játékban volt? Ezután a Karakter betöltése listában jelenik meg.`
+        ? `Megerősíted, hogy ${character.name} már játékban volt?`
         : `Játékba helyezed ${character.name} karaktert? Ezután nem tölthető vissza a karakteralkotásba.`;
+    setActivationFeedback(null);
     if (!window.confirm(message)) return;
-    setSavedCharacters((previous) => previous.map((saved) =>
-      saved.id === character.id && (legacy ? saved.playStatus == null : saved.playStatus !== "playing")
-        ? { ...saved, playStatus: nextStatus } : saved));
+
+    const updated = !saveBlocked && persistCharacterStatus(() => window.localStorage, savedCharacters,
+      previousSave.current, character.id, nextStatus);
+    if (!updated) {
+      setActivationFeedback({ error: true, text: "Az állapot mentése sikertelen. A karakter állapota nem változott." });
+      return;
+    }
+    previousSave.current = JSON.stringify(updated);
+    setSavedCharacters(updated);
+    setActivationFeedback({ text: nextStatus === "playing"
+      ? `${character.name} játékba került, és választható a kalandban.`
+      : `${character.name} szerkeszthető tervezetként van mentve.` });
   }
 
   function openCreationTab(nextTab) {
@@ -704,14 +816,24 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function saveEquipment(character, equipment) {
     setSavedCharacters((previous) => previous.map((saved) =>
-      saved === character ? { ...saved, equipment } : saved
+      saved === character ? { ...saved, equipment, ...(kmSheet && { gmOverrides: true }) } : saved
     ));
   }
 
   function saveMagic(character, magic) {
     setSavedCharacters((previous) => previous.map((saved) =>
-      saved === character ? { ...saved, magic } : saved
+      saved === character ? { ...saved, magic, ...(kmSheet && { gmOverrides: true }) } : saved
     ));
+  }
+
+  function commitMagicCast(characterId, calculate) {
+    if (saveBlocked) return;
+    setSavedCharacters(previous => previous.map(character => {
+      if (character.id !== characterId || character.playStatus !== "playing") return character;
+      const magic = readMagic(character);
+      const next = calculate(character, magic);
+      return next === magic ? character : { ...character, magic: next };
+    }));
   }
 
   function updateHealth(id, amount) {
@@ -754,12 +876,20 @@ function characterSurvived() {
 }
   
 function validateCharacter() {
+  if (kmSheet) {
+    const valid = Boolean(name.trim() && race && Number.isSafeInteger(Number(age)) && Number(age) > 0 &&
+      stats.every(Number.isSafeInteger) && adjustments.every(Number.isSafeInteger) &&
+      [jpDraft, healthDraft].every(value => value == null || Number.isFinite(value)) && (healthDraft == null || healthDraft >= 0));
+    if (!valid) alert("A karakter neve, faja és véges számértékei szükségesek.");
+    return valid;
+  }
+
   let message;
   const skillError = creationEditable && firstInvalidSkillChange(effectiveCreationSkills, creationOriginal?.skills,
     creationCharacter, creationOriginal, trainingGrants);
   const trainingError = creationEditable && Object.entries(trainingPackages ?? {})
     .map(([id, record]) => packageError(creationCharacter, id, record)).find(Boolean);
-  const invalidStart = creationEditable && invalidStartingSkill(creationCharacter, creationOriginal &&
+  const invalidSkill = creationEditable && invalidCreationSkill(creationCharacter, creationOriginal &&
     { ...creationOriginal, ...originalFields, creationStage: originalAgeStage }, creationGrants);
   const selectedTraits = [...advantages, ...disadvantages];
   const originalSelected = [...(creationOriginal?.advantages ?? []), ...(creationOriginal?.disadvantages ?? [])];
@@ -775,7 +905,9 @@ function validateCharacter() {
   const checkAncestry = creationEditable && isHalfBlood && (!selectedCharacter ||
     JSON.stringify(ancestry) !== JSON.stringify(creationFields(selectedCharacter).ancestry));
   const lineage = checkAncestry ? ancestryValidation(ancestry) : {};
-  const checkGender = creationEditable && (!selectedCharacter ||
+  const preservedGmStats = selectedCharacter?.gmOverrides && JSON.stringify(stats) === JSON.stringify(characterStats(selectedCharacter));
+  const preservedGmAge = selectedCharacter?.gmOverrides && sameSavedAge;
+  const checkGender = (creationEditable || testMode === "km") && (!selectedCharacter ||
     race !== selectedCharacter.race || gender !== (selectedCharacter.gender ?? ""));
   if (!name.trim() || !race || !Number.isInteger(Number(age)) || Number(age) < 1) {
     message = "Töltsd ki a nevet, életkort és válaszd ki a fajt!";
@@ -803,13 +935,13 @@ function validateCharacter() {
     message = "A mágikus eredetű származást a Mesélőnek jóvá kell hagynia.";
   } else if (checkGender && race === "Gilf" && gender !== "Nő") {
     message = "Gilf játékoskarakternél a Nő lehetőséget kell kiválasztani.";
-  } else if (!legacyAllocation && !stage) {
+  } else if (!preservedGmAge && !legacyAllocation && !stage) {
     message = "Az életkorhatárok még nem számíthatók ki!";
-  } else if (calculatedAgeLimits?.[3] > 0 && Number(age) > calculatedAgeLimits[3]) {
+  } else if (!preservedGmAge && calculatedAgeLimits?.[3] > 0 && Number(age) > calculatedAgeLimits[3]) {
     message = "A karakter életkora meghaladja a faj maximális életkorát!";
   } else if (!selectedCharacter && stage === "extrém") {
     message = "A senius életszakaszon túl új játékoskarakter nem indítható.";
-  } else if (statBudget == null || (!selectedCharacter && startingJp == null)) {
+  } else if (!preservedGmAge && (statBudget == null || (!selectedCharacter && startingJp == null))) {
     message = "Add meg az életkorhoz tartozó pontkeret-százalékokat!";
   } else if (creationEditable && (creationBudget == null || creationCosts.total > creationBudget)) {
     message = "A jártasságok költsége meghaladja az induló Jp-keretet.";
@@ -817,13 +949,13 @@ function validateCharacter() {
     message = trainingError;
   } else if (skillError) {
     message = skillError;
-  } else if (invalidStart) {
-    message = `A következő jártasság meghaladja az érvényes induló szintkorlátot: ${invalidStart}. Ellenőrizd a szintet vagy a mesélői engedélyt.`;
-  } else if (total !== statBudget) {
+  } else if (invalidSkill) {
+    message = `A következő jártasság szintje meghaladja a megengedett maximumot: ${invalidSkill}.`;
+  } else if (!preservedGmStats && total !== statBudget) {
     message = `A főértékek összege pontosan ${statBudget} kell legyen!`;
-  } else if (!stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
+  } else if (!preservedGmStats && !stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
     message = "Valamelyik főérték kívül esik a faj és az életkor határértékein!";
-  } else if (selectedCharacter?.currentFp > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
+  } else if (!preservedGmStats && (healthDraft ?? selectedCharacter?.currentFp) > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
     message = "A megadott Fizikum az aktuális életerő alá esne. Előbb csökkentsd az aktuális értéket.";
   }
   if (message) alert(message);
@@ -834,7 +966,16 @@ function checkCharacter() {
   if (validateCharacter()) alert("A karakter alapadatai érvényesek!");
 }
 
-  function renderTraits() {
+  function renderTraits(compact = false) {
+    function renderTraitPrice(trait, selected, sign) {
+      if (!compact) {
+        return creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>;
+      }
+      if (trait.valtozo && (!selected || traitValueError(trait.nev, traitValues[trait.nev], race))) return null;
+      const price = traitPrice(trait, traitValues[trait.nev], talentSkills, race);
+      return (price > 0 || !trait.valtozo) && <small className="creation-trait-price">{sign}{price} Jp</small>;
+    }
+
     function renderNarratorPrice(trait) {
       const range = creationEditable && narratorTraitPrices[trait.nev];
       if (!range) return null;
@@ -856,8 +997,8 @@ function checkCharacter() {
         disabled={trait.nev === TEHETSEG && !creationEditable}
         onChange={() => toggleTrait(trait, "elony")}
       />
-      {trait.nev}
-      {creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>}
+      {compact ? <span>{trait.nev}</span> : trait.nev}
+      {renderTraitPrice(trait, advantages.includes(trait.nev), "−")}
     </label>
 
     {advantages.includes(trait.nev) && (
@@ -881,7 +1022,7 @@ function checkCharacter() {
                   <option value="">Válassz jártasságot!</option>
                   {[...new Set([...talentEligibleSkills, ...talentSkills.filter(Boolean)])]
                     .filter((skill) => skill !== talentSkills[1 - index] &&
-                      (skill !== gilfFreeTheory || race === "Gilf" || skill === talentSkills[index])).map((skill) => (
+                      (!legacyTheoryNames.has(skill) || skill === talentSkills[index])).map((skill) => (
                     <option key={skill} value={skill}>{skill} · {talentCost(skill)} Jp</option>
                   ))}
                 </select>
@@ -979,8 +1120,8 @@ function checkCharacter() {
         checked={disadvantages.includes(trait.nev)}
         onChange={() => toggleTrait(trait, "hatrany")}
       />
-      {trait.nev}
-      {creationEditable && Number.isFinite(trait.jp) && !trait.valtozo && <small> · {trait.jp} Jp</small>}
+      {compact ? <span>{trait.nev}</span> : trait.nev}
+      {renderTraitPrice(trait, disadvantages.includes(trait.nev), "+")}
     </label>
 
     {disadvantages.includes(trait.nev) && (
@@ -1068,10 +1209,11 @@ function checkCharacter() {
   <input
     type="checkbox"
     checked={approvedTraits}
-    onChange={(event) => setApprovedTraits(event.target.checked)}
+    onChange={(event) => { setApprovedTraits(event.target.checked); setTraitApprovalSource(null); }}
   />
   Mesélő jóváhagyta a választást
 </label>
+{!approvedTraits && <button type="button" onClick={() => { setApprovedTraits(true); setTraitApprovalSource("test"); }}>KM jóváhagyása (TESZT)</button>}
 
     </>;
   }
@@ -1102,23 +1244,9 @@ function checkCharacter() {
   }
 
   function renderAgeSelector() {
-    return <>
-    <select
-      value={age}
-      onChange={(event) => setAge(event.target.value)}
-    >
-      <option value="">Válassz életkort!</option>
-
-      {Array.from(
-        { length: selectedCharacter ? calculatedAgeLimits[3] : calculatedAgeLimits[2] },
-        (_, i) => i + 1
-      ).map((ageValue) => (
-        <option key={ageValue} value={ageValue}>
-          {ageValue} év
-        </option>
-      ))}
-    </select>
-    </>;
+    return <input type="number" aria-label="Életkor" min="1" step="1"
+      max={kmSheet ? undefined : calculatedAgeLimits?.[selectedCharacter ? 3 : 2]}
+      value={age} onChange={event => changeAge(event.target.value)} />;
   }
 
   function renderAncestryFields() {
@@ -1127,13 +1255,12 @@ function checkCharacter() {
   <>
     <h3>Szülők származása</h3>
 
-    <label>Első szülő faja</label>
- <select
+    <label htmlFor="ancestry-parent-one">Első szülő faja</label>
+ <select id="ancestry-parent-one"
   disabled={race.startsWith("Félvér")}
       value={parent1}
       onChange={(event) => {
        setParent1(event.target.value);
-setAge("");
 if (creationEditable) setInheritedTraits({});
 setAncestry((previous) => ({
   ...previous,
@@ -1155,12 +1282,11 @@ setAncestry((previous) => ({
   ))}
     </select>
 
-    <label>Második szülő faja</label>
-    <select
+    <label htmlFor="ancestry-parent-two">Második szülő faja</label>
+    <select id="ancestry-parent-two"
       value={parent2}
       onChange={(event) => {
        setParent2(event.target.value);
-setAge("");
 if (creationEditable) setInheritedTraits({});
 setAncestry((previous) => ({
   ...previous,
@@ -1184,8 +1310,8 @@ setAncestry((previous) => ({
   ))}
     </select><h4>Első szülő nagyszülei</h4>
 
-<label>Első nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-one">Első nagyszülő</label>
+<select id="ancestry-grandparent-one"
   value={ancestry.parents[0]?.parents?.[0]?.race || ""}
   onChange={(event) => changeGrandparent(0, 0, event.target.value)}
 >
@@ -1195,8 +1321,8 @@ setAncestry((previous) => ({
   ))}
 </select>
 
-<label>Második nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-two">Második nagyszülő</label>
+<select id="ancestry-grandparent-two"
   value={ancestry.parents[0]?.parents?.[1]?.race || ""}
   onChange={(event) => changeGrandparent(0, 1, event.target.value)}
 >
@@ -1208,8 +1334,8 @@ setAncestry((previous) => ({
 
 <h4>Második szülő nagyszülei</h4>
 
-<label>Harmadik nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-three">Harmadik nagyszülő</label>
+<select id="ancestry-grandparent-three"
   value={ancestry.parents[1]?.parents?.[0]?.race || ""}
   onChange={(event) => changeGrandparent(1, 0, event.target.value)}
 >
@@ -1219,8 +1345,8 @@ setAncestry((previous) => ({
   ))}
 </select>
 
-<label>Negyedik nagyszülő</label>
-<select
+<label htmlFor="ancestry-grandparent-four">Negyedik nagyszülő</label>
+<select id="ancestry-grandparent-four"
   value={ancestry.parents[1]?.parents?.[1]?.race || ""}
   onChange={(event) => changeGrandparent(1, 1, event.target.value)}
 >
@@ -1251,44 +1377,34 @@ setAncestry((previous) => ({
     </>;
   }
 
+  function renderGender() {
+    const options = creationGenderOptions(race);
+    return <select aria-label="Nem" value={gender} onChange={event => setGender(event.target.value)}>
+      <option value="">{race === "Gennymanó" ? "Nincs elkülönült nem" : "Nincs megadva"}</option>
+      {gender && !options.includes(gender) && <option value={gender} disabled>{gender} (mentett érték)</option>}
+      {options.map(option => <option key={option}>{option}</option>)}
+    </select>;
+  }
+
+  function renderSubrace() {
+    return subraces[race] && <label>Alfaj
+      <select value={subrace} onChange={(event) => {
+        setSubrace(event.target.value);
+        setRacialSpecializations((previous) => activeRacialChoices(race, event.target.value, previous));
+      }}>
+        <option value="">Válassz alfajt!</option>
+        {subraces[race].map(variant => <option key={variant}>{variant}</option>)}
+      </select>
+    </label>;
+  }
+
+  function updateProfile(key, value) {
+    setProfile(previous => ({ ...previous, [key]: value }));
+  }
+
   function renderCharacterFields(actions) {
-    const genderOptions = creationGenderOptions(race);
     const abilityOptions = racialAbilities[race] ?? [];
-    return <div className="creation-fields">
-      <section className="panel creation-panel">
-        <h3>Karakter adatai</h3>
-        <div className="creation-grid">
-          <label>Karakter neve
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Karakter neve" />
-          </label>
-          <label>Faj{renderRaceSelector()}</label>
-          {subraces[race] && <label>Alfaj
-            <select value={subrace} onChange={(event) => {
-              setSubrace(event.target.value);
-              setRacialSpecializations((previous) => activeRacialChoices(race, event.target.value, previous));
-            }}>
-              <option value="">Válassz alfajt!</option>
-              {subraces[race].map((variant) => <option key={variant}>{variant}</option>)}
-            </select>
-          </label>}
-          <label>Nem
-            <select value={gender} onChange={(event) => setGender(event.target.value)}>
-              <option value="">{race === "Gennymanó" ? "Nincs elkülönült nem" : "Nincs megadva"}</option>
-              {gender && !genderOptions.includes(gender) && (
-                <option value={gender}>{gender} (mentett érték)</option>
-              )}
-              {genderOptions.map((option) => <option key={option}>{option}</option>)}
-            </select>
-          </label>
-          <label>Vallás
-            <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />
-          </label>
-          {race && calculatedAgeLimits && <>
-            <label>Életkor{renderAgeSelector()}</label>
-            <div><strong>Életszakasz</strong><p>{stage ?? "—"}</p></div>
-            {renderAgePointOptions()}
-          </>}
-        </div>
+    const extra = <>
         {isHalfBlood && <div className="creation-ancestry"><h4>Származás</h4>{renderAncestryFields()}
           {ancestryValidation(ancestry).magical && <label>
             <input type="checkbox" checked={ancestry.magicApproved === true}
@@ -1298,11 +1414,12 @@ setAncestry((previous) => ({
               }} />
             A Mesélő jóváhagyta a mágikus eredetet
           </label>}
+          {ancestryValidation(ancestry).magical && !ancestry.magicApproved && <button type="button" onClick={() =>
+            setAncestry(previous => ({ ...previous, magicApproved: true, approvalSource: "test" }))}>KM jóváhagyása (TESZT)</button>}
         </div>}
         {race && calculatedAgeLimits && <small>
           Juvenis határ {calculatedAgeLimits[0]} év · Átlagos életkor {calculatedAgeLimits[1]}–{calculatedAgeLimits[2]} év · Extrém maximum {calculatedAgeLimits[3]} év
         </small>}
-      </section>
       {isHalfBlood && creationEditable && <OroklesPanel ancestry={ancestry} records={resolvedInheritance}
         onChange={(key, record) => setInheritedTraits((previous) => {
           const next = { ...previous };
@@ -1337,8 +1454,9 @@ setAncestry((previous) => ({
           {racialSelectionError(race, subrace, selectedRacialAbilities) &&
             <p role="status">{racialSelectionError(race, subrace, selectedRacialAbilities)}</p>}
         </section>}
-        <section className="panel creation-panel">
-          <h3>Főértékek</h3>
+      </>}
+    </>;
+    const budget = race && <div className="general-budget">
           <dl className="creation-points">
             <div><dt>Rendelkezésre áll</dt><dd>{statBudget ?? "—"}</dd></div>
             <div><dt>Felhasználva</dt><dd>{total}</dd></div>
@@ -1348,41 +1466,34 @@ setAncestry((previous) => ({
           {previousBudget && <small>A mentett pontkeret változatlan. Életkorváltáskor az új számítás érvényesül.</small>}
           {creationEditable && statBudget != null && remaining !== 0 && (
             <button type="button" onClick={() => {
-              setStats(initialStats(limits, statBudget));
+              setStats(allocateStartingStats(limits, statBudget, perception.suggested));
               setAdjustments(characterAdjustments());
             }}>Főértékek újraelosztása a kerethez</button>
           )}
-          <div className="skills-table-container">
-            <table className="skills-table creation-stats">
-              <thead><tr><th>Főérték</th><th>Érték</th><th>Aktív összetevő</th><th>Passzív összetevő</th></tr></thead>
-              <tbody>{attributes.map(([label, active, passive], index) => {
-                const value = stats[index];
-                const adjustment = adjustments[index];
-                const limit = attributeAdjustmentLimit(value);
-                return <tr key={label}>
-                  <th scope="row">{label}<small>{limits[index][0]}–{limits[index][1]}</small></th>
-                  <td><div className="creation-stepper">
-                    <button type="button" aria-label={label + " csökkentése"} disabled={value <= limits[index][0]} onClick={() => changeStat(index, -1)}>−</button>
-                    <output>{effectiveAttribute(creationCharacter, index)}</output>
-                    <button type="button" aria-label={label + " növelése"} disabled={value >= limits[index][1]} onClick={() => changeStat(index, 1)}>+</button>
-                  </div></td>
-                  <td><small>{active}</small><div className="creation-stepper">
-                    <button type="button" aria-label={active + " csökkentése"} disabled={adjustment <= -limit} onClick={() => changeAdjustment(index, -1)}>−</button>
-                    <output>{effectiveAttribute(creationCharacter, index, 1)}</output>
-                    <button type="button" aria-label={active + " növelése"} disabled={adjustment >= limit} onClick={() => changeAdjustment(index, 1)}>+</button>
-                  </div></td>
-                  <td><small>{passive}</small><output>{effectiveAttribute(creationCharacter, index, -1)}</output></td>
-                </tr>;
-              })}</tbody>
-            </table>
-          </div>
-        </section>
-        <section className="panel creation-panel creation-traits" aria-label="Előnyök és hátrányok">
-          {renderTraits()}
-        </section>
-        {actions}
-      </>}
     </div>;
+    return <GeneralPage mode="creation"
+      identity={{ name, race, subrace, age, gender, ancestry }}
+      header={{ actions: selectedCharacterId !== null && <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> }}
+      links={creationEditable ? [["details", "Karakteradatok"], ["skills", "Jártasságok"], ["equipment", "Felszerelés"], ["magic", "Mágia"]].map(
+        ([id, label]) => ({ id, label, current: creationTab === id, onClick: () => openCreationTab(id) })
+      ) : undefined}
+      character={{ ...creationCharacter, name, jp: creationBudget == null ? undefined : creationBudget - creationCosts.total }}
+      stage={stage} extra={extra} budget={budget} actions={race && actions}
+      onChangeHealth={race && calculatedAgeLimits ? (amount) => {
+        const currentFp = healthDraft ?? selectedCharacter?.currentFp ?? maxHealth(creationCharacter);
+        const updated = changeCurrentHealth({ ...creationCharacter, currentFp }, amount);
+        if (updated.currentFp !== currentFp) setHealthDraft(updated.currentFp);
+      } : undefined}
+      edit={{
+        stats, adjustments, limits, profile, setProfile: updateProfile, changeStat, changeAdjustment, health: healthDraft,
+        name: <input aria-label="Karakter neve" value={name} placeholder="Karakter neve" onChange={event => setName(event.target.value)} />,
+        race: <label>Faj{renderRaceSelector()}</label>,
+        age: race && calculatedAgeLimits ? <label>Életkor{renderAgeSelector()}</label> : null,
+        gender: renderGender(), subrace: renderSubrace(),
+        religion: <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />,
+        ageOptions: renderAgePointOptions(),
+        advantages, disadvantages, renderTraits: race ? renderTraits : null,
+      }} />;
   }
   const creationActions = (
     <div className="skills-actions">
@@ -1390,149 +1501,178 @@ setAncestry((previous) => ({
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
   );
-  const restorableCharacters = savedCharacters.filter((character) => character.playStatus === "draft");
+  const creationTabs = (
+    <nav className="workspace-nav" aria-label="A karakteralkotás részei">
+      <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
+      <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
+      <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
+      <button type="button" aria-pressed={creationTab === "magic"} onClick={() => openCreationTab("magic")}>Mágia</button>
+    </nav>
+  );
+  const inPlayerView = page === "karakterlap" || (page === "test-adventure" && testMode === "player");
+  const selectingForPlay = page === "jatek";
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
-  const unclassifiedCharacters = savedCharacters.filter((character) => character.playStatus == null);
 
   return (
-    <div className="app">
+    <div className="app test-app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
         {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
-          <section className="home-content" aria-labelledby="home-title">
-            <h1 id="home-title">Káosz Kalandmester</h1>
-            <nav className="home-actions" aria-label="Főmenü">
-              <button type="button" onClick={() => navigate("alkotas", null)}>Karakteralkotás</button>
-              <button type="button" onClick={() => navigate("visszatoltes", null)}>Karakter visszatöltése</button>
-              <button type="button" onClick={() => navigate("karakterek")}>Karakter betöltése</button>
-            </nav>
-          </section>
+          <MainMenu characters={savedCharacters} adventure={adventure}
+            onNew={() => navigate("alkotas", null)} onLoad={openMenuCharacter}
+            onEdit={(character) => openMenuCharacter(character, true)} onDelete={startDelete}
+            onSheet={openPlayerCharacter} onCodex={(character) => openPlayerCharacter(character, 4)} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
+            onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
+            onGM={() => selectTestMode("km")} />
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
-            <button type="button" onClick={() => navigate("fomenu", null)}>Vissza a főmenübe</button>
-            {page === "karakterlap" && (
-              <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
+            {(!inPlayerView || page === "karakterlap") && page !== "test-settings" &&
+              <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
+            {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
+            {testMode && page !== "test-adventure" &&
+              <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
+            {page !== "karakterek" && (
+              <button className="workspace-saved" type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
             )}
           </nav>
         )}
+        {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
+          onHome={() => {
+            if (window.confirm("Visszatérsz a főmenübe?")) returnHome();
+          }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
+        {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
+          {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
+          <TestMode key={testMode} mode={testMode} initialTab={adventureTabOnOpen} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
+            ? playingCharacters : [...playingCharacters, sampleCharacter]}
+            adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
+        </Suspense>}
         {page === "alkotas" && (
-        <div className="creation-workspace"><div className="welcome">
-          <h2>Karakteralkotás</h2>
+        <div className="creation-workspace" style={ancestryTheme(race, subrace)}>
+          {creationTab !== "details" && <header className="character-cover creation-cover">
+            <div className="character-cover-art" aria-hidden="true" />
+            <div className="character-cover-caption">
+              <h2>Karakteralkotás</h2>
+              {race && <p>{[race, subrace].filter(Boolean).join(" · ")}</p>}
+            </div>
           {selectedCharacterId !== null && (
             <button className="save" onClick={() => navigate("alkotas", null)}>
               Új karakter
             </button>
           )}
 
-        </div>
+        </header>}
 
-        {creationEditable && (
-          <nav className="workspace-nav" aria-label="A karakteralkotás részei">
-            <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
-            <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
-            <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
-            <button type="button" aria-pressed={creationTab === "magic"} onClick={() => openCreationTab("magic")}>Mágia</button>
-          </nav>
-        )}
+        {creationEditable && creationTab !== "details" && creationTabs}
         {creationEditable && creationTab === "skills"
-          ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants}
+          ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
-            onChange={changeCreationSkill} onClarify={clarifyCreationSkill}
-            onApprovalsChange={(startingSkillApprovals) => setCreationExtras((previous) => ({ ...previous, startingSkillApprovals }))} />
+            original={creationOriginal} onAcademicCodex={(codex) => {
+              const academicSpecialization = selectAcademicCodex(creationCharacter.magic?.academicSpecialization, codex);
+              if (!validAcademicSpecialization(academicSpecialization)) return;
+              setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization, academicSpecializationApproval: { source: "test", codex } } }));
+            }} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
           {creationActions}</>
           : creationEditable && creationTab === "equipment"
-            ? <><CreationSection key="equipment" Editor={Felszereles} character={creationCharacter}
-              onSave={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
+            ? <><AlkotasiFelszereles equipment={creationCharacter.equipment}
+              onChange={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
           : creationEditable && creationTab === "magic"
-            ? <><CreationSection key="magic" Editor={Magia} character={creationCharacter}
-              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</>
+            ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
+              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
           : renderCharacterFields(creationActions)}
         </div>)}
         {page === "karakterlap" && (
-          <Karakterlap key={selectedCharacterId}
+          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
             character={selectedCharacter}
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}
             onSaveSkills={saveSkills}
-            onSaveEquipment={saveEquipment} onSaveMagic={saveMagic}
+            onSaveEquipment={saveEquipment} onSaveMagic={saveMagic} onMagicCast={saveBlocked ? undefined : commitMagicCast}
             onStartCharacterEdit={() => loadCharacter(selectedCharacter)}
+            onCancelCharacterEdit={() => loadCharacter(selectedCharacter)}
             onFinalizeCharacterEdit={() => !characterFieldsChanged || saveCharacter({ notify: false })}
-            onChangeHealth={(amount) => updateHealth(selectedCharacterId, amount)}
+            mode={testMode === "km" ? "gm" : "player"}
+            onSettings={() => navigate("test-settings", null)}
+            onChat={() => openMenuChat(selectedCharacter)}
+            unread={unreadMessages(adventure, selectedCharacterId, "player")}
+            onChangeHealth={(amount, staged) => {
+              if (!staged) { if (amount < 0 || testMode === "km") updateHealth(selectedCharacterId, amount); return; }
+              const updated = changeCurrentHealth({ ...selectedCharacter, stats, adjustments,
+                currentFp: healthDraft ?? selectedCharacter.currentFp ?? maxHealth(selectedCharacter) }, amount);
+              if (updated.currentFp !== undefined) setHealthDraft(updated.currentFp);
+            }}
             characterEditor={{
               changed: characterFieldsChanged,
               stats, adjustments, limits, remaining, stage, notes, setNotes,
+              profile, setProfile: updateProfile, health: healthDraft, advantages, disadvantages,
+              identity: { name, race, subrace, age, gender, ancestry },
+              override: kmSheet,
+              componentOverrides: componentDraft,
+              changeComponent: kmSheet ? (index, direction, value) => {
+                if (value !== "" && !Number.isSafeInteger(Number(value))) return;
+                setComponentDraft(previous => Object.assign([...previous], {
+                  [index]: { ...previous[index], [direction]: value === "" ? null : Number(value) },
+                }));
+              } : undefined,
+              healthField: kmSheet && <input type="number" step="any" aria-label="Aktuális életerő"
+                value={healthDraft ?? selectedCharacter.currentFp ?? maxHealth(selectedCharacter)}
+                onChange={event => setHealthDraft(event.target.value === "" ? null : Number(event.target.value))} />,
+              jp: kmSheet && <input type="number" aria-label="Elkölthető Jp" step="any"
+                value={jpDraft ?? selectedCharacter.jp ?? 0} onChange={event => setJpDraft(event.target.value === "" ? null : Number(event.target.value))} />,
+              gender: testMode === "km" ? renderGender() : null,
+              resourceFields: testMode === "km" ? (key) => <input type="number" min="0" step="any"
+                aria-label={key === "activeEp" ? "Aktuális aktív Ep" : "Aktuális Esszenciapajzs"}
+                value={(Object.hasOwn(resourceDraft, key) ? resourceDraft[key] : selectedCharacter.magic?.[key]) ?? ""}
+                onChange={event => {
+                  const value = event.target.value;
+                  setResourceDraft(previous => ({ ...previous, [key]: value === "" ? null : Number(value) }));
+                }} /> : null,
               changeStat, changeAdjustment,
               name: <input aria-label="Karakter neve" value={name} onChange={(event) => setName(event.target.value)} />,
               religion: <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />,
-              race: renderRaceSelector(),
-              age: race && calculatedAgeLimits ? renderAgeSelector() : null,
+              race: kmSheet ? renderRaceSelector() : null,
+              subrace: kmSheet ? renderSubrace() : null,
+              age: race && (kmSheet || calculatedAgeLimits) ? renderAgeSelector() : null,
               ancestry: isHalfBlood ? renderAncestryFields() : null,
               ageOptions: renderAgePointOptions(),
               renderTraits,
             }}
             confirmLeaving={confirmLeaving}
-          />
+          /></Suspense>
         )}
-        {page === "visszatoltes" && (
-          <section className="panel" aria-labelledby="restore-title">
-            <h2 id="restore-title">Karakter visszatöltése</h2>
-            {restorableCharacters.length === 0 && <p>Nincs visszatölthető karakter.</p>}
-            {restorableCharacters.map((character) => (
-              <div key={character.id} className="attribute">
+        {(page === "karakterek" || selectingForPlay) && (
+          <section className="panel" aria-labelledby="saved-characters-title">
+            <h2 id="saved-characters-title">{selectingForPlay ? "Válassz karaktert a játékhoz" : "Karakterbetöltés"}</h2>
+            <p>{selectingForPlay ? "A játékba helyezett karakterek karakterlapja innen nyitható meg."
+              : "A tervezetek a karakteralkotásban szerkeszthetők. A már játékba helyezett karakterek a karakterlapon kezelhetők."}</p>
+            {activationFeedback && <p role={activationFeedback.error ? "alert" : "status"}>{activationFeedback.text}</p>}
+            {savedCharacters.length === 0 && <p>Nincs mentett karakter.</p>}
+            {savedCharacters.map((character) => (
+              <article key={character.id} className="attribute">
                 <h3>{character.name}</h3>
-                <p>{character.race} – {character.age} éves</p>
-                <button className="save" type="button" onClick={() => navigate("alkotas", character)}>
-                  Visszatöltés karakteralkotásba
-                </button>
-                <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>
-                  Játékba helyezés
-                </button>
-              </div>
+                <p>{[character.race, character.age != null && `${character.age} éves`].filter(Boolean).join(" · ")}</p>
+                <p>Állapot: <strong>{character.playStatus === "playing" ? "Játékban"
+                  : character.playStatus === "draft" ? "Tervezet" : "Régi mentés · besorolásra vár"}</strong></p>
+                {character.playStatus === "draft" && <>
+                  {!selectingForPlay && <button className="save" type="button" onClick={() => navigate("alkotas", character)}>Karakter szerkesztése</button>}
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Játékba helyezés</button>
+                </>}
+                {character.playStatus === "playing" && <>
+                  <button className="save" type="button" onClick={() => selectingForPlay
+                    ? openPlayerCharacter(character) : navigate("karakterlap", character)}>Karakterlap megnyitása</button>
+                  {!selectingForPlay && <>
+                    <button className="save" type="button" onClick={() => openAdventureFor(character)}>Kaland megnyitása</button>
+                    <button className="save" type="button" onClick={() => startDelete(character)}>Karakter eltávolítása</button>
+                  </>}
+                </>}
+                {character.playStatus == null && <>
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>
+                  <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Már játékban volt</button>
+                </>}
+              </article>
             ))}
           </section>
         )}
-      {page === "karakterek" && (
-  <section className="panel">
-    <h2>Karakter betöltése</h2>
-
-    {playingCharacters.length === 0 ? (
-      <p>Nincs játékba került karakter.</p>
-    ) : (
-      playingCharacters.map((character) => (
-        <div key={character.id} className="attribute">
-          <h3>{character.name}</h3>
-          <p>{character.race} – {character.age} éves</p>
-          <button
-            className="save"
-            onClick={() => navigate("karakterlap", character)}
-          >
-            Karakter betöltése
-          </button>
-          <button
-  className="save"
-  onClick={() => startDelete(character)}
->
-  Karakter eltávolítása
-</button>
-        </div>
-      ))
-    )}
-  </section>
-  )}
-{(page === "visszatoltes" || page === "karakterek") && unclassifiedCharacters.length > 0 && (
-  <section className="panel" aria-labelledby="legacy-status-title">
-    <h2 id="legacy-status-title">Régi mentések állapotának megadása</h2>
-    {unclassifiedCharacters.map((character) => (
-      <div key={character.id} className="attribute">
-        <h3>{character.name}</h3>
-        <p>{character.race} – {character.age} éves</p>
-        <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>
-        <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Már játékban volt</button>
-      </div>
-    ))}
-  </section>
-)}
 {deletingCharacter && (
   <div className="modal-overlay">
     <section className="modal-panel">

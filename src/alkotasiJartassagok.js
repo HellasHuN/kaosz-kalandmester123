@@ -1,3 +1,4 @@
+import { generalTheory, legacyTheoryNames, legacyTheoryRank } from "./teszt/academic.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { jpKoltsegek } from "./jpKoltsegek.js";
 import { attributeModifier, levelCost, paidLevels, skillPrices } from "./jpSzamitas.js";
@@ -6,13 +7,12 @@ import { inheritedModifier } from "./felverOrokles.js";
 import { traitSkillLimit, traitSkillModifier } from "./karakterTulajdonsagok.js";
 import { seniorStartingCap, startingApprovalContext, startingSkillException } from "./induloJartassagEngedelyek.js";
 import { packageCreationModifier, packageGrants, packageJp } from "./kepzesiCsomagok.js";
-import { freeMagicUse, gilfFreeTheory, gilfStartingSkillCap } from "./gilfMagia.js";
 import { skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { artSkillName, baseSkillName, genericSpecializations, hasWeaponFoundation, racialWeaponTraining, specialization,
   specializationLearningRank, specializationNames } from "./jartassagSzakosodasok.js";
 
 export const creationSkillNames = [...Object.keys(jpKoltsegek).filter((name) =>
-  name !== "Mágiaelmélet" && name !== devotionSkill && !genericSpecializations.has(name)), ...specializationNames];
+  !legacyTheoryNames.has(name) && name !== devotionSkill && !genericSpecializations.has(name)), ...specializationNames];
 
 const racialStartingSkills = {
   "Elf": { "Természetismeret": 5 },
@@ -20,11 +20,6 @@ const racialStartingSkills = {
   "Gennymanó": { "Tolvajlás": 4, "Lopakodás": 4, "Falmászás": 4 },
   "Gyíklény": { "Úszás": 6 },
 };
-const nightSkills = new Set(["Koldulás", "Álcázás", "Rejtőzés", "Lopakodás", "Követés/Lerázás",
-  "Szájról olvasás", "Tolvajnyelv", "Jelbeszéd", "Hangutánzás", "Hallgatózás", "Tolvajlás", "Zárnyitás",
-  "Falmászás", "Csapdakészítés", "Csapdakeresés/Rejtekajtó keresés", "Csapdák eltávolítása",
-  "Hátbaszúrás", "Vallatás", "Hamisítás", "Szerencsejáték", "Méregismeret", "Méregkeverés", "Méregdetekció"]);
-
 export function creationGrantedSkills(character, original) {
   if (original && original.race === character.race && !original.creationRacialSkills &&
       original.subrace === character.subrace) return {};
@@ -59,41 +54,27 @@ export function skillsUnderRacialGrant(purchased, grants) {
   return Object.fromEntries(Object.entries(purchased).filter(([name, level]) => level <= (grants[name] ?? 0)));
 }
 
-export function ordinaryCreationSkillLimit(character, name) {
-  const item = specialization(name);
-  if (item?.base === "Fegyverforgatás" && !item.branch) return 1;
-  const senior = seniorStartingCap(character);
-  let racial = character.race === "Ember" ? 4 : 3;
-  if (["Anyanyelvismeret", "Közös nyelv"].includes(name)) return jpKoltsegek[name].length;
-  if (character.race === "Gnóm" && ["Mértan", "Számtan"].includes(name)) racial = 6;
-  if (character.race === "Gennymanó" && nightSkills.has(name)) racial = 4;
-  if (character.race === "Gilf" && (name === freeMagicUse || name === gilfFreeTheory)) racial = 4;
-  if (character.race === "Elf" && name === "Természetismeret") racial = 5;
-  if (character.race === "Elf" && character.racialSpecializations?.approvedNatureSkills?.includes(name)) racial = Math.max(racial, 4);
-  if (character.race === "Gyíklény" && character.subrace === "Tecath" && name === "Halászat") racial = 4;
-  if (character.race === "Gyíklény" && character.subrace === "Tecath" &&
-      name === "Vadászat" && character.racialSpecializations?.waterHunting) racial = 4;
-  if (character.race === "Tündérke" && ["Természetismeret", "Gyógynövény ismeret", "Tájékozódás"].includes(name)) racial = 6;
-  return Math.max(senior, racial);
-}
-
 export function creationSkillLimit(character, name) {
-  const base = ordinaryCreationSkillLimit(character, name);
-  const item = specialization(name);
-  const approved = item?.base === "Fegyverforgatás" && !item.branch ? base : startingSkillException(character, name, base);
-  return Math.min(approved, gilfStartingSkillCap(character, name), skillPrices(name)?.length ?? 10,
-    traitSkillLimit(character, baseSkillName(name)));
+  const definedMaximum = skillPrices(name)?.length ?? Infinity;
+  if (name === devotionSkill) {
+    const base = Math.max(seniorStartingCap(character), character.race === "Ember" ? 4 : 3);
+    return Math.min(definedMaximum, startingSkillException(character, name, base));
+  }
+  return Math.min(definedMaximum, traitSkillLimit(character, baseSkillName(name)));
 }
 
-export function invalidStartingSkill(character, original, grants) {
-  const unchangedLegacyContext = original &&
-    JSON.stringify(startingApprovalContext(character)) === JSON.stringify(startingApprovalContext(original));
-  return Object.entries(character.skills).find(([name, level]) =>
-    level > Math.max(grants[name] ?? 0, creationSkillLimit(character, name)) &&
-    !(unchangedLegacyContext && (original.skills?.[name] ?? 0) >= level &&
-      !original.startingSkillApprovals?.exceptions?.[name]?.approved &&
-      !(original.creationStage === "senius" && original.startingSkillApprovals?.senior?.approved && level === 7) &&
-      JSON.stringify(original.disadvantages ?? []) === JSON.stringify(character.disadvantages ?? [])))?.[0];
+export function invalidCreationSkill(character, original, grants) {
+  const sameDisadvantages = JSON.stringify(original?.disadvantages ?? []) === JSON.stringify(character.disadvantages ?? []);
+  return Object.entries(character.skills).find(([name, level]) => {
+    if (level <= Math.max(grants[name] ?? 0, creationSkillLimit(character, name))) return false;
+    if ((original?.skills?.[name] ?? 0) < level || !sameDisadvantages) return true;
+    if (name === devotionSkill) {
+      return JSON.stringify(startingApprovalContext(character)) !== JSON.stringify(startingApprovalContext(original)) ||
+        original.startingSkillApprovals?.exceptions?.[name]?.approved ||
+        (original.creationStage === "senius" && original.startingSkillApprovals?.senior?.approved && level === 7);
+    }
+    return false;
+  })?.[0];
 }
 
 function creationLevelCost(character, name, level, groupSkills) {
@@ -119,6 +100,7 @@ export function creationSkillCosts(character, original) {
   const grants = combineCreationGrants(creationGrantedSkills(character, original), packageGrants(character.trainingPackages));
   const historicalGrants = combineCreationGrants(original?.creationRacialSkills, packageGrants(original?.trainingPackages));
   const earlierSkills = {};
+  const inheritedTheoryLevel = legacyTheoryRank(character.skills);
   for (const [name, level] of Object.entries(character.skills)) {
     if (!skillPrices(name)) continue;
     if (name === "Fegyverforgatás" && level > 1) {
@@ -135,13 +117,14 @@ export function creationSkillCosts(character, original) {
       if (specialization(name)?.branch && index < specializationLearningRank(name, 0, character)) return 0;
       const item = specialization(name);
       const lostGrant = index < (historicalGrants[name] ?? 0);
+      if (name === generalTheory && index < inheritedTheoryLevel && index >= previousLevel) return 0;
       const price = creationLevelCost(character, name, index + 1, item ? earlierSkills : undefined);
       if (!lostGrant && historical?.prices[index] === null) {
         retainedEstimate = true;
         return null;
       }
       if (!lostGrant && historical?.prices[index] != null &&
-          (name === devotionSkill || item || price === creationLevelCost(original, name, index + 1))) {
+          (name === devotionSkill || legacyTheoryNames.has(name) || item || price === creationLevelCost(original, name, index + 1))) {
         return historical.prices[index];
       }
       return price;
@@ -162,26 +145,44 @@ export function savedCreationSkillTotal(character) {
   }, (character.racialSpecializationJp ?? 0) + packageJp(character.trainingPackages));
 }
 
-export function updateCreationSkill(character, budget, name, level, original, devotionApproved = false) {
-  if (name === devotionSkill && devotionError(character, level, devotionApproved)) return character.skills;
+export function quoteCreationSkill(character, budget, name, level, original, devotionApproved = false) {
+  if (name === devotionSkill) {
+    const error = devotionError(character, level, devotionApproved);
+    if (error) return { error };
+  }
   const item = specialization(name);
   if ((name !== devotionSkill && !creationSkillNames.includes(name)) || !Number.isInteger(level) || level < 0 ||
-      level > skillPrices(name).length || (item?.branch && level > 0 &&
-      (level <= specializationLearningRank(name, 0, character) || !hasWeaponFoundation(character, item)))) return character.skills;
-  if (level > 0 && item?.base === "Fegyverforgatás" && !item.branch &&
-      racialWeaponTraining(character)?.id === item.id) return character.skills;
+      level > skillPrices(name).length) return { error: "Ez a jártasságszint nem szerepel a szabálytáblában." };
   const currentLevel = character.skills[name] ?? 0;
-  if (name === freeMagicUse && level > currentLevel && skillPrerequisiteMessage(character.skills, name, level, character)) return character.skills;
+  if (name === generalTheory && level > currentLevel && level <= legacyTheoryRank(character.skills)) {
+    return { error: "Ezt a Mágiaelmélet-szintet a korábbi elméleti jártasság már fedezi." };
+  }
   const minimum = combineCreationGrants(creationGrantedSkills(character, original), packageGrants(character.trainingPackages))[name] ?? 0;
-  if (level < minimum || (level > currentLevel && level > creationSkillLimit(character, name))) return character.skills;
+  if (level < minimum) return { error: "A faji vagy képzési csomagból járó szint nem távolítható el." };
+  if (level > currentLevel && level > creationSkillLimit(character, name)) {
+    return { error: name === devotionSkill ? "Ez az Elhivatottság-szint itt nem választható."
+      : "A karakter szabályai nem engedik ezt a jártasságszintet." };
+  }
+  if (level > 0 && item?.branch &&
+      (level <= specializationLearningRank(name, 0, character) || !hasWeaponFoundation(character, item))) {
+    return { error: "A szakosodáshoz előbb a megfelelő fegyveres alapot kell megszerezni." };
+  }
+  if (level > 0 && item?.base === "Fegyverforgatás" && !item.branch &&
+      racialWeaponTraining(character)?.id === item.id) return { error: "Ez a fegyveres alap faji szakosodásból már jár." };
   const skills = { ...character.skills };
   if (!level && specializationNames.some((key) => specialization(key).foundation === name &&
-      (skills[key] || character.skillTraining?.[key]))) return character.skills;
+      (skills[key] || character.skillTraining?.[key]))) return { error: "Ehhez az alaphoz meglévő vagy folyamatban lévő szakosodás tartozik." };
   if (level === 0) delete skills[name];
   else skills[name] = level;
-  if (level > currentLevel && (budget == null || creationSkillCosts({ ...character, skills }, original).total > budget)) {
-    return character.skills;
-  }
-  return skills;
+  if (level <= currentLevel) return { skills };
+  const projected = creationSkillCosts({ ...character, skills }, original);
+  const cost = projected.total - creationSkillCosts(character, original).total;
+  const error = skillPrerequisiteMessage(character.skills, name, level, character) ||
+    (budget == null ? "Előbb add meg a karakter induló Jp-keretét."
+      : projected.total > budget ? "Nincs elég elkölthető Jp ehhez a szinthez." : "");
+  return error ? { cost, error } : { cost, skills };
 }
 
+export function updateCreationSkill(character, budget, name, level, original, devotionApproved = false) {
+  return quoteCreationSkill(character, budget, name, level, original, devotionApproved).skills ?? character.skills;
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 56">
+  <defs>
+    <linearGradient id="metal" x2=".25" y2="1"><stop stop-color="#fff2a1"/><stop offset=".6" stop-color="#ffbb30"/><stop offset="1" stop-color="#7f2b06"/></linearGradient>
+    <radialGradient id="enamel" cx=".42" cy=".25"><stop stop-color="#ffbb30"/><stop offset=".48" stop-color="#7f2b06"/><stop offset="1" stop-color="#10090d"/></radialGradient>
+  </defs>
+  <path d="M20 2h24l15 11 4 15-4 15-15 11H20L5 43 1 28l4-15Z" fill="#0a0808" stroke="#7f2b06" stroke-width="2"/>
+  <path d="M20 4h24l13 10 4 14-4 14-13 10H20L7 42 3 28l4-14Z" fill="url(#enamel)" stroke="url(#metal)" stroke-width="1.5"/>
+  <path d="m11 17 10-9m22 0 10 9m0 22-10 9m-22 0-10-9" fill="none" stroke="#fff2a1" opacity=".55"/>
+  <g transform="translate(9 4)" fill="url(#metal)" stroke="#fff2a1" stroke-width=".65" stroke-linejoin="round"><path d="M4 24c7-9 14-12 20-12s13 3 20 12c-7 9-14 12-20 12S11 33 4 24Z" fill="#401708" stroke="url(#metal)" stroke-width="3"/><circle cx="24" cy="24" r="8"/><circle cx="24" cy="24" r="4" fill="#241006"/><circle cx="26" cy="21" r="1.6" fill="#fff5d0"/></g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 56">
+  <defs>
+    <linearGradient id="metal" x2=".25" y2="1"><stop stop-color="#fce1ff"/><stop offset=".6" stop-color="#e471ff"/><stop offset="1" stop-color="#551471"/></linearGradient>
+    <radialGradient id="enamel" cx=".42" cy=".25"><stop stop-color="#e471ff"/><stop offset=".48" stop-color="#551471"/><stop offset="1" stop-color="#10090d"/></radialGradient>
+  </defs>
+  <path d="M20 2h24l15 11 4 15-4 15-15 11H20L5 43 1 28l4-15Z" fill="#0a0808" stroke="#551471" stroke-width="2"/>
+  <path d="M20 4h24l13 10 4 14-4 14-13 10H20L7 42 3 28l4-14Z" fill="url(#enamel)" stroke="url(#metal)" stroke-width="1.5"/>
+  <path d="m11 17 10-9m22 0 10 9m0 22-10 9m-22 0-10-9" fill="none" stroke="#fce1ff" opacity=".55"/>
+  <g transform="translate(9 4)" fill="url(#metal)" stroke="#fce1ff" stroke-width=".65" stroke-linejoin="round"><path d="M24 4c4 9-4 12 2 19 2-4 5-7 4-12 7 5 12 13 11 19-1 8-7 13-17 13S7 38 7 30c0-6 4-11 8-15-1 6 1 9 4 11-3-10 5-13 5-22Z"/><path d="M24 25c2 5-2 7 2 10l3-6c6 9 1 12-5 12-6 0-9-6 0-16Z" fill="#581577"/></g>
+</svg>
