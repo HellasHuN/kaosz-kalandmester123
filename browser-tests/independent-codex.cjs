@@ -64,22 +64,76 @@ async function verify(page, width) {
   await cast.getByRole("button", { name: "Digitális k100" }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.activeEp === 22);
   assert.equal((await magic()).castingLog.length, 2);
-  await button("Új próba").click();
-  await cast.getByLabel(/Kézi k100/).fill("00");
-  await cast.getByRole("button", { name: "Kézi dobás elbírálása" }).click();
-  await cast.getByText(/a kudarc Ep-veszteségét/i).waitFor();
-  assert.equal((await magic()).activeEp, 22);
-  assert.equal((await magic()).castingLog.length, 2);
-  await button("Varázslási ablak bezárása").click();
-  await codex.getByRole("button", { name: "Varázskönyv", exact: true }).click();
-  assert.equal(await codex.locator("ol li").count(), 2);
+  for (const [input, roll] of [["60", 60], ["00", 100]]) {
+    await button("Új próba").click();
+    await cast.getByLabel(/Kézi k100/).fill(input);
+    await cast.getByRole("button", { name: "Kézi dobás elbírálása" }).click();
+    await cast.getByText("KM elbírálására vár", { exact: true }).waitFor();
+    const saved = await magic();
+    assert.equal(saved.activeEp, 22);
+    const attempt = saved.castingLog.at(-1);
+    assert.equal(attempt.roll, roll);
+    assert.equal(attempt.target, 25);
+    assert.equal(attempt.spellId, "official:esszencia-erzekelese");
+    assert.equal(attempt.status, "pending");
+    assert.ok(Number.isFinite(Date.parse(attempt.recordedAt)));
+    assert.equal(attempt.consequence, undefined);
+  }
+  await photo(cast, "km-elbiralasra-var");
+  const originalAttempts = (await magic()).castingLog.slice(-2);
+  const openBook = async () => {
+    await button("Mágia").click();
+    await button("Kódexfüggetlen").click();
+    await codex.getByRole("button", { name: "Varázskönyv", exact: true }).click();
+  };
+  await page.reload();
+  await button("Betöltés").click();
+  await openBook();
+  assert.equal(await codex.getByText("KM elbírálására vár", { exact: true }).count(), 2);
+  await button("Szerkesztés").click();
+  assert.equal(await codex.getByRole("button", { name: "Elbírálás rögzítése" }).count(), 0);
+  await button("Mégse").click();
   await button("Beállítások").click();
   await button("Vissza a főmenübe").click();
-  await button("Kalandmester").click();
-  await button("Karakterlap megnyitása").click();
-  await button("Mágia").click();
+  const openKm = async () => {
+    await button("Kalandmester").click();
+    await button("Karakterlap megnyitása").click();
+    await openBook();
+    await button("Szerkesztés").click();
+  };
+  await openKm();
+  const normalFailure = codex.getByRole("form", { name: "Dobás elbírálása: 60 / 25" });
+  await normalFailure.getByLabel(/Ep-veszteség/).fill("23");
+  await normalFailure.getByLabel(/következménye/).fill("A fény kialudt.");
+  await normalFailure.getByRole("button").click();
+  await normalFailure.getByRole("alert").waitFor();
+  assert.equal((await magic()).activeEp, 22);
+  await normalFailure.getByLabel(/Ep-veszteség/).fill("4");
+  await photo(codex, "km-elbiralas");
+  await normalFailure.getByRole("button").click();
+  await normalFailure.waitFor({ state: "detached" });
+  await button("Mégse").click();
+  assert.deepEqual((await magic()).castingLog.slice(-2), originalAttempts);
   await button("Szerkesztés").click();
-  await button("Kódexfüggetlen").click();
+  await normalFailure.getByLabel(/Ep-veszteség/).fill("4");
+  await normalFailure.getByLabel(/következménye/).fill("A fény kialudt.");
+  await normalFailure.getByRole("button").click();
+  const criticalFailure = codex.getByRole("form", { name: "Dobás elbírálása: 100 / 25" });
+  await criticalFailure.getByLabel(/Ep-veszteség/).fill("0");
+  await criticalFailure.getByLabel(/következménye/).fill("A felvillanás elárulta a helyzetét.");
+  await criticalFailure.getByRole("button").click();
+  await button("Véglegesítés").click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.activeEp === 18);
+  await page.reload();
+  await openKm();
+  const settled = (await magic()).castingLog.slice(-2);
+  assert.deepEqual(settled.map(record => [record.status, record.previousEp - record.remainingEp]), [["adjudicated", 4], ["adjudicated", 0]]);
+  assert.deepEqual(settled.map(record => [record.id, record.recordedAt, record.roll, record.target]),
+    originalAttempts.map(record => [record.id, record.recordedAt, record.roll, record.target]));
+  assert.equal(await normalFailure.count(), 0);
+  assert.equal(await criticalFailure.count(), 0);
+  await codex.getByText("A fény kialudt.").waitFor();
+  await photo(codex, "km-elbiralva");
   await openSpell("Varázshéj");
   await button("Formula megadása (KM)").click();
   await button("Véglegesítés").click();
@@ -89,7 +143,7 @@ async function verify(page, width) {
   await button("Véglegesítés").click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.academicExceptions?.["official:varazshej"]?.granted === false);
   await page.reload();
-  assert.equal((await magic()).castingLog.length, 2);
+  assert.equal((await magic()).castingLog.length, 4);
   assert.deepEqual(errors, []);
 }
 

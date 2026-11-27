@@ -1,9 +1,33 @@
 import { BookOpen, Compass } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import book from "./independent-assets/open-grimoire.webp";
 import "./independent-codex.css";
 
-export function IndependentCodex({ activeEp, availableEp, release, known, log, page, onPage, selected, onSelect, rows, artwork, filters, children }) {
+function CastingRecord({ record, onAdjudicate }) {
+  const [error, setError] = useState(false);
+  const pending = record.status === "pending";
+  return <li>
+    <strong>{record.spellName}</strong> · {record.outcome}
+    {record.status && <> · {record.roll} / {record.target} ·{" "}
+      <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time></>}
+    {pending ? <> · <strong>KM elbírálására vár</strong></>
+      : <> · {record.status === "adjudicated" && "KM elbírálta · "}{record.previousEp - record.remainingEp} Ep</>}
+    {record.consequence && <p>{record.consequence}</p>}
+    {pending && onAdjudicate && <form className="codex-neutral-adjudication" aria-label={`Dobás elbírálása: ${record.roll} / ${record.target}`}
+      onSubmit={event => {
+        event.preventDefault();
+        const fields = new FormData(event.currentTarget);
+        setError(!onAdjudicate(record.id, Number(fields.get("loss")), fields.get("consequence")));
+      }}>
+      <label>KM által megállapított Ep-veszteség <input name="loss" type="number" min="0" step="any" required /></label>
+      <label>A kudarc következménye <textarea name="consequence" maxLength={1000} required /></label>
+      <button type="submit">Elbírálás rögzítése</button>
+      {error && <p role="alert">Ellenőrizd a szabad Ep-keretet és a megadott következményt.</p>}
+    </form>}
+  </li>;
+}
+
+export function IndependentCodex({ activeEp, availableEp, release, known, log, onAdjudicate, page, onPage, selected, onSelect, rows, artwork, filters, children }) {
   const heading = useRef(null);
   function open(next) {
     onPage(next);
@@ -57,8 +81,8 @@ export function IndependentCodex({ activeEp, availableEp, release, known, log, p
       <h4>Ismert formulák</h4>
       {known.length ? <ul className="codex-neutral-index">{known.map(row)}</ul> : <p>A varázskönyvben még nincs ismert Kódexfüggetlen formula.</p>}
       <h4>Varázslási napló</h4>
-      {log.length ? <ol>{log.slice().reverse().map(record => <li key={record.id}><strong>{record.spellName}</strong> · {record.outcome} · {record.previousEp - record.remainingEp} Ep{record.consequence && ` · ${record.consequence}`}</li>)}</ol>
-        : <p>Még nincs elszámolt Kódexfüggetlen varázslás.</p>}
+      {log.length ? <ol>{log.slice().reverse().map(record => <CastingRecord key={record.id} record={record} onAdjudicate={onAdjudicate} />)}</ol>
+        : <p>Még nincs rögzített Kódexfüggetlen varázslás.</p>}
     </section>}
   </section>;
 }

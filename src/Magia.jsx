@@ -3,7 +3,7 @@ import { BookOpen, Dice5, Feather, Flame, Sparkles, Sun, Zap } from "lucide-reac
 import "./MagicBook.css";
 import { readPercentileRoll, rollDie } from "./teszt/dice.js";
 import { percentileResult } from "./teszt/trials.js";
-import { logAcademicCasting, logAcademicFailure, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
+import { adjudicateIndependentFailure, recordIndependentFailure, logAcademicCasting, logAcademicFailure, logSacredCasting, undoSacredCasting } from "./teszt/sacredCasting.js";
 import { useImperativeHandle, useRef, useState } from "react";
 import { academicException, academicTheoryRank, selectAcademicCodex, setAcademicGrant, validAcademicSpecialization } from "./teszt/academic.js";
 import AkademikusKodexValaszto from "./AkademikusKodexValaszto.jsx";
@@ -78,6 +78,7 @@ function spellArtwork(spell) {
 
 function SpellDetails({ spell, character, magic, form, gm, editing, onChange, onCast, independent = false, scarlet = false, azure = false }) {
   const illustrated = independent || scarlet || azure;
+  const trackFailure = form === "academic" && spell.codex === independentCodex && Boolean(onCast);
   const castDialog = useRef(null);
   const entry = magic.acquisitions.find((item) => item.spellId === spell.id && item.form === form);
   const [units, setUnits] = useState(entry?.units ?? "");
@@ -113,9 +114,28 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
     if (!canRoll) return;
     const roll = digital ? rollDie(100) : readPercentileRoll(manualRoll);
     const attempt = { id: crypto.randomUUID(), signature: trialSignature, roll, outcome: percentileResult(trial.target, roll) };
+    setNotice("");
     setTrialResult(attempt);
     if (independent && attempt.outcome === "success" && spell.fp == null && spell.id !== "official:sebokozas") {
       commitIndependentCast(attempt);
+    } else if (trackFailure && ["failure", "critical-failure"].includes(attempt.outcome)) {
+      const operation = { id: attempt.id, roll, recordedAt: new Date().toISOString() };
+      const failureContext = independent || (gm && editing) ? context : { ...context, conditionsConfirmed: true };
+      if (gm && editing) {
+        onChange(previous => recordIndependentFailure(character, previous, spell, failureContext, operation));
+      } else {
+        const persisted = readMagic(character);
+        const next = recordIndependentFailure(character, persisted, spell, failureContext, operation);
+        if (next === persisted || next.castingLog.at(-1).target !== trial.target) {
+          setNotice("A dobás mentéséhez előbb véglegesítsd a varázslást érintő módosításokat.");
+          return;
+        }
+        onCast(character.id, (latestCharacter, latestMagic) =>
+          recordIndependentFailure(latestCharacter, latestMagic, spell, failureContext, operation));
+        if (editing) onChange(previous => ({
+          ...previous, castingLog: [...(previous.castingLog ?? []), next.castingLog.at(-1)],
+        }));
+      }
     }
   }
   function commitIndependentCast(attempt, dice) {
@@ -222,14 +242,16 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
                 "critical-failure": "Katasztrofális rontás",
               })[trialResult.outcome]}. ${independent ? "A célpont ellenállása külön ellenőrzendő." : "A célpont ellenállása és az Ep elszámolása külön ellenőrzendő."}`
           }</p>}
-          {illustrated && recordedAttempt && <p role="status">Naplózva · {recordedAttempt.previousEp - recordedAttempt.remainingEp} Ep elszámolva.</p>}
+          {recordedAttempt?.status === "pending" && <p role="status">KM elbírálására vár</p>}
+          {illustrated && recordedAttempt && recordedAttempt.status !== "pending" &&
+            <p role="status">Naplózva · {recordedAttempt.previousEp - recordedAttempt.remainingEp} Ep elszámolva.</p>}
           {illustrated && currentOutcome && <button type="button" onClick={() => {
             if (recordedAttempt || !gm || !editing || window.confirm("Elveted a még el nem számolt dobást?")) {
               setTrialResult(null);
               setManualRoll("");
             }
           }}>Új próba</button>}
-          {gm && editing && trialResult?.signature === trialSignature &&
+          {!trackFailure && !independent && gm && editing && trialResult?.signature === trialSignature &&
             ["failure", "critical-failure"].includes(trialResult.outcome) && (
             <form key={trialResult.id} onSubmit={event => {
               event.preventDefault();
@@ -583,7 +605,7 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
           {!gm && selected.access.fromScroll && <p>Birtokolt mondóka-pergamen</p>}
           <SpellDetails key={`${selected.form}:${selected.spell.id}-${editing}-${gm}`}
             spell={selected.spell} form={selected.form} independent={independent} scarlet={scarlet} azure={azure} character={character} magic={magic} editing={editing}
-            gm={selected.form === "academic" && selected.spell.codex === independentCodex ? kmMode : gm} onChange={setDraft} />
+            gm={selected.form === "academic" && selected.spell.codex === independentCodex ? kmMode : gm} onChange={setDraft} onCast={onCast} />
         </article>}
         {!selected && <p className="spellbook-placeholder">Válassz varázslatot a részletekhez.</p>}
       </div>
@@ -667,7 +689,7 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
         <details>
           <summary>Varázslási napló</summary>
           <ol>{magic.castingLog.map(record => <li key={record.id}>
-            {record.spellName} · {record.previousEp - record.remainingEp} Ep · {record.outcome} ·{" "}
+            {record.spellName} · {record.status === "pending" ? "KM elbírálására vár" : `${record.previousEp - record.remainingEp} Ep`} · {record.outcome} ·{" "}
             <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time>
             {record.consequence && <p>{record.consequence}</p>}
           </li>)}</ol>
@@ -786,7 +808,13 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
           spell.name.toLocaleLowerCase("hu").includes(search) && (!knownOnly || access.recorded));
         return <IndependentCodex activeEp={magic.activeEp} availableEp={freeEp} release={limits.release}
           known={all.filter(({ access }) => access.recorded)}
-          log={(magic.castingLog ?? []).filter(entry => independentSpells.some(spell => entry.spellName === spell.name))}
+          log={(magic.castingLog ?? []).filter(entry => independentSpells.some(spell => entry.spellId === spell.id || entry.spellName === spell.name))}
+          onAdjudicate={kmMode && editing && onCast ? (id, epLoss, consequence) => {
+            const operation = { id, epLoss, consequence, adjudicatedAt: new Date().toISOString() };
+            if (adjudicateIndependentFailure(character, magic, operation) === magic) return false;
+            setDraft(previous => adjudicateIndependentFailure(character, previous, operation));
+            return true;
+          } : undefined}
           page={independentPage} onPage={setIndependentPage} selected={selected} onSelect={setSelectedSpell} rows={rows}
           artwork={spellArtwork} filters={<div className="codex-neutral-filters">
             <label>Varázslat keresése<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>

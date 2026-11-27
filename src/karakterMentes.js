@@ -20,6 +20,10 @@ function validAncestor(node, root = false) {
     ((!root && node.parents == null) || arrayOf((parent) => parent == null || validAncestor(parent))(node.parents));
 }
 
+function validEpAccounting(entry) {
+  return isNonnegative(entry.previousEp) && isNonnegative(entry.remainingEp) && entry.remainingEp <= entry.previousEp;
+}
+
 function validMagic(magic) {
   const spellReference = (entry) => isRecord(entry) && isText(entry.spellId) && isText(entry.form);
   const effect = (entry) => isRecord(entry) && isId(entry.id) && isText(entry.name) && isText(entry.description) &&
@@ -41,7 +45,11 @@ function validMagic(magic) {
         hasFields(entry, { ep: isNonnegative, units: isNonnegative, target: isRecord })),
       castingLog: arrayOf(entry => isRecord(entry) && isId(entry.id) && isText(entry.spellName) &&
         isText(entry.recordedAt) && isText(entry.outcome) && optional(entry.consequence, isText) && optional(entry.reservation, spellReference) &&
-        isNonnegative(entry.previousEp) && isNonnegative(entry.remainingEp) && entry.remainingEp <= entry.previousEp),
+        (entry.status === "pending" || entry.status === "adjudicated"
+          ? isId(entry.spellId) && Number.isSafeInteger(entry.roll) && entry.roll >= 1 && entry.roll <= 100 &&
+            isNumber(entry.target) && (entry.status === "pending" ||
+              (isText(entry.adjudicatedAt) && isText(entry.consequence) && validEpAccounting(entry)))
+          : validEpAccounting(entry))),
       restrictedSpells: arrayOf(spellReference), wildEffects: arrayOf(effect), freeEffects: arrayOf(effect),
     }).every(([key, check]) => magic[key] === undefined || check(magic[key]));
 }
