@@ -442,7 +442,6 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
   const edition = codexEdition(illustratedCodex);
   const combinedCodex = illustratedCodex === "__osszesitett__";
   const illustrated = independent || scarlet || azure || Boolean(edition) || combinedCodex;
-  const EssenceIcon = azure || edition ? getCodexIcon(illustratedCodex) : Flame;
   const showAcademic = illustrated || selectedForm === "academic";
   const showSacred = selectedForm === "sacred";
   const formCatalog = spells.filter((spell) => (selectedForm === "practical") === (spell.codex === "Praktikus mágia"));
