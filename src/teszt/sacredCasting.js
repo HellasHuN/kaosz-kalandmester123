@@ -44,8 +44,8 @@ export function logAcademicFailure(character, magic, spell, context, { id, roll,
   }] };
 }
 
-export function recordIndependentFailure(character, magic, spell, context, { id, roll, recordedAt }) {
-  if (spell.codex !== "Kódexfüggetlen" || magic.castingLog?.some(entry => entry.id === id) ||
+export function recordAcademicPendingFailure(character, magic, spell, context, { id, roll, recordedAt }) {
+  if (!["Kódexfüggetlen", "Skarlát"].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
@@ -57,7 +57,7 @@ export function recordIndependentFailure(character, magic, spell, context, { id,
   }] };
 }
 
-export function adjudicateIndependentFailure(character, magic, { id, epLoss, consequence, adjudicatedAt }) {
+export function adjudicateAcademicFailure(character, magic, { id, epLoss, consequence, adjudicatedAt }) {
   if (!magic.castingLog?.some(entry => entry.id === id && entry.status === "pending") ||
       !Number.isFinite(epLoss) || epLoss < 0 || (availableMagicEp(character, magic) ?? -1) < epLoss ||
       !consequence?.trim() || consequence.length > 1000) return magic;

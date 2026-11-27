@@ -1,7 +1,8 @@
-import { BookOpen, Compass } from "lucide-react";
+import { BookOpen, Compass, Flame } from "lucide-react";
 import { useRef, useState } from "react";
 import book from "./independent-assets/open-grimoire.webp";
 import "./independent-codex.css";
+import "./scarlet-codex.css";
 
 function CastingRecord({ record, onAdjudicate }) {
   const [error, setError] = useState(false);
@@ -27,8 +28,11 @@ function CastingRecord({ record, onAdjudicate }) {
   </li>;
 }
 
-export function IndependentCodex({ activeEp, availableEp, release, known, log, onAdjudicate, page, onPage, selected, onSelect, rows, artwork, filters, children }) {
+export function IndependentCodex({ scarlet = false, catalog, costLabel, activeEp, availableEp, release, known, log, onAdjudicate, page, onPage, selected, onSelect, rows, artwork, filters, children }) {
   const heading = useRef(null);
+  const title = scarlet ? "Skarlát Kódex" : "Kódexfüggetlen";
+  const Icon = scarlet ? Flame : Compass;
+  const featured = scarlet && (known.find(({ spell }) => spell.id === "official:tuzgyuru") ?? known[0] ?? catalog.find(({ spell }) => spell.id === "official:tuzgyuru"));
   function open(next) {
     onPage(next);
     heading.current?.scrollIntoView({ block: "nearest" });
@@ -36,15 +40,15 @@ export function IndependentCodex({ activeEp, availableEp, release, known, log, o
   const row = ({ spell, access }) => <li key={spell.id}>
     <button type="button" aria-label={`${spell.name} kiválasztása`} onClick={() => { onSelect(spell.id); open("detail"); }}>
       <img src={artwork(spell)} alt="" width="96" height="70" loading="lazy" />
-      <span><strong>{spell.name}</strong><small>{spell.type}</small></span>
+      <span><strong>{spell.name}</strong><small>{spell.type}</small>{scarlet && <small className="scarlet-list-cost">{costLabel(spell.ep)}</small>}</span>
       <small className="codex-neutral-status" data-known={access.recorded}>{access.recorded ? "Ismert" : "Még nincs megszerezve"}</small>
     </button>
   </li>;
-  return <section className="codex-neutral" aria-labelledby="academic-magic-heading">
+  return <section className={`codex-neutral${scarlet ? " scarlet-codex" : ""}`} aria-labelledby="academic-magic-heading">
     <header className="codex-neutral-hero" ref={heading}>
-      <Compass aria-hidden="true" /><h3 id="academic-magic-heading">Kódexfüggetlen</h3>
+      <Icon aria-hidden="true" />{scarlet && <span className="scarlet-eyebrow">Akadémikus mágia</span>}<h3 id="academic-magic-heading">{title}</h3>
     </header>
-    <nav aria-label="Kódexfüggetlen oldalak" className="codex-neutral-tabs">
+    <nav aria-label={`${title} oldalak`} className="codex-neutral-tabs">
       {[
         ["home", "Áttekintés"], ["list", "Varázslatok"], ["book", "Varázskönyv"],
       ].map(([id, label]) => <button key={id} type="button" aria-current={page === id || (page === "detail" && id === "list") ? "page" : undefined} onClick={() => open(id)}>{label}</button>)}
@@ -54,7 +58,24 @@ export function IndependentCodex({ activeEp, availableEp, release, known, log, o
       <div><dt>Elérhető Ep</dt><dd>{availableEp ?? "—"}</dd></div>
       <div><dt>Felszabadítható Ep</dt><dd>{release}</dd></div>
     </dl>
-    {page === "home" && <div className="codex-neutral-spread">
+    {page === "home" && scarlet && <>
+      {featured && <section className="codex-neutral-paper scarlet-feature">
+        <h4>{featured.spell.name}</h4>
+        <img src={artwork(featured.spell)} width="480" height="270" alt="" />
+        <p>{featured.access.recorded ? "Ismert formula" : featured.spell.type} · {costLabel(featured.spell.ep)}</p>
+        <button type="button" onClick={() => { onSelect(featured.spell.id); open("detail"); }}>Adatlap</button>
+      </section>}
+      <section className="codex-neutral-paper scarlet-quick">
+        <h4>Varázslatok</h4>
+        <ul className="codex-neutral-index">{["langhivas", "langpajzs", "tuzgolyo"].map(id =>
+          catalog.find(({ spell }) => spell.id === `official:${id}`)).filter(Boolean).map(row)}</ul>
+        <div className="scarlet-home-actions">
+          <button type="button" onClick={() => open("list")}>Teljes varázslatlista</button>
+          <button type="button" onClick={() => open("book")}>Varázskönyv megnyitása</button>
+        </div>
+      </section>
+    </>}
+    {page === "home" && !scarlet && <div className="codex-neutral-spread">
       <section className="codex-neutral-paper">
         <h4>Varázslatok</h4>
         <ul className="codex-neutral-index">{(known.length ? known : rows).slice(0, 3).map(row)}</ul>
@@ -69,6 +90,7 @@ export function IndependentCodex({ activeEp, availableEp, release, known, log, o
     {page === "list" && <section className="codex-neutral-paper">
       <h4>Varázslatlista</h4>
       {filters}
+      {scarlet && <p role="status">{rows.length} formula</p>}
       {rows.length ? <ul className="codex-neutral-index">{rows.map(row)}</ul> : <p>Nincs megjeleníthető találat.</p>}
     </section>}
     {page === "detail" && selected && <section className="codex-neutral-paper codex-neutral-detail">
@@ -79,10 +101,10 @@ export function IndependentCodex({ activeEp, availableEp, release, known, log, o
     </section>}
     {page === "book" && <section className="codex-neutral-paper">
       <h4>Ismert formulák</h4>
-      {known.length ? <ul className="codex-neutral-index">{known.map(row)}</ul> : <p>A varázskönyvben még nincs ismert Kódexfüggetlen formula.</p>}
+      {known.length ? <ul className="codex-neutral-index">{known.map(row)}</ul> : <p>A varázskönyvben még nincs ismert {title} formula.</p>}
       <h4>Varázslási napló</h4>
       {log.length ? <ol>{log.slice().reverse().map(record => <CastingRecord key={record.id} record={record} onAdjudicate={onAdjudicate} />)}</ol>
-        : <p>Még nincs rögzített Kódexfüggetlen varázslás.</p>}
+        : <p>Még nincs rögzített {title} varázslás.</p>}
     </section>}
   </section>;
 }
