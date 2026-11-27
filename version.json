@@ -1,4 +1,6 @@
 {
-  "sourceCommit": "de37c2fec0e01a9778f9bb7b18f3ff746b509a3b",
+  "sourceCommit": "bc483357f958cdbd92f75d9c09cc223e45be971e",
+  "previousDeploymentCommit": "db22afddafefadc90713610bff4ab45dbfdbf678",
+  "indexSha256": "7d8c11e941e02a3d9429ff7ca92576de8d4ac0613f6876e3624e4adb7eecccb7",
   "status": "preview"
 }
