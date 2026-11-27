@@ -10,7 +10,7 @@ import GeneralPage, { GeneralEditActions } from "./page1/GeneralPage.jsx";
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
 
 function Karakterlap({
-  character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
+  character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onMagicCast, onStartCharacterEdit,
   onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving,
 }) {
   const [activePage, setActivePage] = React.useState(initialPage);
@@ -91,7 +91,7 @@ function Karakterlap({
       </div>
     )}
     {activePage === 4 && (
-      <Magia ref={editor} character={character} onSave={onSaveMagic} />
+      <Magia ref={editor} character={character} onSave={onSaveMagic} kmMode={mode === "gm"} onCast={onMagicCast} />
     )}
     </div>
   );

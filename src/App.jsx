@@ -817,6 +817,16 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     ));
   }
 
+  function commitMagicCast(characterId, calculate) {
+    if (saveBlocked) return;
+    setSavedCharacters(previous => previous.map(character => {
+      if (character.id !== characterId || character.playStatus !== "playing") return character;
+      const magic = readMagic(character);
+      const next = calculate(character, magic);
+      return next === magic ? character : { ...character, magic: next };
+    }));
+  }
+
   function updateHealth(id, amount) {
     setSavedCharacters((previous) => previous.map((character) =>
       character.id === id ? changeCurrentHealth(character, amount) : character
@@ -1572,7 +1582,7 @@ setAncestry((previous) => ({
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}
             onSaveSkills={saveSkills}
-            onSaveEquipment={saveEquipment} onSaveMagic={saveMagic}
+            onSaveEquipment={saveEquipment} onSaveMagic={saveMagic} onMagicCast={saveBlocked ? undefined : commitMagicCast}
             onStartCharacterEdit={() => loadCharacter(selectedCharacter)}
             onCancelCharacterEdit={() => loadCharacter(selectedCharacter)}
             onFinalizeCharacterEdit={() => !characterFieldsChanged || saveCharacter({ notify: false })}
