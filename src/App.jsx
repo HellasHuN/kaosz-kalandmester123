@@ -1563,7 +1563,10 @@ setAncestry((previous) => ({
           </nav>}
         {page === "test-settings" && <Suspense fallback={<p className="campaign-notice" role="status">Beállítások betöltése…</p>}>
           <TestSettings mode={testMode} onMode={selectTestMode} onExport={exportCharacters} onImport={importCharacters}
-            onReturnToCharacter={settingsFromPlayingSheet ? navigation.back : undefined} />
+            onReturnToCharacter={settingsFromPlayingSheet ? navigation.back : undefined}
+            onReturnHome={settingsFromPlayingSheet ? () => {
+              if (window.confirm("Biztosan visszalépsz a főmenübe? Ezzel elhagyod az aktív játéknézetet.")) returnHome();
+            } : undefined} />
         </Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p className="campaign-notice" role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p className="campaign-notice" role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
