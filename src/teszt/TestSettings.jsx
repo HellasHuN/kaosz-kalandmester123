@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ApplicationHeading } from "./ApplicationChrome.jsx";
 
 export default function TestSettings({ mode, onMode, onHome, onExport, onImport }) {
   const fileInput = useRef(null);
@@ -19,8 +20,8 @@ export default function TestSettings({ mode, onMode, onHome, onExport, onImport 
     }
   }
 
-  return <section className="test-panel">
-    <h2>Beállítások</h2>
+  return <section className="test-panel campaign-surface">
+    <ApplicationHeading>Beállítások</ApplicationHeading>
     <p>A tesztadatok ebben a böngészőben maradnak. Más eszközökön külön mentés szükséges.</p>
     <div className="test-actions">
       {mode && <button type="button" onClick={() => onMode(mode === "km" ? "player" : "km")}>

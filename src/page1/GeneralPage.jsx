@@ -13,14 +13,14 @@ const missing = "—";
 const componentIcons = [[Hand, ShieldCheck], [Feather, Crosshair], [BookOpen, Sun], [Sparkles, Shield], [Eye, ScanEye]];
 const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, equipment: Backpack, chat: MessageCircle, home: House, settings: Settings };
 
-export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread, subtitle = "Általános" }) {
+export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread, subtitle = "Általános", title = creation ? "Karakteralkotás" : "Karakterlap", showTools = true }) {
   const { race, subrace, gender, age, name } = character;
   const illustratedHuman = race === "Ember" && !subrace && gender === "Férfi";
   return <header className="general-hero" data-illustrated-human={illustratedHuman}
     style={pageAncestryTheme(race, subrace, gender)}>
     {!illustratedHuman && <div className="general-hero-portrait" aria-hidden="true" />}
     <div className="general-ribbon">
-      <h2>{creation ? "Karakteralkotás" : "Karakterlap"}</h2>
+      <h2>{title}</h2>
       <span>{subtitle}</span>
     </div>
     <div className="general-identity">
@@ -31,7 +31,7 @@ export function IllustratedHeader({ character, creation, actions, onCodex, onCha
         {age && <span><Hourglass />{age} év</span>}
       </div>
     </div>
-    {creation ? actions && <div className="general-new">{actions}</div> : <>
+    {creation ? actions && <div className="general-new">{actions}</div> : showTools && <>
       <div className="general-hero-tools">
         <button type="button" aria-label="Kódex" onClick={onCodex}><BookOpen /></button>
         <button type="button" aria-label={unread ? `Értesítések · ${unread} olvasatlan üzenet` : "Értesítések"} onClick={onChat}>

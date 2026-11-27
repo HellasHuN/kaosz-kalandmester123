@@ -1,0 +1,149 @@
+.test-app .campaign-surface,
+.test-app .campaign-dialog {
+  color: #fff0d2;
+  font-family: Georgia, serif;
+  text-shadow: 0 1px 2px #000;
+  background: radial-gradient(ellipse at 50% 12%,#29415755,transparent 60%),var(--stone);
+}
+.test-app :is(.campaign-surface,.campaign-dialog),
+.test-app .campaign-surface :is(.adventure-desk-content,.general-hero,.test-map-viewport,.test-timeline),
+.test-app .main-menu :is(.menu-frame,.menu-portrait-hero) {
+  border: 1px solid #bb854c;
+  border-image: var(--ornament) 39 / 12px stretch;
+  border-radius: 0;
+}
+.test-app .test-panel.campaign-surface { padding: clamp(.55rem,2vw,1rem); }
+.test-app .test-panel.adventure-desk.campaign-surface {
+  width: min(100%,82rem);
+  border: 1px solid #bb854c;
+  border-image: var(--ornament) 39 / 12px stretch;
+  background: radial-gradient(ellipse at 50% 12%,#29415755,transparent 60%),var(--stone);
+}
+.campaign-surface .campaign-heading {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  place-items: center;
+  min-height: clamp(4.5rem,11vw,8rem);
+  padding: .36rem;
+  background: linear-gradient(90deg,#080d13ee,#15161c52,#080d13ee),
+    url("../assets/theme/gate.webp") center 47% / cover;
+  border-image: var(--ornament) 39 / 12px stretch;
+}
+.test-app .campaign-surface .campaign-heading h2 {
+  width: min(100%,50rem);
+  margin: 0;
+  padding: .65rem clamp(.5rem,8vw,4rem);
+  font-size: clamp(1.05rem,3.2vw,2.35rem);
+}
+.test-app .campaign-surface .adventure-desk-content {
+  color: inherit;
+  background: var(--enamel);
+  box-shadow: none;
+}
+.campaign-surface .adventure-desk-content :is(h3,h4,legend,summary) {
+  color: var(--gold);
+}
+.campaign-surface .adventure-desk-content > section > h3 {
+  padding: .42rem .45rem;
+  background: linear-gradient(#661a10,#290907);
+  border-block: 1px solid #a66d3b;
+}
+.campaign-surface .adventure-desk-content summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.test-app .campaign-surface .adventure-desk-content label { color: #ffe8bf; }
+.test-app .campaign-surface :is(input:not([type="checkbox"],[type="file"]),textarea,select) {
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #886c47;
+  border-radius: 0;
+  color: #fff0d2;
+  background: #09131c;
+  color-scheme: dark;
+  font: inherit;
+}
+.campaign-surface input[type="checkbox"] { accent-color: #c78c48; }
+.test-app :is(.campaign-surface,.campaign-dialog,.campaign-navigation,.main-menu) button:not(.atlas-pin) {
+  min-height: 44px;
+  border: 1px solid #c28946;
+  border-image: var(--small-ornament) 27 / 8px stretch;
+  border-radius: 0;
+  color: #fff0c7;
+  background: radial-gradient(ellipse at 49% -5%,#b5813e72,transparent 60%),var(--enamel);
+  font-family: Georgia, serif;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.test-app :is(.campaign-surface,.main-menu) button:is([aria-pressed="true"],[aria-current="page"],[data-tone="red"]):not(.atlas-pin) {
+  background: radial-gradient(ellipse at 50% 5%,#b74715,#310a08 73%);
+  box-shadow: inset 0 0 .45rem #ff80267a;
+}
+.test-app .main-menu button[data-tone="green"] { background: linear-gradient(#284a31,#102418); }
+.test-app :is(.campaign-surface,.campaign-dialog,.campaign-navigation) button:disabled { opacity: .5; cursor: default; }
+.test-app :is(.campaign-surface,.campaign-dialog,.campaign-navigation) :focus-visible {
+  outline: 2px solid #ffedb7;
+  outline-offset: 2px;
+}
+.campaign-surface .test-messages li,
+.campaign-surface .adventure-desk-content :is(.bestiary-cards details,.bestiary-empty),
+.campaign-surface .adventure-desk-content li:has(> time) {
+  padding: .48rem;
+  border: 1px solid #986840;
+  color: #fff0d2;
+  background: var(--enamel);
+}
+.campaign-surface .adventure-desk-content :is(.test-timeline,fieldset) { color: inherit; min-width: 0; }
+.campaign-surface .adventure-desk-content :is(.test-timeline,.atlas-results) { overflow-wrap: anywhere; }
+.campaign-surface .adventure-desk-content .atlas-pin {
+  max-width: 8rem;
+  min-height: 44px;
+  color: #fff0cf;
+  background: #282019;
+  border-color: #b98146;
+  white-space: normal;
+}
+.campaign-surface .adventure-desk-content .atlas-pin[aria-pressed="true"] { background: #6e260f; }
+.campaign-surface .adventure-desk-content :is(.bestiary-panel,.atlas-panel) .test-feature-title {
+  color: var(--gold);
+  border-image: var(--ornament) 39 / 10px stretch;
+}
+.test-app :is(.campaign-surface,.main-menu) :is([role="status"],[role="alert"]):not([hidden]),
+.campaign-notice {
+  width: min(100%,54rem);
+  margin: .4rem auto;
+  padding: .45rem .6rem;
+  background: linear-gradient(105deg,#492919,#11171e);
+  color: #fff0c7;
+  border: 1px solid #bb854c;
+  font-family: Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.test-app .campaign-notice[role="alert"] { background: linear-gradient(105deg,#642519,#241014); }
+.test-app .campaign-dialog {
+  width: min(calc(100% - 1.5rem), 32rem);
+  max-height: calc(100% - 1.5rem);
+  overflow: auto;
+  padding: .8rem;
+  margin: auto;
+  text-align: center;
+}
+.campaign-dialog::backdrop { background: #03060bd9; }
+.test-app .campaign-dialog h2 { margin: .2rem auto .6rem; }
+.test-app .campaign-dialog button { margin: .2rem; max-width: 100%; }
+.test-app .main-menu .menu-title {
+  border: 0;
+  border-radius: 0;
+  background: var(--title-art) center / 100% 100% no-repeat;
+  box-shadow: none;
+  padding: .6rem;
+}
+.main-menu .menu-title::before,.main-menu .menu-title::after { content: none; }
+.test-app .main-menu .menu-search button { border: 0; background: transparent; box-shadow: none; }
+.test-app .main-menu .menu-frame { background: var(--enamel); }
+@media (max-width: 34rem) {
+  .campaign-surface .adventure-desk-navigation button { min-width: 0; }
+  .campaign-surface .adventure-desk-content { padding: .55rem; }
+}

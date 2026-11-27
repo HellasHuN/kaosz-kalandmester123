@@ -1,6 +1,7 @@
 import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
 import GeneralPage, { CharacterWorkspace, GeneralNavigation } from "./page1/GeneralPage.jsx";
 import "./CharacterInterfaces.css";
+import { ApplicationDialog } from "./teszt/ApplicationChrome.jsx";
 import { profileError, readProfile } from "./characterProfile.js";
 import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
 import MainMenu from "./teszt/MainMenu.jsx";
@@ -181,6 +182,7 @@ function App() {
   const [testMode, setTestMode] = useState(null);
   const [adventureCharacterId, setAdventureCharacterId] = useState(null);
   const [activationFeedback, setActivationFeedback] = useState(null);
+  const [saveFeedback, setSaveFeedback] = useState("");
   const [adventure, setAdventure] = useState(() => readAdventure({
     getItem: (key) => window.localStorage.getItem(key),
   }));
@@ -631,10 +633,15 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   setHealthDraft(null);
   setResourceDraft({});
 
-  if (notify) alert(saveBlocked ? "A karakter az aktuális munkamenetben frissült." : "A karakter sikeresen elmentve!");
+  if (notify) {
+    const message = saveBlocked ? "A karakter az aktuális munkamenetben frissült." : "A karakter sikeresen elmentve!";
+    setSaveFeedback(message);
+    alert(message);
+  }
   return true;
 }
   function loadCharacter(character, forCreation = false) {
+    setSaveFeedback("");
     setDevotionApproval(null);
     setCreationTab("details");
     setCreationSkills(forCreation ? purchasedCreationSkills(character) : {});
@@ -1503,7 +1510,7 @@ setAncestry((previous) => ({
   return (
     <div className="app test-app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
-        {saveBlocked && <p role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
+        {saveBlocked && <p className="campaign-notice" role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
           <MainMenu characters={savedCharacters} adventure={adventure}
@@ -1513,7 +1520,7 @@ setAncestry((previous) => ({
             onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
             onGM={() => selectTestMode("km")} />
         ) : !selectingCharacter && (
-          <nav className="workspace-nav" aria-label="Visszalépés">
+          <nav className={`workspace-nav${page === "test-settings" || page === "test-adventure" ? " campaign-navigation" : ""}`} aria-label="Visszalépés">
             {!inPlayerView && page !== "test-settings" &&
               <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
             {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
@@ -1524,16 +1531,17 @@ setAncestry((previous) => ({
             )}
           </nav>
         )}
-        {page === "test-settings" && <Suspense fallback={<p role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
+        {page === "test-settings" && <Suspense fallback={<p className="campaign-notice" role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
           onHome={() => {
             if (window.confirm("Visszatérsz a főmenübe?")) returnHome();
           }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
-        {page === "test-adventure" && <Suspense fallback={<p role="status">Kaland betöltése…</p>}>
-          {(adventure.blocked || adventureWriteFailed) && <p role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
+        {page === "test-adventure" && <Suspense fallback={<p className="campaign-notice" role="status">Kaland betöltése…</p>}>
+          {(adventure.blocked || adventureWriteFailed) && <p className="campaign-notice" role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
           <TestMode key={testMode} mode={testMode} initialTab={adventureTabOnOpen} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
             ? playingCharacters : [...playingCharacters, sampleCharacter]}
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
+        {page === "alkotas" && saveFeedback && <p className="campaign-notice" role="status">{saveFeedback}</p>}
         {page === "alkotas" && (
           creationEditable && creationTab !== "details" ?
             <CharacterWorkspace character={creationIdentity} subtitle={creationLinks.find(link => link.current)?.label}
@@ -1640,11 +1648,9 @@ setAncestry((previous) => ({
           </section>
         )}
 {deletingCharacter && (
-  <div className="modal-overlay">
-    <section className="modal-panel">
+  <ApplicationDialog title={deleteStep === 1 ? "Biztosan törlöd?" : "Nem gondoltad meg magad?"}>
       {deleteStep === 1 && (
         <>
-          <h2>Biztosan törlöd?</h2>
           <p>
             Biztos törölni akarod {deletingCharacter.name} karaktert?
           </p>
@@ -1665,7 +1671,6 @@ setAncestry((previous) => ({
 
       {deleteStep === 2 && (
         <>
-          <h2>Nem gondoltad meg magad?</h2>
           <p>{deletingCharacter.name} sorsa a te kezedben van.</p>
           <button className="save" onClick={characterDied}>
             Meghalt
@@ -1675,20 +1680,16 @@ setAncestry((previous) => ({
           </button>
         </>
       )}
-    </section>
-  </div>
+  </ApplicationDialog>
 )}
 
 {farewellMessage && (
-  <div className="modal-overlay">
-    <section className="modal-panel">
-    <h2>Búcsú a kaland végén</h2>
+  <ApplicationDialog title="Búcsú a kaland végén">
     <p>{farewellMessage}</p>
     <button className="save" onClick={() => setFarewellMessage("")}>
       Bezárás
     </button>
-  </section>
-</div>)}</main>
+  </ApplicationDialog>)}</main>
    
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bell, BookOpen, Compass, Feather, HeartPulse, Home, Hourglass, Info, MessageCircle,
   Pencil, Play, Plus, Search, Settings, Shield, Sparkles, Star, Swords, Trash2, UserRound, Users, X } from "lucide-react";
-import { ancestryTheme } from "./ancestryTheme.js";
+import { pageAncestryTheme } from "./ancestryTheme.js";
 import { unreadMessages } from "./localAdventure.js";
 import { maxHealth } from "../eletero.js";
 import { magicLimits, readMagic } from "../magiaSzabalyok.js";
@@ -29,7 +29,7 @@ function CharacterPreview({ character, onLoad, onEdit, onDelete }) {
     ["Származás", origin],
   ];
   const classified = character.playStatus === "playing" || character.playStatus === "draft";
-  return <section className="menu-frame menu-preview" aria-labelledby="menu-character-title" style={ancestryTheme(character.race, character.subrace)}>
+  return <section className="menu-frame menu-preview" aria-labelledby="menu-character-title" style={pageAncestryTheme(character.race, character.subrace, character.gender)}>
     <div className="menu-portrait-hero">
       <Shield className="menu-crest" aria-hidden="true" />
       <h3 id="menu-character-title">{character.name}</h3>
@@ -106,7 +106,7 @@ export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit,
             const active = character.id === selected?.id;
             return <li key={character.id}>
               <button type="button" aria-pressed={active} onClick={() => { setSelection(character.id); setMessage(""); }}
-                style={ancestryTheme(character.race, character.subrace)}>
+                style={pageAncestryTheme(character.race, character.subrace, character.gender)}>
                 <span className="menu-avatar" aria-hidden="true" />
                 <span className="menu-card-copy">
                   <strong>{character.name}</strong>

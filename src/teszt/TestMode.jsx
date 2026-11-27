@@ -4,6 +4,8 @@ import { SecretTrials } from "./TrialTools.jsx";
 import { Bestiary, CreatureGenerator, MapTool } from "./FieldTools.jsx";
 import SegmentTimeline from "./SegmentTimeline.jsx";
 import { useState } from "react";
+import { ApplicationHeading } from "./ApplicationChrome.jsx";
+import { IllustratedHeader } from "../page1/GeneralPage.jsx";
 import { addMessage, conversationFor, markConversationRead, unreadMessages } from "./localAdventure.js";
 
 const quickMessages = [
@@ -17,8 +19,8 @@ export default function TestMode({ mode, initialTab = "overview", initialCharact
   const [recipient, setRecipient] = useState(() => String(initialCharacterId ?? ""));
   const [text, setText] = useState("");
   if (!mode) return (
-    <section className="test-panel">
-      <h2>Kaland kezdete</h2>
+    <section className="test-panel campaign-surface">
+      <ApplicationHeading>Kaland kezdete</ApplicationHeading>
       <div className="test-actions">
         <button type="button" onClick={() => onSelectMode("player")}>Játékos mód</button>
         <button type="button" onClick={() => onSelectMode("km")}>Kalandmester mód</button>
@@ -46,10 +48,10 @@ export default function TestMode({ mode, initialTab = "overview", initialCharact
     }
   }
 
-  return <section className={`test-panel adventure-desk${km ? " adventure-desk-km" : ""}`}>
-    <header className="adventure-desk-heading">
-      <h2 className="test-heading">{km ? "Kalandmesteri irányítópult" : "Játékos mód"}</h2>
-    </header>
+  return <section className={`test-panel adventure-desk campaign-surface${km ? " adventure-desk-km" : ""}`}>
+    {tab === "messages" && selected ? <IllustratedHeader character={selected} title="Üzenetek"
+      subtitle={km ? "Kalandmester" : "Játékos mód"} showTools={false} />
+      : <ApplicationHeading>{km ? "Kalandmesteri irányítópult" : "Játékos mód"}</ApplicationHeading>}
     <div className="adventure-desk-layout">
     <nav className="test-actions adventure-desk-navigation" aria-label="Tesztkaland">
       <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}><Compass aria-hidden="true" size={16} />Kaland áttekintése</button>

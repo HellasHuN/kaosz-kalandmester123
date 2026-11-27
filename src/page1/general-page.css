@@ -1,13 +1,16 @@
 .test-app .workspace-screen:has(.general-sheet:is([data-mode="gm"],[data-mode="player"])) > .workspace-nav :is(.workspace-settings,.workspace-home,.workspace-saved),
 .test-app .workspace-screen:has(.general-sheet:is([data-mode="gm"],[data-mode="player"])) > .workspace-nav:not(:has(> button:not(.workspace-settings,.workspace-home,.workspace-saved))) { display:none; }
 
-.general-sheet {
+:is(.general-sheet,.campaign-surface,.main-menu,.campaign-dialog,.campaign-navigation) {
   --ornament: url("./assets/panel-engraving.webp");
   --small-ornament: url("./assets/cornerwork.svg");
   --spark: url("./assets/sun-pin.svg");
   --stone: url("../assets/sheet/obsidian.webp");
   --gold: #ffdb89;
   --enamel: linear-gradient(166deg,#262d31e8,#080e13ed 55%,#151109e8),var(--stone);
+  --title-art: url("./assets/title-engraving.webp");
+}
+.general-sheet {
   width: min(100%,54rem);
   margin-inline: auto;
   padding: clamp(.24rem, 1.3vw,.62rem);
