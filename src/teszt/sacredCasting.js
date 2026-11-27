@@ -1,3 +1,4 @@
+import { remainingCodexNames } from "../magic/codexEditions.js";
 import { percentileResult } from "./trials.js";
 import { academicMagicTrial, availableMagicEp, finishSacredSpell, readDamageDice, spellCost, spellReadiness } from "../magiaSzabalyok.js";
 
@@ -12,8 +13,8 @@ export function logSacredCasting(character, magic, spell, context, { id, recorde
   }] };
 }
 
-export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt, damageDice }) {
-  if (magic.castingLog?.some(entry => entry.id === id) || spell.fp != null ||
+export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt, damageDice, fpConfirmed = false }) {
+  if (magic.castingLog?.some(entry => entry.id === id) || (spell.fp != null && spell.fp !== 0 && !fpConfirmed) ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { ep, difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
@@ -45,7 +46,7 @@ export function logAcademicFailure(character, magic, spell, context, { id, roll,
 }
 
 export function recordAcademicPendingFailure(character, magic, spell, context, { id, roll, recordedAt }) {
-  if (!["Kódexfüggetlen", "Skarlát", "Azúr"].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
+  if (!["Kódexfüggetlen", "Skarlát", "Azúr", ...remainingCodexNames].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
