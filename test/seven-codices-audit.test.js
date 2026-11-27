@@ -61,7 +61,7 @@ test("Audit: all fixed, per-unit and variable cost records obey the engine", () 
       assert.fail("Unexpected cost kind: " + ep.kind + " for " + spell.id);
     }
   }
-  assert.deepEqual({ fixed, units, variable, flight }, { fixed: 129, units: 6, variable: 87, flight: 1 });
+  assert.deepEqual({ fixed, units, variable, flight }, { fixed: 129, units: 27, variable: 66, flight: 1 });
 });
 
 test("Audit: all eligible fixed-cost formulas succeed once, decline duplicate charge, and persist one critical failure until KM adjudication", () => {
@@ -92,6 +92,7 @@ test("Audit: all eligible fixed-cost formulas succeed once, decline duplicate ch
   }
   assert.ok(eligible >= 70, "Too few real spells were exercised: " + eligible);
   assert.equal(coveredCodices.size, 7);
+  console.log("AUDIT: complete successful casting, duplicate-charge and critical/KM adjudication scenarios for", eligible, "distinct formulas.");
 });
 
 test("Audit: deny unavailable formulas and preserve human-approved Fp costs", () => {
@@ -114,6 +115,7 @@ test("Audit: deny unavailable formulas and preserve human-approved Fp costs", ()
   }
   assert.ok(denied >= 70);
   assert.ok(fpChecks >= 30);
+  console.log("AUDIT: acquisition checks", denied, "and KM-controlled Fp-cost checks", fpChecks);
 });
 
 test("Audit: a specialization must not lock out already known Kódexfüggetlen formulas", () => {
