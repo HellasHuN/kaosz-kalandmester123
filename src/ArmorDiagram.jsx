@@ -24,7 +24,7 @@ export function ArmorDiagram({ character }) {
     armorProtection(character.equipment, zones.map(([label]) => label));
   const speed = characterSpeed(withEffectiveStrength(character));
   return (
-    <section className="parchment-card armor-card" aria-labelledby="armor-title">
+    <section className="general-frame armor-card" aria-labelledby="armor-title">
       <h3 id="armor-title">Páncélzat és védettségi zónák</h3>
       <figure className="armor-figure">
         <img src={figure} alt="" />
@@ -52,7 +52,7 @@ export function ArmorDiagram({ character }) {
           })}
         </ul>
       </figure>
-      <p className="armor-legend"><span>Védett zóna</span><span>Védelem nincs jelölve</span></p>
+      <p className="armor-legend"><span>Védett zóna</span><span>Védetlen vagy ismeretlen</span></p>
       <div className="armor-speed">
         <span>Gyorsaság</span>
         <output aria-label="Aktuális gyorsaság">{speed.value ?? empty}</output>

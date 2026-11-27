@@ -1,4 +1,6 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import { ArmorDiagram } from "./ArmorDiagram.jsx";
+import "./Felszereles.css";
 import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 
 import { catalog, labels, formatStat, readEquipment, variableStats, statOptions, equipmentDetails,
@@ -7,6 +9,7 @@ import { catalog, labels, formatStat, readEquipment, variableStats, statOptions,
 export default function Felszereles({ character, onSave, ref }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
+  const [inventoryQuery, setInventoryQuery] = useState("");
   const [draft, setDraft] = useState(null);
   const [newEntryId, setNewEntryId] = useState(null);
   const newStatInput = useRef(null);
@@ -19,13 +22,14 @@ export default function Felszereles({ character, onSave, ref }) {
   const editing = draft !== null;
   const current = draft ?? saved;
   const search = query.trim().toLocaleLowerCase("hu");
-  const matchesSearch = (item) =>
-    `${item.name} ${felszerelesTipusok[item.kind] ?? ""}`.toLocaleLowerCase("hu").includes(search);
-  const choices = felszereles.filter(matchesSearch);
+  const inventorySearch = inventoryQuery.trim().toLocaleLowerCase("hu");
+  const matchesSearch = (item, term) =>
+    `${item.name} ${felszerelesTipusok[item.kind] ?? ""}`.toLocaleLowerCase("hu").includes(term);
+  const choices = felszereles.filter(item => matchesSearch(item, search));
   const rows = current.items.map((entry) => ({
     entry,
     item: catalog.get(entry.catalogId) ?? { name: entry.catalogId },
-  })).filter(({ item }) => editing || matchesSearch(item));
+  })).filter(({ item }) => matchesSearch(item, inventorySearch));
   const needsDetails = current.items.some((entry) =>
     variableStats(catalog.get(entry.catalogId)).some(([key]) => entry.values[key] == null || entry.values[key] === ""));
 
@@ -36,6 +40,7 @@ export default function Felszereles({ character, onSave, ref }) {
     };
     setDraft((previous) => ({ ...previous, items: [...previous.items, entry] }));
     setNewEntryId(entry.id);
+    setInventoryQuery("");
   }
 
   function updateItem(id, update) {
@@ -86,43 +91,41 @@ export default function Felszereles({ character, onSave, ref }) {
   }
 
   useImperativeHandle(ref, () => ({
-    start: () => { setQuery(""); setDraft(saved); },
+    start: () => { setQuery(""); setInventoryQuery(""); setDraft(saved); },
     save,
     cancel: closeEditor,
   }));
 
   return (
-    <section className="panel equipment-panel" data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
+    <>
+    <ArmorDiagram character={editing ? { ...character, equipment: draft } : character} />
+    <section className="general-frame sheet-inventory" data-unsaved={editing && JSON.stringify(draft) !== JSON.stringify(saved)}>
       <h2>Felszerelés és egyéb adatok</h2>
-      <p>{character.name}</p>
+      <p className="equipment-view-status">{editing ? "Szerkesztés" : "Megtekintés"}</p>
       {needsDetails && <p>A pontosítandó értékeket szerkesztéskor kell megadni a mentéshez.</p>}
       <form onSubmit={(event) => event.preventDefault()}>
-        {!editing && (
-          <>
-            <label htmlFor={searchId}>Keresés a felszerelésben</label>
-            <input id={searchId} type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
-          </>
-        )}
+        <label className="equipment-search" htmlFor={`${searchId}-inventory`}>Keresés a felszerelésben</label>
+        <input id={`${searchId}-inventory`} type="search" value={inventoryQuery} onChange={(event) => setInventoryQuery(event.target.value)} />
         {rows.length ? (
           <div className="skills-table-container">
-            <table className="skills-table">
-              <thead>
-                <tr>
-                  <th scope="col">Tárgy</th>
-                  <th scope="col">Típus</th>
-                  <th scope="col">Darab</th>
-                  <th scope="col">Tulajdonságok</th>
-                  <th scope="col">Könyv szerinti ár</th>
-                  <th scope="col">Viselés</th>
-                  {editing && <th scope="col">Eltávolítás</th>}
+            <table className="equipment-table" role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader">Tárgy</th>
+                  <th scope="col" role="columnheader">Típus</th>
+                  <th scope="col" role="columnheader">Darab</th>
+                  <th scope="col" role="columnheader">Tulajdonságok</th>
+                  <th scope="col" role="columnheader">Könyv szerinti ár</th>
+                  <th scope="col" role="columnheader">Viselés</th>
+                  {editing && <th scope="col" role="columnheader">Eltávolítás</th>}
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {rows.map(({ item, entry }) => (
-                  <tr key={entry.id}>
-                    <th scope="row">{item.name}</th>
-                    <td>{felszerelesTipusok[item.kind] ?? "—"}</td>
-                    <td>
+                  <tr role="row" key={entry.id}>
+                    <th scope="row" role="rowheader">{item.name}</th>
+                    <td role="cell" data-label="Típus">{felszerelesTipusok[item.kind] ?? "—"}</td>
+                    <td role="cell" data-label="Darab">
                       {editing ? (
                         <input
                           aria-label={`${item.name} darabszáma`}
@@ -135,7 +138,7 @@ export default function Felszereles({ character, onSave, ref }) {
                         />
                       ) : entry.quantity}
                     </td>
-                    <td>
+                    <td role="cell" data-label="Tulajdonságok">
                       {equipmentDetails(item, entry)}
                       {editing && variableStats(item).map(([key, [min, max]], index) => (
                         <label className="equipment-stat" key={key}>
@@ -160,8 +163,8 @@ export default function Felszereles({ character, onSave, ref }) {
                         </label>
                       ))}
                     </td>
-                    <td>{item.price ?? "—"}</td>
-                    <td>{item.kind !== "armor" ? "—" : editing ? (
+                    <td role="cell" data-label="Könyv szerinti ár">{item.price ?? "—"}</td>
+                    <td role="cell" data-label="Viselés">{item.kind !== "armor" ? "—" : editing ? (
                       <label className="magic-checkbox">
                         <input type="checkbox" checked={entry.equipped === true}
                           onChange={(event) => {
@@ -173,8 +176,8 @@ export default function Felszereles({ character, onSave, ref }) {
                     ) : entry.equipped === true ? <strong className="equipment-worn">Viseli</strong>
                       : entry.equipped === false ? "Levett vért" : "Viselés nincs jelölve"}</td>
                     {editing && (
-                      <td>
-                        <button className="skills-remove" type="button" aria-label={`${item.name} eltávolítása`} onClick={() => removeItem(entry.id)}>×</button>
+                      <td role="cell" className="equipment-row-action">
+                        <button type="button" aria-label={`${item.name} eltávolítása`} onClick={() => removeItem(entry.id)}>Eltávolítás</button>
                       </td>
                     )}
                   </tr>
@@ -182,7 +185,7 @@ export default function Felszereles({ character, onSave, ref }) {
               </tbody>
             </table>
           </div>
-        ) : <p>{!editing && search ? "Nincs találat." : "Nincs felvett felszerelés."}</p>}
+        ) : <p>{inventorySearch ? "Nincs találat." : "Nincs felvett felszerelés."}</p>}
         {editing && (
           <>
             <label htmlFor={searchId}>Új tárgy keresése név vagy típus alapján</label>
@@ -195,16 +198,16 @@ export default function Felszereles({ character, onSave, ref }) {
             />
             {search && (choices.length ? (
               <div className="skills-table-container equipment-results">
-                <table className="skills-table">
-                  <thead><tr><th scope="col">Tárgy</th><th scope="col">Típus</th><th scope="col">Tulajdonságok</th><th scope="col">Könyv szerinti ár</th><th scope="col">Felvétel</th></tr></thead>
-                  <tbody>
+                <table className="equipment-table" role="table">
+                  <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Tárgy</th><th scope="col" role="columnheader">Típus</th><th scope="col" role="columnheader">Tulajdonságok</th><th scope="col" role="columnheader">Könyv szerinti ár</th><th scope="col" role="columnheader">Felvétel</th></tr></thead>
+                  <tbody role="rowgroup">
                     {choices.map((item) => (
-                      <tr key={item.id}>
-                        <th scope="row">{item.name}</th>
-                        <td>{felszerelesTipusok[item.kind]}</td>
-                        <td>{equipmentDetails(item)}</td>
-                        <td>{item.price ?? "—"}</td>
-                        <td><button type="button" aria-label={`${item.name} hozzáadása`} onClick={() => addItem(item.id)}>Hozzáadás</button></td>
+                      <tr role="row" key={item.id}>
+                        <th scope="row" role="rowheader">{item.name}</th>
+                        <td role="cell" data-label="Típus">{felszerelesTipusok[item.kind]}</td>
+                        <td role="cell" data-label="Tulajdonságok">{equipmentDetails(item)}</td>
+                        <td role="cell" data-label="Könyv szerinti ár">{item.price ?? "—"}</td>
+                        <td role="cell" className="equipment-row-action"><button type="button" aria-label={`${item.name} hozzáadása`} onClick={() => addItem(item.id)}>Hozzáadás</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -229,5 +232,6 @@ export default function Felszereles({ character, onSave, ref }) {
         )}
       </form>
     </section>
+    </>
   );
 }

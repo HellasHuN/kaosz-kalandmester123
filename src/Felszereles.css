@@ -1,0 +1,150 @@
+.equipment-sheet :is(.armor-card, .sheet-inventory) {
+  padding: clamp(.55rem, 2vw, 1rem);
+}
+.equipment-sheet :is(#armor-title, .sheet-inventory h2) {
+  width: min(100%, 32rem);
+  margin: 0 auto .55rem;
+  padding: .65rem .5rem;
+  color: #ffe4a3;
+  font: 700 clamp(1rem, 3.8vw, 1.8rem)/1.15 Georgia, serif;
+  text-align: center;
+  background: url("./page1/assets/title-engraving.webp") center / 100% 100% no-repeat;
+}
+.equipment-sheet .armor-figure {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  aspect-ratio: 1.1;
+  background: radial-gradient(ellipse at center, #89654157, transparent 63%);
+}
+.equipment-sheet .armor-figure img { padding: 0; }
+.equipment-sheet .armor-figure svg { width: 100%; height: 100%; }
+.equipment-sheet .armor-label {
+  min-height: 23px;
+  color: #ded2be;
+  background: #131b24;
+  border-color: #77664c;
+  box-shadow: none;
+  font-size: clamp(.65rem, 2.7vw, .9rem);
+}
+.equipment-sheet .armor-label strong {
+  flex: 0 1 auto;
+  min-width: .8rem;
+  white-space: nowrap;
+}
+.equipment-sheet .armor-label.has-armor {
+  color: #fff1b8;
+  background: linear-gradient(#643614, #2b1a09);
+  border-color: #fbd57e;
+  box-shadow: 0 0 .4rem #f6b53c88;
+}
+.equipment-sheet .armor-figure .has-armor polyline { stroke: #efbc66; }
+.equipment-sheet .armor-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .3rem .75rem;
+  color: #e8d6b9;
+  font-size: .8rem;
+}
+.equipment-sheet .armor-legend span::before {
+  content: "";
+  display: inline-block;
+  width: .57rem;
+  height: .57rem;
+  margin-right: .25rem;
+  background: #535861;
+  border: 1px solid #a49b8b;
+}
+.equipment-sheet .armor-legend span:first-child::before {
+  background: #f2c46e;
+  border-color: #ffedb6;
+}
+.equipment-sheet .armor-speed {
+  justify-content: center;
+  margin: .55rem 0 .2rem;
+  text-align: center;
+  color: var(--gold);
+}
+.equipment-sheet .armor-speed output {
+  background: linear-gradient(#653117, #281107);
+  color: #ffe8b9;
+}
+.equipment-sheet .armor-caption { margin-top: .35rem; color: #ead1ad; }
+.equipment-sheet .equipment-view-status {
+  margin: .35rem 0 .65rem;
+  padding: .45rem;
+  color: var(--gold);
+  background: linear-gradient(90deg, #82370e48, transparent);
+  border-block: 1px solid #aa7a43;
+}
+.sheet-inventory :is(.equipment-search, label[for]) {
+  display: block;
+  margin-block: .65rem .25rem;
+}
+.sheet-inventory input[type="search"] { margin-bottom: .5rem; }
+.sheet-inventory :is(.skills-table-container, .equipment-notes) { margin: .4rem 0; }
+.equipment-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: .9rem;
+  text-align: left;
+}
+.equipment-table :is(th, td) {
+  padding: .38rem .32rem;
+  border: 1px solid #845e38;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.equipment-table thead { background: linear-gradient(#661a10, #290907); color: #ffe5ad; }
+.equipment-table tbody th { color: var(--gold); }
+.equipment-table tbody tr:nth-child(even) { background: #a9612b17; }
+.equipment-table thead th:nth-child(4) { width: 28%; }
+.equipment-table:not(.equipment-results table) thead th:nth-child(3) { width: 10%; }
+.equipment-table .equipment-stat {
+  display: grid;
+  gap: .2rem;
+  margin-top: .35rem;
+}
+.equipment-table button { max-width: 100%; overflow-wrap: anywhere; }
+.equipment-table .magic-checkbox {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: .25rem;
+}
+.equipment-table input[type="checkbox"] { flex: none; width: 1.1rem; height: 1.1rem; accent-color: #c78c48; }
+.equipment-table .equipment-worn { color: #ffe8a6; background: #4d3616; }
+.sheet-inventory h3 { padding-block: .55rem .2rem; color: var(--gold); }
+.sheet-inventory .equipment-notes { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 43rem) {
+  .equipment-sheet .skills-table-container { overflow: visible; }
+  .equipment-sheet .equipment-table :is(thead) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .equipment-table, .equipment-table tbody { display: block; }
+  .equipment-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: .42rem;
+    border: 1px solid #9c683c;
+    background: var(--enamel);
+  }
+  .equipment-table tbody :is(th, td) { border: 0; min-width: 0; }
+  .equipment-table tbody :is(th, td[data-label="Tulajdonságok"], .equipment-row-action) { grid-column: 1 / -1; }
+  .equipment-table tbody th { background: linear-gradient(90deg, #541a11, #1a1211); }
+  .equipment-table td { box-shadow: inset 0 1px #845a3466; }
+  .equipment-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: #ddbc94;
+    margin-bottom: .13rem;
+    font-size: .76rem;
+  }
+  .equipment-table .equipment-row-action button { width: 100%; }
+}

@@ -4,7 +4,6 @@ import React from "react";
 import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
 import Magia from "./Magia";
-import { ArmorDiagram } from "./ArmorDiagram.jsx";
 import GeneralPage, { GeneralEditActions, GeneralNavigation, IllustratedHeader } from "./page1/GeneralPage.jsx";
 
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
@@ -51,7 +50,7 @@ function Karakterlap({
     setEditing(false);
   }
 
-  if (activePage === 1 || activePage === 2) {
+  if (activePage !== 4) {
     const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["magic", "Mágia", 4], ["equipment", "Felszerelés", 3]]
       .map(([id, label, page]) => ({ id, label, current: page === activePage, onClick: () => openPage(page) }));
     links.push({ id: "chat", label: "Chat", onClick: onChat });
@@ -61,6 +60,13 @@ function Karakterlap({
         onChat={onChat} onSettings={onSettings} unread={unread} />
       {actions}
       <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />
+      <GeneralNavigation links={links} />
+    </article>;
+    if (activePage === 3) return <article className="general-sheet equipment-sheet" data-mode={mode}>
+      <IllustratedHeader character={character} subtitle="Felszerelés" onCodex={() => openPage(4)}
+        onChat={onChat} onSettings={onSettings} unread={unread} />
+      {actions}
+      <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
       <GeneralNavigation links={links} />
     </article>;
     return <GeneralPage character={character} identity={editing ? { ...character, ...characterEditor.identity } : character}
@@ -91,12 +97,6 @@ function Karakterlap({
         {editing && <button type="button" onClick={cancelEditing}>Mégse</button>}
       </div>
     </div>
-    {activePage === 3 && (
-      <div className="equipment-sheet">
-        <ArmorDiagram character={character} />
-        <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
-      </div>
-    )}
     {activePage === 4 && (
       <Magia ref={editor} character={character} onSave={onSaveMagic} />
     )}
