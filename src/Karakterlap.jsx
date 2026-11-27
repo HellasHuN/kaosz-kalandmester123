@@ -83,11 +83,11 @@ function Karakterlap({
         {editing && <button type="button" onClick={cancelEditing}>Mégse</button>}
       </div>
     </div>
-    {activePage === 2 && <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />}
+    {activePage === 2 && <Jartassagok kmMode={mode === "gm"} ref={editor} character={character} onSave={onSaveSkills} />}
     {activePage === 3 && (
       <div className="equipment-sheet">
         <ArmorDiagram character={character} />
-        <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
+        <Felszereles kmMode={mode === "gm"} ref={editor} character={character} onSave={onSaveEquipment} />
       </div>
     )}
     {activePage === 4 && (

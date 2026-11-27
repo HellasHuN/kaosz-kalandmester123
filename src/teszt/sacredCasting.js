@@ -12,17 +12,18 @@ export function logSacredCasting(character, magic, spell, context, { id, recorde
   }] };
 }
 
-export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt, damageDice }) {
-  if (magic.castingLog?.some(entry => entry.id === id) || spell.fp != null ||
+export function logAcademicCasting(character, magic, spell, context, { id, roll, recordedAt, damageDice, method }) {
+  if (magic.castingLog?.some(entry => entry.id === id) || (spell.fp != null && method !== "manual") ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { ep, difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
-  if (percentileResult(target, roll) !== "success" || !Number.isFinite(ep) || ep < 0) return magic;
+  if ((method !== "manual" && percentileResult(target, roll) !== "success") || !Number.isFinite(ep) || ep < 0) return magic;
   const damage = damageDice && spell.id === "official:sebokozas" && readDamageDice(damageDice.join(" "), context.units);
   const remainingEp = magic.activeEp - ep;
   return { ...magic, activeEp: remainingEp, castingLog: [...(magic.castingLog ?? []), {
     id, recordedAt, spellName: spell.name ?? spell.id, previousEp: magic.activeEp, remainingEp,
-    outcome: `sikeres létrehozási próba (${roll} / ${target})`,
+    outcome: method === "manual" ? "Kézzel elbírált siker" : `sikeres létrehozási próba (${roll} / ${target})`,
+    ...(method === "manual" && { method, spellId: spell.id }),
     ...(damage && { consequence: `Sebzés feloldás előtt: ${damage.reduce((sum, die) => sum + die, 0)} Fp (${damage.join(" + ")})` }),
   }] };
 }
@@ -45,7 +46,7 @@ export function logAcademicFailure(character, magic, spell, context, { id, roll,
 }
 
 export function recordAcademicPendingFailure(character, magic, spell, context, { id, roll, recordedAt }) {
-  if (!["Kódexfüggetlen", "Skarlát", "Azúr"].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
+  if (magic.castingLog?.some(entry => entry.id === id) ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);

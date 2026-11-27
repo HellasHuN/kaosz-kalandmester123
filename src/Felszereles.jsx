@@ -4,7 +4,7 @@ import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 import { catalog, labels, formatStat, readEquipment, variableStats, statOptions, equipmentDetails,
   validQuantity, validEquipmentStat } from "./felszerelesSzerkesztes.js";
 
-export default function Felszereles({ character, onSave, ref }) {
+export default function Felszereles({ character, onSave, ref, kmMode = false }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState(null);
@@ -72,7 +72,9 @@ export default function Felszereles({ character, onSave, ref }) {
       for (const [key, [min, max]] of variableStats(catalog.get(entry.catalogId))) {
         const raw = values[key];
         const value = Number(raw);
-        if (!validEquipmentStat(key, raw, min, max)) {
+        const existing = saved.items.find(item => item.id === entry.id)?.values[key];
+        const preserved = character.gmOverrides && raw != null && raw === existing;
+        if (!preserved && !(kmMode ? raw !== "" && raw != null && Number.isFinite(value) : validEquipmentStat(key, raw, min, max))) {
           window.alert("Add meg a tárgy minden pontosítandó értékét a megengedett tartományból.");
           return false;
         }
@@ -140,7 +142,11 @@ export default function Felszereles({ character, onSave, ref }) {
                       {editing && variableStats(item).map(([key, [min, max]], index) => (
                         <label className="equipment-stat" key={key}>
                           {labels[key]} ({formatStat(min)}–{formatStat(max)})
-                          <select
+                          {kmMode ? <input type="number" step="any" value={entry.values[key] ?? ""}
+                            onChange={event => {
+                              const value = event.target.value;
+                              updateItem(entry.id, current => ({ ...current, values: { ...current.values, [key]: value } }));
+                            }} /> : <select
                             ref={entry.id === newEntryId && index === 0 ? newStatInput : undefined}
                             required
                             value={entry.values[key] ?? ""}
@@ -156,7 +162,7 @@ export default function Felszereles({ character, onSave, ref }) {
                               ? saved.items.find((item) => item.id === entry.id)?.values[key]
                               : undefined)
                               .map((value) => <option key={value} value={value}>{formatStat(value)}</option>)}
-                          </select>
+                          </select>}
                         </label>
                       ))}
                     </td>

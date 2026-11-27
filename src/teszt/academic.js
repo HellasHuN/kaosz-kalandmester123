@@ -35,21 +35,21 @@ export function academicAccess(magic, spell) {
   const permitted = exception?.allowed === true;
   const acquired = magic.acquisitions?.some(entry => entry.spellId === spell.id && entry.form === "academic");
   return {
-    allowed: !codex || ownCodex || permitted,
+    allowed: !codex || ownCodex || spell.codex === "Kódexfüggetlen" || permitted,
     bonus: ownCodex || (permitted && acquired && exception.bonus === true) ? 20 : 0,
     componentFree: ownCodex || (permitted && exception.componentFree === true),
   };
 }
 
-export function setAcademicGrant(character, magic, spell, granted) {
-  if (!character.skills?.[academicUse] || spell.codex === "Praktikus mágia") return magic;
+export function setAcademicGrant(character, magic, spell, granted, source = "gm") {
+  if (spell.codex === "Praktikus mágia" || (source === "test" && !character.skills?.[academicUse])) return magic;
   const previous = academicException(magic, spell);
   if (granted === (previous?.granted === true)) return magic;
   const isFormula = (entry) => entry.spellId === spell.id && entry.form === "academic";
   const acquisitions = magic.acquisitions ?? [];
   const added = granted && !acquisitions.some(isFormula);
   const next = granted
-    ? { ...previous, allowed: true, granted: true, grantAddedAcquisition: added, bonus: previous?.allowed === true && previous.bonus === true }
+    ? { ...previous, allowed: true, granted: true, source, grantAddedAcquisition: added, bonus: previous?.allowed === true && previous.bonus === true }
     : { ...previous, allowed: false, granted: false, grantAddedAcquisition: false, bonus: false };
   return {
     ...magic,

@@ -46,3 +46,15 @@ test("KM adjudication charges the specified Ep once and retains the original att
   assert.equal(casting.undoSacredCasting(settled), settled);
   assert.deepEqual(reload(settled).characters[0].magic, settled);
 });
+
+test("manual success requires a known usable formula and charges Ep once without a roll", () => {
+  const magic = readMagic(character);
+  const operation = { id: "manual", method: "manual", recordedAt };
+  const cast = casting.logAcademicCasting(character, magic, spell, context, operation);
+  assert.equal(cast.activeEp, 31);
+  assert.equal(cast.castingLog[0].outcome, "Kézzel elbírált siker");
+  assert.equal(cast.castingLog[0].roll, undefined);
+  assert.equal(casting.logAcademicCasting(character, cast, spell, context, operation), cast);
+  const unknown = { ...magic, acquisitions: [] };
+  assert.equal(casting.logAcademicCasting(character, unknown, spell, context, operation), unknown);
+});

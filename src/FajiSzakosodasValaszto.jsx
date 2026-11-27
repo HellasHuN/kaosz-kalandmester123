@@ -61,6 +61,9 @@ export default function FajiSzakosodasValaszto({ race, subrace, choices, onChang
         </label>
         <label><input type="checkbox" checked={choices.customApproved === true}
           onChange={(event) => set("customApproved", event.target.checked)} /> A Mesélő jóváhagyta a torzulást és az árát</label>
+        {!choices.customApproved && <button type="button" onClick={() => onChange({
+          ...choices, customApproved: true, customApprovalSource: "test",
+        })}>KM jóváhagyása (TESZT)</button>}
       </>}
       {weaponRace && <>
         <label>Fegyvertípus
@@ -78,6 +81,10 @@ export default function FajiSzakosodasValaszto({ race, subrace, choices, onChang
         </label>}
         {race === "Gennymanó" && choices.weaponType === "Íj" && <label><input type="checkbox" checked={choices.weaponApproval === true}
           onChange={(event) => set("weaponApproval", event.target.checked)} /> A Mesélő engedélyezte az íjat (legfeljebb 3-as fegyvererő)</label>}
+        {race === "Gennymanó" && choices.weaponType === "Íj" && !choices.weaponApproval &&
+          <button type="button" onClick={() => onChange({ ...choices, weaponApproval: true, weaponApprovalSource: "test" })}>
+            KM jóváhagyása (TESZT)
+          </button>}
         {race === "Gennymanó" && choices.weaponType === "Közelharci fegyver" &&
           <p>Nem mágikus fegyvernél a fegyvererő és a fegyvergyorsaság legfeljebb 3.</p>}
       </>}

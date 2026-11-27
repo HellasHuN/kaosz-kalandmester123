@@ -1,20 +1,22 @@
+import { useState } from "react";
+
 export default function ElhivatottsagValaszto({ level, maximum, creation = false, onChange }) {
-  function approve(next) {
-    const condition = creation
-      ? "A karakter induló szerepe és a forrás szerint jogosult a kiválasztott Elhivatottság-szintre?"
-      : "A karakter hitéhez és szerepjátékához illik a kiválasztott Elhivatottság-szint?";
-    if (window.confirm(`Kalandmesteri jóváhagyás. ${condition}`)) onChange(next, true);
-  }
+  const [pending, setPending] = useState(null);
+  const chosen = pending ?? level;
 
   return <div><label>
     Elhivatottság · {creation ? "400 Jp szintenként" : "szerepjáték alapján, Jp nélkül"}
-    <select value={level} onChange={(event) => approve(Number(event.target.value))}>
-      {Array.from({ length: Math.max(maximum, level) + 1 }, (_, rank) =>
+    <select value={chosen} onChange={event => setPending(Number(event.target.value))}>
+      {Array.from({ length: maximum + 1 }, (_, rank) =>
         <option key={rank} value={rank} disabled={rank > maximum && rank !== level}>
           {rank === 0 ? "Nincs rögzítve" : `${rank}. szint`}
         </option>)}
+      {level > maximum && <option value={level}>{level}. szint (KM)</option>}
     </select>
   </label>
-    {creation && level > 0 && <button type="button" onClick={() => approve(level)}>Szint jóváhagyása</button>}
+    {(pending !== null || (creation && level > 0)) && <button type="button" onClick={() => {
+      onChange(chosen, true);
+      setPending(null);
+    }}>KM jóváhagyása (TESZT)</button>}
   </div>;
 }

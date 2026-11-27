@@ -6,7 +6,7 @@ import { attributeAdjustmentLimit, attributes, characterAdjustments, characterSt
 import { maxHealth, woundLevel, woundThresholds } from "../eletero.js";
 import { magicLimits, readMagic } from "../magiaSzabalyok.js";
 import { profileFields, readProfile } from "../characterProfile.js";
-import { pageAncestryTheme } from "../teszt/ancestryTheme.js";
+import { pageAncestryTheme, portraitUrl } from "../teszt/ancestryTheme.js";
 import "./general-page.css";
 
 const missing = "—";
@@ -16,7 +16,11 @@ const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, e
 export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread }) {
   const { race, subrace, gender, age, name } = character;
   return <header className="general-hero" style={pageAncestryTheme(race, subrace, gender)}>
-    <div className="general-hero-portrait" aria-hidden="true" />
+    <div className="general-hero-portrait" role="img" aria-label={[race, subrace, gender, "portré"].filter(Boolean).join(" · ")} />
+    {character.ancestry?.parents?.some(parent => parent?.race) && <div className="general-parent-portraits" aria-label="Szülői származás">
+      {character.ancestry.parents.map((parent, index) => parent?.race && <img key={index}
+        src={portraitUrl(parent.race, parent.subrace, parent.gender)} alt={parent.race} title={parent.race} />)}
+    </div>}
     <div className="general-ribbon">
       <h2>{creation ? "Karakteralkotás" : "Karakterlap"}</h2>
       <span>Általános</span>
@@ -41,6 +45,14 @@ export function IllustratedHeader({ character, creation, actions, onCodex, onCha
   </header>;
 }
 
+function ComponentValue({ index, direction, label, character, edit }) {
+  const value = effectiveAttribute(character, index, direction);
+  return edit?.changeComponent ? <input type="number" step="1" aria-label={label}
+    value={character.componentOverrides?.[index]?.[direction] ?? ""} placeholder={String(value ?? "")}
+    onChange={event => edit.changeComponent(index, direction, event.target.value)} />
+    : <output aria-label={label}>{value}</output>;
+}
+
 function AttributeRow({ index, names: [name, active, passive], character, edit }) {
   const { stats, adjustments } = character;
   const bounds = edit?.limits[index];
@@ -52,29 +64,29 @@ function AttributeRow({ index, names: [name, active, passive], character, edit }
       <span>{name}{bounds && <small>{bounds.join("–")}</small>}</span>
       <output aria-label={name}>{effectiveAttribute(character, index)}</output>
       {bounds && <div className="general-steppers">
-        <button type="button" aria-label={`${name} csökkentése`} disabled={stats[index] <= bounds[0]} onClick={() => edit.changeStat(index, -1)}>−</button>
-        <button type="button" aria-label={`${name} növelése`} disabled={stats[index] >= bounds[1]} onClick={() => edit.changeStat(index, 1)}>+</button>
+        <button type="button" aria-label={`${name} csökkentése`} disabled={!edit.override && stats[index] <= bounds[0]} onClick={() => edit.changeStat(index, -1)}>−</button>
+        <button type="button" aria-label={`${name} növelése`} disabled={!edit.override && stats[index] >= bounds[1]} onClick={() => edit.changeStat(index, 1)}>+</button>
       </div>}
     </div></th>
     <td><div className="general-components">
-      <div><ActiveIcon /><span>{active}</span><output aria-label={active}>{effectiveAttribute(character, index, 1)}</output>
-        {bounds && <div className="general-steppers">
-          <button type="button" aria-label={`${active} csökkentése`} disabled={adjustments[index] <= -limit} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
-          <button type="button" aria-label={`${active} növelése`} disabled={adjustments[index] >= limit} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
+      <div><ActiveIcon /><span>{active}</span><ComponentValue index={index} direction={1} label={active} character={character} edit={edit} />
+        {bounds && !edit.override && <div className="general-steppers">
+          <button type="button" aria-label={`${active} csökkentése`} disabled={!edit.override && adjustments[index] <= -limit} onClick={() => edit.changeAdjustment(index, -1)}>−</button>
+          <button type="button" aria-label={`${active} növelése`} disabled={!edit.override && adjustments[index] >= limit} onClick={() => edit.changeAdjustment(index, 1)}>+</button>
         </div>}
       </div>
-      <div><PassiveIcon /><span>{passive}</span><output aria-label={passive}>{effectiveAttribute(character, index, -1)}</output></div>
+      <div><PassiveIcon /><span>{passive}</span><ComponentValue index={index} direction={-1} label={passive} character={character} edit={edit} /></div>
     </div></td>
   </tr>;
 }
 
-function HealthPanel({ current, maximum, canIncrease, onChange }) {
+function HealthPanel({ current, maximum, canIncrease, onChange, field }) {
   const level = woundLevel(current, maximum);
   return <section className="general-health general-frame" aria-label="Életerő">
     <div className="general-vitals">
       <h3><i aria-hidden="true" />Életerő <small>(ÉP)</small></h3>
       <button type="button" aria-label="Életerő csökkentése" disabled={!onChange || current <= 0 || current - 1 > maximum} onClick={() => onChange(-1)}>−</button>
-      <strong><output aria-label="Aktuális életerő">{current}</output> / <span aria-label="Maximális életerő">{maximum}</span></strong>
+      <strong>{field || <output aria-label="Aktuális életerő">{current}</output>} / <span aria-label="Maximális életerő">{maximum}</span></strong>
       <button type="button" aria-label="Életerő növelése" disabled={!onChange || !canIncrease || current < 0 || current >= maximum} onClick={() => onChange(1)}>+</button>
     </div>
     <div className="general-wounds">
@@ -167,7 +179,7 @@ export function GeneralEditActions({ editing, onEdit, onSave, onCancel }) {
 export default function GeneralPage({ character, identity = character, stage, edit, mode = "player", onChangeHealth,
   extra, budget, actions, header, links }) {
   const creation = mode === "creation";
-  const displayed = { ...character, stats: edit?.stats ?? characterStats(character), adjustments: edit?.adjustments ?? characterAdjustments(character) };
+  const displayed = { ...character, stats: edit?.stats ?? characterStats(character), adjustments: edit?.adjustments ?? characterAdjustments(character), componentOverrides: edit?.componentOverrides ?? character.componentOverrides };
   const magic = readMagic(character);
   return <article className="general-sheet" data-mode={mode} data-unsaved={!creation && Boolean(edit?.changed)}>
     <IllustratedHeader character={identity} creation={creation} {...header} />
@@ -176,10 +188,10 @@ export default function GeneralPage({ character, identity = character, stage, ed
         {attributes.map((names, index) => <AttributeRow key={names[0]} index={index} names={names} character={displayed} edit={edit} />)}
       </tbody></table>
       {budget}
-      {edit && !creation && <p>Hátralévő főértékpont: {edit.remaining ?? missing} · Elkölthető Jp: {character.jp ?? 0}</p>}
+      {edit && !creation && <p>{!edit.override && <>Hátralévő főértékpont: {edit.remaining ?? missing} · </>}Elkölthető Jp: {edit.jp || character.jp || 0}</p>}
     </section>
     <HealthPanel current={edit?.health ?? character.currentFp ?? maxHealth(character)} maximum={maxHealth(displayed)}
-      onChange={onChangeHealth} canIncrease={mode === "gm" || Boolean(edit)} />
+      field={edit?.healthField} onChange={onChangeHealth} canIncrease={mode === "gm" || Boolean(edit)} />
     <EssenceDisplays magic={magic} limits={magicLimits(displayed)} resourceFields={edit?.resourceFields} />
     <CharacterInformation character={character} stage={stage} magic={magic} edit={edit} />
     {extra}

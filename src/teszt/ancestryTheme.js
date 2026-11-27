@@ -42,20 +42,20 @@ export function ancestryTheme(race, subrace) {
     "--ancestry-background": `url("${directory}${prefix}-landscape.webp")` };
 }
 
-const pagePortraits = {
-  "Ember::Férfi": "human-male.webp",
-  "Ember::Nő": "human-female.webp",
-  "Elf:Erdei elf:Nő": "forest-elf-female.webp",
-  "Gilf::Nő": "gilf-female.webp",
-};
+const racePortraitStarts = [1, 3, 5, 6, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29];
+
+export function portraitFile(race, subrace, gender) {
+  const variant = subraces[race]?.includes(subrace) ? variantOrder.indexOf(subrace) : -1;
+  const offset = gender === "Nő" && race !== "Gilf" && race !== "Gennymanó" ? 1 : 0;
+  if (variant >= 0) return `variant-${String(variant * 2 + 1 + offset).padStart(2, "0")}.webp`;
+  const start = racePortraitStarts[raceOrder.indexOf(race)] ?? racePortraitStarts[1];
+  return `race-${String(start + offset).padStart(2, "0")}.webp`;
+}
+
+export function portraitUrl(race, subrace, gender) {
+  return `${import.meta.env.BASE_URL}ancestry/portraits/${portraitFile(race, subrace, gender)}`;
+}
 
 export function pageAncestryTheme(race, subrace, gender) {
-  const theme = ancestryTheme(race, subrace);
-  const key = `${race}:${subrace || ""}:${gender || ""}`;
-  const variant = pagePortraits[key] ?? (race === "Gilf" ? pagePortraits["Gilf::Nő"] : undefined);
-  if (variant) {
-    const directory = new URL(`${import.meta.env.BASE_URL}ancestry/page-one/`, document.baseURI).href;
-    theme["--ancestry-portrait"] = `url("${directory}${variant}")`;
-  }
-  return theme;
+  return { ...ancestryTheme(race, subrace), "--ancestry-portrait": `url("${portraitUrl(race, subrace, gender)}")` };
 }

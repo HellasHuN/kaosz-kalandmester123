@@ -13,6 +13,7 @@ const isNumber = Number.isFinite;
 const isNonnegative = (value) => isNumber(value) && value >= 0;
 const stringList = arrayOf(isText);
 const ranks = mapOf(isRank);
+const overrideRanks = mapOf(value => Number.isSafeInteger(value) && value >= 0);
 const scalar = (value) => isText(value) || isNumber(value) || typeof value === "boolean";
 
 function validAncestor(node, root = false) {
@@ -73,6 +74,7 @@ function validCharacter(character, allowedRaces) {
     religion: isText, gender: isText, parent1: isText, parent2: isText,
     jp: isNumber, currentFp: isNumber, maxFp: isNumber, stats: (stats) =>
       (stats.length === 4 || stats.length === 5) && arrayOf(isNumber)(stats),
+    componentOverrides: arrayOf(entry => entry == null || hasFields(entry, { "-1": isNumber, "1": isNumber })),
     adjustments: arrayOf(isNumber), advantages: stringList, disadvantages: stringList,
     talentSkills: stringList, racialAbilities: stringList,
     racialSpecializations: (value) => hasFields(value, {
@@ -80,7 +82,7 @@ function validCharacter(character, allowedRaces) {
     }),
     ancestry: (value) => validAncestor(value, true), ageAllocation: isRecord,
     inheritedTraits: isRecord, traitValues: mapOf((value) => value == null || scalar(value)),
-    startingSkillApprovals: (value) => hasFields(value, { exceptions: mapOf(isRecord) }), skills: ranks, skillEffectBaseline: ranks, creationRacialSkills: ranks,
+    startingSkillApprovals: (value) => hasFields(value, { exceptions: mapOf(isRecord) }), skills: character.gmOverrides === true ? overrideRanks : ranks, skillEffectBaseline: character.gmOverrides === true ? overrideRanks : ranks, creationRacialSkills: ranks,
     creationSkillsUnderGrant: ranks, skillNotes: mapOf(isText), skillFoundations: mapOf(isText),
     trainingPackages: mapOf((record) => hasFields(record, { choices: stringList, paidJp: isNonnegative })),
     skillTraining: mapOf((entry) => isRecord(entry) && isRank(entry.level) && isNonnegative(entry.cost)),

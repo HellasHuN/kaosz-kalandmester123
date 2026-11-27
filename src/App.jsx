@@ -32,7 +32,7 @@ import AlkotasiFelszereles from "./AlkotasiFelszereles.jsx";
 import "./App.css";
 import { elonyok, hatranyok } from "./elonyokHatranyok.js";
 import {
-  ageOptions, ageStage, allocateStartingStats, attributeAdjustmentLimit, LEGACY_PERCEPTION, characterAdjustments, characterStats,
+  ageOptions, ageStage, allocateStartingStats, races, attributeAdjustmentLimit, LEGACY_PERCEPTION, characterAdjustments, characterStats,
   clampAttributeAdjustment,
   perceptionLimits, statLimits, statPoints, STAT_POINTS,
 } from "./karakterFoeertekek.js";
@@ -41,24 +41,6 @@ const Magia = lazy(() => import("./Magia.jsx"));
 const TestMode = lazy(() => import("./teszt/TestMode.jsx"));
 const TestSettings = lazy(() => import("./teszt/TestSettings.jsx"));
 
-const races = {
-  Elf: [[20, 70], [50, 90], [55, 90], [30, 85]],
-  Ember: [[30, 80], [30, 80], [25, 80], [35, 90]],
-  Gennymanó: [[15, 45], [60, 100], [20, 85], [20, 70]],
-  Gilf: [[35, 85], [35, 85], [35, 85], [30, 100]],
-  Gnóm: [[30, 60], [45, 85], [60, 90], [20, 70]],
-  Gyíklény: [[30, 70], [35, 85], [20, 75], [20, 70]],
-  Manó: [[15, 50], [30, 70], [20, 65], [15, 65]],
-  Ogár: [[55, 95], [25, 70], [15, 60], [10, 60]],
-  Ork: [[30, 90], [25, 75], [25, 70], [20, 70]],
-  Törpe: [[45, 85], [25, 70], [25, 75], [20, 70]],
-  Tündérke: [[10, 30], [40, 100], [25, 80], [25, 80]],
-  "Félvér elf": [[35, 75], [45, 85], [35, 80], [25, 80]],
-  "Félvér gilf": [[35, 80], [30, 75], [30, 80], [25, 85]],
-  "Félvér ogár": [[50, 90], [30, 75], [20, 70], [20, 75]],
-  Szürkemanó: [[15, 100], [15, 100], [15, 100], [10, 100]],
-  "Félvér ork": [[45, 85], [30, 80], [25, 80], [15, 75]],
-};
 const ageLimits = {
   Elf: [33, 300, 350, 550],
   Ember: [13, 70, 90, 110],
@@ -188,6 +170,8 @@ function App() {
   const [religion, setReligion] = useState("");
   const [gender, setGender] = useState("");
   const [notes, setNotes] = useState("");
+  const [componentDraft, setComponentDraft] = useState([]);
+  const [jpDraft, setJpDraft] = useState(null);
   const [age, setAge] = useState("");
   const [parent1, setParent1] = useState("");
 const [parent2, setParent2] = useState("");
@@ -200,6 +184,7 @@ const [ancestry, setAncestry] = useState({
 const [advantages, setAdvantages] = useState([]);
 const [disadvantages, setDisadvantages] = useState([]);
 const [approvedTraits, setApprovedTraits] = useState(false);
+const [traitApprovalSource, setTraitApprovalSource] = useState(null);
 const [traitValues, setTraitValues] = useState({});
 const [talentSkills, setTalentSkills] = useState([]);
   // Az aktív érték eltérése az alap főértéktől.
@@ -216,14 +201,14 @@ const [talentSkills, setTalentSkills] = useState([]);
     return;
   }
 
-  if (advantages.length + disadvantages.length >= 4 && !approvedTraits) {
+  if (!kmSheet && advantages.length + disadvantages.length >= 4 && !approvedTraits) {
     alert("Legfeljebb 4 előny és hátrány választható!");
     return;
   }
 
   const selected = [...advantages, ...disadvantages];
   const existingConflicts = ["Kimagasló sebgyógyulás", "Vérzékenység", "Kimagasló mágikus ellenállás", "Rossz mágikus ellenállás"];
-  if ((creationEditable || existingConflicts.includes(trait.nev)) && traitConflict(trait.nev, selected)) {
+  if (!kmSheet && (creationEditable || existingConflicts.includes(trait.nev)) && traitConflict(trait.nev, selected)) {
     alert("Ez a tulajdonság nem választható a már kiválasztott mellé!");
     return;
   }
@@ -248,6 +233,7 @@ const [creationSkills, setCreationSkills] = useState({});
 const [creationClarifications, setCreationClarifications] = useState({});
 const [creationExtras, setCreationExtras] = useState({});
 const selectedCharacter = savedCharacters.find((character) => character.id === selectedCharacterId);
+const kmSheet = page === "karakterlap" && testMode === "km";
 const creationEditable = page === "alkotas" && (selectedCharacterId === null || selectedCharacter?.playStatus === "draft");
 const [deletingCharacter, setDeletingCharacter] = useState(null);
 const [deleteStep, setDeleteStep] = useState(0);
@@ -395,7 +381,7 @@ const calculatedAgeLimits =
     if (creationOriginal?.skillTraining?.[name]) return "Ehhez a jártassághoz már folyamatban lévő fejlesztés tartozik.";
     const { error } = quoteCreationSkill(creationCharacter, creationBudget, name, level, creationOriginal, devotionApproved);
     if (error) return error;
-    if (name === devotionSkill) setDevotionApproval({ level, religion });
+    if (name === devotionSkill) setDevotionApproval({ level, religion, source: "test" });
     setCreationSkills((previous) => {
       const next = { ...previous };
       if (level > (creationGrants[name] ?? 0)) next[name] = level;
@@ -405,7 +391,23 @@ const calculatedAgeLimits =
     return "";
   }
 
+  function allocateForAge(percent, ageClass) {
+    const nextLimits = statLimits(races[race], ageClass === "senius" ? percent : 100, perception.range);
+    setStats(allocateStartingStats(nextLimits, statPoints(percent) - abilityCost, perception.suggested));
+  }
+
+  function changeAge(value) {
+    setAge(value);
+    if (!creationEditable || selectedCharacter || !value) return;
+    const nextStage = ageStage(value, calculatedAgeLimits);
+    const fixedPercent = nextStage === "adultus" ? 100
+      : Number(value) === calculatedAgeLimits?.[1] ? 80
+        : Number(value) === calculatedAgeLimits?.[2] ? 50 : null;
+    if (fixedPercent != null && fixedPercent !== statPercent) allocateForAge(fixedPercent, nextStage);
+  }
+
   function chooseAgeAllocation(key, value) {
+    if (creationEditable && !selectedCharacter && key === "stats" && value !== "") allocateForAge(Number(value), stage);
     setAgeAllocation((previous) => ({
       ...(previous.stage === stage ? previous : { stage }),
       [key]: value === "" ? undefined : Number(value),
@@ -414,27 +416,27 @@ const calculatedAgeLimits =
 
 function changeRace(value) {
   setRace(value);
-  if (creationEditable) {
+  if (creationEditable || kmSheet) {
     setSubrace("");
     setSelectedRacialAbilities([]);
     setRacialSpecializations({});
     setInheritedTraits({});
   }
-  if (creationEditable && !creationGenderOptions(value).includes(gender)) setGender("");
+  if ((creationEditable || kmSheet) && !creationGenderOptions(value).includes(gender)) setGender("");
     setAncestry({
     race: value,
     parents: [],
   });
-  setAge("");
+  if (!kmSheet) setAge("");
   setAgeAllocation({});
   setParent1("");
   setParent2("");
 
-  if (value) {
+  if (value && !kmSheet) {
     setStats(allocateStartingStats(statLimits(races[value], 100, perceptionLimits[value].range), statPoints(), perceptionLimits[value].suggested));
   }
 
-  setAdjustments(characterAdjustments());
+  if (!kmSheet) setAdjustments(characterAdjustments());
   const fixedParent = fixedParentRace[value];
   if (fixedParent) {
   setParent1(fixedParent);
@@ -455,8 +457,8 @@ function changeRace(value) {
     const next = [...stats];
     const newValue = next[index] + amount;
 
-    if ((amount < 0 && newValue < limits[index][0]) ||
-        (amount > 0 && newValue > limits[index][1])) {
+    if (!Number.isSafeInteger(newValue) || (!kmSheet && ((amount < 0 && newValue < limits[index][0]) ||
+        (amount > 0 && newValue > limits[index][1])))) {
       return;
     }
 
@@ -467,7 +469,7 @@ function changeRace(value) {
     const nextAdjustments = [...adjustments];
     nextAdjustments[index] = creationEditable
       ? clampAttributeAdjustment(newValue, adjustments[index])
-      : 0;
+      : kmSheet ? adjustments[index] : 0;
     setAdjustments(nextAdjustments);
   }
 
@@ -476,7 +478,7 @@ function changeRace(value) {
     const next = [...adjustments];
     const newValue = next[index] + amount;
 
-    if (Math.abs(newValue) > limit) return;
+    if (!Number.isSafeInteger(newValue) || (!kmSheet && Math.abs(newValue) > limit)) return;
 
     next[index] = newValue;
     setAdjustments(next);
@@ -529,8 +531,8 @@ function saveCharacter({ notify = true } = {}) {
   const profileMessage = profileError(profile, savedFields.profile);
   const profileChanges = Object.entries(profile).filter(([key, value]) => value !== savedFields.profile[key]);
   if (profileMessage) { alert(profileMessage); return false; }
-  const updatedCharacter = { ...existingCharacter, stats, adjustments };
-  if (healthDraft != null && healthDraft > maxHealth(updatedCharacter)) {
+  const updatedCharacter = { ...existingCharacter, stats, adjustments, componentOverrides: componentDraft };
+  if (!kmSheet && healthDraft != null && healthDraft > maxHealth(updatedCharacter)) {
     alert("Az életerő nem haladhatja meg a módosított maximumot.");
     return false;
   }
@@ -541,8 +543,8 @@ function saveCharacter({ notify = true } = {}) {
     const available = availableMagicEp(updatedCharacter, nextMagic);
     const previousAvailable = availableMagicEp(existingCharacter, originalMagic);
     if (Object.entries(resourceDraft).some(([key, value]) =>
-      value != null && (!Number.isFinite(value) || value < 0 || value > maximum[key])) ||
-      (resourceDraft.activeEp != null && resourceDraft.activeEp < (originalMagic.activeEp ?? 0) &&
+      value != null && (!Number.isFinite(value) || value < 0 || (!kmSheet && value > maximum[key]))) ||
+      (!kmSheet && resourceDraft.activeEp != null && resourceDraft.activeEp < (originalMagic.activeEp ?? 0) &&
         (unresolvedSacredReservations(nextMagic).length || (available != null && available < Math.min(0, previousAvailable ?? 0))))) {
       alert("A módosított esszenciaérték vagy a szakrális foglalás kívül esik a megengedett kereten.");
       return false;
@@ -575,11 +577,14 @@ function saveCharacter({ notify = true } = {}) {
     name: name.trim(),
     age,
     race,
-    jp: creationEditable ? creationBudget - creationCosts.total : existingCharacter.jp,
+    jp: creationEditable ? creationBudget - creationCosts.total : jpDraft ?? existingCharacter.jp,
+    ...(kmSheet && { gmOverrides: true, componentOverrides: componentDraft }),
+    ...(kmSheet && { subrace, racialAbilities: selectedRacialAbilities, racialSpecializations }),
     ...(creationEditable && {
       playStatus: "draft",
       ...(!existingCharacter && { statAllocationVersion: 1 }),
       skills: effectiveCreationSkills,
+      ...(devotionApproval && { devotionApproval }),
       skillEffectBaseline: creationCharacter.skillEffectBaseline,
       ...(subrace || existingCharacter?.subrace ? { subrace: subrace || undefined } : {}),
       ...(selectedRacialAbilities.length || existingCharacter?.racialAbilities ? { racialAbilities: selectedRacialAbilities } : {}),
@@ -606,6 +611,7 @@ function saveCharacter({ notify = true } = {}) {
     traitValues,
     talentSkills: selectedTalents,
     approvedTraits,
+    ...(traitApprovalSource && { traitApprovalSource }),
     parent1,
 parent2,
 ancestry: JSON.parse(JSON.stringify(ancestry)),
@@ -634,7 +640,7 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
   return true;
 }
   function loadCharacter(character, forCreation = false) {
-    setDevotionApproval(null);
+    setDevotionApproval(character?.devotionApproval ?? null);
     setCreationTab("details");
     setCreationSkills(forCreation ? purchasedCreationSkills(character) : {});
     setCreationClarifications({});
@@ -658,12 +664,15 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     setTraitValues(fields.traitValues);
     setTalentSkills(fields.talentSkills);
     setApprovedTraits(fields.approvedTraits);
+    setTraitApprovalSource(character?.traitApprovalSource ?? null);
     setAdjustments(fields.adjustments);
     setReligion(fields.religion);
     setGender(fields.gender);
     setNotes(fields.notes);
     setProfile(fields.profile);
     setHealthDraft(null);
+    setJpDraft(null);
+    setComponentDraft(character?.componentOverrides ?? []);
     setResourceDraft({});
   }
 
@@ -672,7 +681,7 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     parent1, parent2, ancestry, inheritedTraits, stats, ageAllocation,
     advantages, disadvantages, traitValues, talentSkills, approvedTraits, adjustments,
     religion, gender, notes, profile,
-  }) !== JSON.stringify(creationFields(selectedCharacter)) || healthDraft != null || Object.keys(resourceDraft).length > 0;
+  }) !== JSON.stringify(creationFields(selectedCharacter)) || JSON.stringify(componentDraft) !== JSON.stringify(selectedCharacter?.componentOverrides ?? []) || jpDraft != null || healthDraft != null || Object.keys(resourceDraft).length > 0;
 
   function confirmLeaving() {
     const hasChanges = (page === "alkotas" && (characterFieldsChanged ||
@@ -807,13 +816,13 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function saveEquipment(character, equipment) {
     setSavedCharacters((previous) => previous.map((saved) =>
-      saved === character ? { ...saved, equipment } : saved
+      saved === character ? { ...saved, equipment, ...(kmSheet && { gmOverrides: true }) } : saved
     ));
   }
 
   function saveMagic(character, magic) {
     setSavedCharacters((previous) => previous.map((saved) =>
-      saved === character ? { ...saved, magic } : saved
+      saved === character ? { ...saved, magic, ...(kmSheet && { gmOverrides: true }) } : saved
     ));
   }
 
@@ -867,6 +876,14 @@ function characterSurvived() {
 }
   
 function validateCharacter() {
+  if (kmSheet) {
+    const valid = Boolean(name.trim() && race && Number.isSafeInteger(Number(age)) && Number(age) > 0 &&
+      stats.every(Number.isSafeInteger) && adjustments.every(Number.isSafeInteger) &&
+      [jpDraft, healthDraft].every(value => value == null || Number.isFinite(value)) && (healthDraft == null || healthDraft >= 0));
+    if (!valid) alert("A karakter neve, faja és véges számértékei szükségesek.");
+    return valid;
+  }
+
   let message;
   const skillError = creationEditable && firstInvalidSkillChange(effectiveCreationSkills, creationOriginal?.skills,
     creationCharacter, creationOriginal, trainingGrants);
@@ -888,6 +905,8 @@ function validateCharacter() {
   const checkAncestry = creationEditable && isHalfBlood && (!selectedCharacter ||
     JSON.stringify(ancestry) !== JSON.stringify(creationFields(selectedCharacter).ancestry));
   const lineage = checkAncestry ? ancestryValidation(ancestry) : {};
+  const preservedGmStats = selectedCharacter?.gmOverrides && JSON.stringify(stats) === JSON.stringify(characterStats(selectedCharacter));
+  const preservedGmAge = selectedCharacter?.gmOverrides && sameSavedAge;
   const checkGender = (creationEditable || testMode === "km") && (!selectedCharacter ||
     race !== selectedCharacter.race || gender !== (selectedCharacter.gender ?? ""));
   if (!name.trim() || !race || !Number.isInteger(Number(age)) || Number(age) < 1) {
@@ -916,13 +935,13 @@ function validateCharacter() {
     message = "A mágikus eredetű származást a Mesélőnek jóvá kell hagynia.";
   } else if (checkGender && race === "Gilf" && gender !== "Nő") {
     message = "Gilf játékoskarakternél a Nő lehetőséget kell kiválasztani.";
-  } else if (!legacyAllocation && !stage) {
+  } else if (!preservedGmAge && !legacyAllocation && !stage) {
     message = "Az életkorhatárok még nem számíthatók ki!";
-  } else if (calculatedAgeLimits?.[3] > 0 && Number(age) > calculatedAgeLimits[3]) {
+  } else if (!preservedGmAge && calculatedAgeLimits?.[3] > 0 && Number(age) > calculatedAgeLimits[3]) {
     message = "A karakter életkora meghaladja a faj maximális életkorát!";
   } else if (!selectedCharacter && stage === "extrém") {
     message = "A senius életszakaszon túl új játékoskarakter nem indítható.";
-  } else if (statBudget == null || (!selectedCharacter && startingJp == null)) {
+  } else if (!preservedGmAge && (statBudget == null || (!selectedCharacter && startingJp == null))) {
     message = "Add meg az életkorhoz tartozó pontkeret-százalékokat!";
   } else if (creationEditable && (creationBudget == null || creationCosts.total > creationBudget)) {
     message = "A jártasságok költsége meghaladja az induló Jp-keretet.";
@@ -932,11 +951,11 @@ function validateCharacter() {
     message = skillError;
   } else if (invalidSkill) {
     message = `A következő jártasság szintje meghaladja a megengedett maximumot: ${invalidSkill}.`;
-  } else if (total !== statBudget) {
+  } else if (!preservedGmStats && total !== statBudget) {
     message = `A főértékek összege pontosan ${statBudget} kell legyen!`;
-  } else if (!stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
+  } else if (!preservedGmStats && !stats.every((value, index) => value >= limits[index][0] && value <= limits[index][1])) {
     message = "Valamelyik főérték kívül esik a faj és az életkor határértékein!";
-  } else if ((healthDraft ?? selectedCharacter?.currentFp) > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
+  } else if (!preservedGmStats && (healthDraft ?? selectedCharacter?.currentFp) > stats[0] && stats[0] < maxHealth(selectedCharacter)) {
     message = "A megadott Fizikum az aktuális életerő alá esne. Előbb csökkentsd az aktuális értéket.";
   }
   if (message) alert(message);
@@ -1190,10 +1209,11 @@ function checkCharacter() {
   <input
     type="checkbox"
     checked={approvedTraits}
-    onChange={(event) => setApprovedTraits(event.target.checked)}
+    onChange={(event) => { setApprovedTraits(event.target.checked); setTraitApprovalSource(null); }}
   />
   Mesélő jóváhagyta a választást
 </label>
+{!approvedTraits && <button type="button" onClick={() => { setApprovedTraits(true); setTraitApprovalSource("test"); }}>KM jóváhagyása (TESZT)</button>}
 
     </>;
   }
@@ -1224,23 +1244,9 @@ function checkCharacter() {
   }
 
   function renderAgeSelector() {
-    return <>
-    <select
-      value={age}
-      onChange={(event) => setAge(event.target.value)}
-    >
-      <option value="">Válassz életkort!</option>
-
-      {Array.from(
-        { length: selectedCharacter ? calculatedAgeLimits[3] : calculatedAgeLimits[2] },
-        (_, i) => i + 1
-      ).map((ageValue) => (
-        <option key={ageValue} value={ageValue}>
-          {ageValue} év
-        </option>
-      ))}
-    </select>
-    </>;
+    return <input type="number" aria-label="Életkor" min="1" step="1"
+      max={kmSheet ? undefined : calculatedAgeLimits?.[selectedCharacter ? 3 : 2]}
+      value={age} onChange={event => changeAge(event.target.value)} />;
   }
 
   function renderAncestryFields() {
@@ -1255,7 +1261,6 @@ function checkCharacter() {
       value={parent1}
       onChange={(event) => {
        setParent1(event.target.value);
-setAge("");
 if (creationEditable) setInheritedTraits({});
 setAncestry((previous) => ({
   ...previous,
@@ -1282,7 +1287,6 @@ setAncestry((previous) => ({
       value={parent2}
       onChange={(event) => {
        setParent2(event.target.value);
-setAge("");
 if (creationEditable) setInheritedTraits({});
 setAncestry((previous) => ({
   ...previous,
@@ -1410,6 +1414,8 @@ setAncestry((previous) => ({
               }} />
             A Mesélő jóváhagyta a mágikus eredetet
           </label>}
+          {ancestryValidation(ancestry).magical && !ancestry.magicApproved && <button type="button" onClick={() =>
+            setAncestry(previous => ({ ...previous, magicApproved: true, approvalSource: "test" }))}>KM jóváhagyása (TESZT)</button>}
         </div>}
         {race && calculatedAgeLimits && <small>
           Juvenis határ {calculatedAgeLimits[0]} év · Átlagos életkor {calculatedAgeLimits[1]}–{calculatedAgeLimits[2]} év · Extrém maximum {calculatedAgeLimits[3]} év
@@ -1466,7 +1472,7 @@ setAncestry((previous) => ({
           )}
     </div>;
     return <GeneralPage mode="creation"
-      identity={{ name, race, subrace, age, gender }}
+      identity={{ name, race, subrace, age, gender, ancestry }}
       header={{ actions: selectedCharacterId !== null && <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> }}
       links={creationEditable ? [["details", "Karakteradatok"], ["skills", "Jártasságok"], ["equipment", "Felszerelés"], ["magic", "Mágia"]].map(
         ([id, label]) => ({ id, label, current: creationTab === id, onClick: () => openCreationTab(id) })
@@ -1521,7 +1527,7 @@ setAncestry((previous) => ({
             onGM={() => selectTestMode("km")} />
         ) : (
           <nav className="workspace-nav" aria-label="Visszalépés">
-            {!inPlayerView && page !== "test-settings" &&
+            {(!inPlayerView || page === "karakterlap") && page !== "test-settings" &&
               <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
             {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
             {testMode && page !== "test-adventure" &&
@@ -1563,9 +1569,8 @@ setAncestry((previous) => ({
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
             original={creationOriginal} onAcademicCodex={(codex) => {
               const academicSpecialization = selectAcademicCodex(creationCharacter.magic?.academicSpecialization, codex);
-              if (!validAcademicSpecialization(academicSpecialization) ||
-                  !window.confirm("A Kalandmester jóváhagyta az akadémikus szakosodás módosítását?")) return;
-              setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization } }));
+              if (!validAcademicSpecialization(academicSpecialization)) return;
+              setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization, academicSpecializationApproval: { source: "test", codex } } }));
             }} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
           {creationActions}</>
           : creationEditable && creationTab === "equipment"
@@ -1600,9 +1605,22 @@ setAncestry((previous) => ({
               changed: characterFieldsChanged,
               stats, adjustments, limits, remaining, stage, notes, setNotes,
               profile, setProfile: updateProfile, health: healthDraft, advantages, disadvantages,
-              identity: { name, race, subrace, age, gender },
+              identity: { name, race, subrace, age, gender, ancestry },
+              override: kmSheet,
+              componentOverrides: componentDraft,
+              changeComponent: kmSheet ? (index, direction, value) => {
+                if (value !== "" && !Number.isSafeInteger(Number(value))) return;
+                setComponentDraft(previous => Object.assign([...previous], {
+                  [index]: { ...previous[index], [direction]: value === "" ? null : Number(value) },
+                }));
+              } : undefined,
+              healthField: kmSheet && <input type="number" step="any" aria-label="Aktuális életerő"
+                value={healthDraft ?? selectedCharacter.currentFp ?? maxHealth(selectedCharacter)}
+                onChange={event => setHealthDraft(event.target.value === "" ? null : Number(event.target.value))} />,
+              jp: kmSheet && <input type="number" aria-label="Elkölthető Jp" step="any"
+                value={jpDraft ?? selectedCharacter.jp ?? 0} onChange={event => setJpDraft(event.target.value === "" ? null : Number(event.target.value))} />,
               gender: testMode === "km" ? renderGender() : null,
-              resourceFields: testMode === "km" ? (key, maximum) => <input type="number" min="0" max={maximum} step="any"
+              resourceFields: testMode === "km" ? (key) => <input type="number" min="0" step="any"
                 aria-label={key === "activeEp" ? "Aktuális aktív Ep" : "Aktuális Esszenciapajzs"}
                 value={(Object.hasOwn(resourceDraft, key) ? resourceDraft[key] : selectedCharacter.magic?.[key]) ?? ""}
                 onChange={event => {
@@ -1612,8 +1630,9 @@ setAncestry((previous) => ({
               changeStat, changeAdjustment,
               name: <input aria-label="Karakter neve" value={name} onChange={(event) => setName(event.target.value)} />,
               religion: <VallasValaszto value={religion} original={creationFields(selectedCharacter).religion} onChange={setReligion} />,
-              race: null,
-              age: race && calculatedAgeLimits ? renderAgeSelector() : null,
+              race: kmSheet ? renderRaceSelector() : null,
+              subrace: kmSheet ? renderSubrace() : null,
+              age: race && (kmSheet || calculatedAgeLimits) ? renderAgeSelector() : null,
               ancestry: isHalfBlood ? renderAncestryFields() : null,
               ageOptions: renderAgePointOptions(),
               renderTraits,

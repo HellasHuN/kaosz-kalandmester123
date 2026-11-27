@@ -15,15 +15,15 @@ export function activeRacialChoices(race, subrace, choices = {}) {
     return { waterHunting: choices.waterHunting === true, weaponTraining: choices.weaponTraining };
   }
   if (race === "Ogár") {
-    const { extraLimbs, extraLimbDescription, spikeLocations, torsoSpikes, customMutation, customCost, customApproved } = choices;
+    const { extraLimbs, extraLimbDescription, spikeLocations, torsoSpikes, customMutation, customCost, customApproved, customApprovalSource } = choices;
     return {
-      extraLimbs, extraLimbDescription, torsoSpikes, customMutation, customCost, customApproved,
+      extraLimbs, extraLimbDescription, torsoSpikes, customMutation, customCost, customApproved, customApprovalSource,
       spikeLocations: ogreLimbOptions(extraLimbs).filter((limb) => spikeLocations?.includes(limb)),
     };
   }
   if (race === "Gennymanó" || race === "Gnóm") {
-    const { weaponType, weaponApproval, weaponName, weaponTraining } = choices;
-    return { weaponType, weaponApproval, weaponName, weaponTraining };
+    const { weaponType, weaponApproval, weaponApprovalSource, weaponName, weaponTraining } = choices;
+    return { weaponType, weaponApproval, weaponApprovalSource, weaponName, weaponTraining };
   }
   return {};
 }

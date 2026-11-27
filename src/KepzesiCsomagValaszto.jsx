@@ -8,6 +8,11 @@ export default function KepzesiCsomagValaszto({ character, onChange }) {
   const selected = character.trainingPackages ?? {};
   const entry = trainingPackages[id];
   const skills = packageSkills(id, record);
+  function add(approval = record) {
+    const error = onChange(id, approval);
+    setMessage(error);
+    if (!error) { setId(""); setRecord({ choices: [] }); }
+  }
   return <details>
     <summary>Rendek és iskolák</summary>
     {Object.entries(selected).map(([key, value]) => trainingPackages[key] && <p key={key}>
@@ -48,11 +53,10 @@ export default function KepzesiCsomagValaszto({ character, onChange }) {
         onChange={(event) => setRecord({ ...record, overlapApproved: event.target.checked })} />
         Több tagság vagy szintátfedés esetén a Mesélő jóváhagyta a kombinációt és a teljes csomagárakat
       </label>
-      <button type="button" onClick={() => {
-        const error = onChange(id, record);
-        setMessage(error);
-        if (!error) { setId(""); setRecord({ choices: [] }); }
-      }}>Csomag felvétele</button>
+      <button type="button" onClick={() => add()}>Csomag felvétele</button>
+      <button type="button" onClick={() => add({ ...record, approved: true, approvalSource: "test" })}>
+        KM jóváhagyása (TESZT)
+      </button>
     </>}
     {message && <p role="status">{message}</p>}
   </details>;
