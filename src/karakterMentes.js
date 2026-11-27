@@ -13,11 +13,16 @@ const isNumber = Number.isFinite;
 const isNonnegative = (value) => isNumber(value) && value >= 0;
 const stringList = arrayOf(isText);
 const ranks = mapOf(isRank);
+const overrideRanks = mapOf(value => Number.isSafeInteger(value) && value >= 0);
 const scalar = (value) => isText(value) || isNumber(value) || typeof value === "boolean";
 
 function validAncestor(node, root = false) {
   return hasFields(node, { race: isText }) &&
     ((!root && node.parents == null) || arrayOf((parent) => parent == null || validAncestor(parent))(node.parents));
+}
+
+function validEpAccounting(entry) {
+  return isNonnegative(entry.previousEp) && isNonnegative(entry.remainingEp) && entry.remainingEp <= entry.previousEp;
 }
 
 function validMagic(magic) {
@@ -41,7 +46,11 @@ function validMagic(magic) {
         hasFields(entry, { ep: isNonnegative, units: isNonnegative, target: isRecord })),
       castingLog: arrayOf(entry => isRecord(entry) && isId(entry.id) && isText(entry.spellName) &&
         isText(entry.recordedAt) && isText(entry.outcome) && optional(entry.consequence, isText) && optional(entry.reservation, spellReference) &&
-        isNonnegative(entry.previousEp) && isNonnegative(entry.remainingEp) && entry.remainingEp <= entry.previousEp),
+        (entry.status === "pending" || entry.status === "adjudicated"
+          ? isId(entry.spellId) && Number.isSafeInteger(entry.roll) && entry.roll >= 1 && entry.roll <= 100 &&
+            isNumber(entry.target) && (entry.status === "pending" ||
+              (isText(entry.adjudicatedAt) && isText(entry.consequence) && validEpAccounting(entry)))
+          : validEpAccounting(entry))),
       restrictedSpells: arrayOf(spellReference), wildEffects: arrayOf(effect), freeEffects: arrayOf(effect),
     }).every(([key, check]) => magic[key] === undefined || check(magic[key]));
 }
@@ -65,6 +74,7 @@ function validCharacter(character, allowedRaces) {
     religion: isText, gender: isText, parent1: isText, parent2: isText,
     jp: isNumber, currentFp: isNumber, maxFp: isNumber, stats: (stats) =>
       (stats.length === 4 || stats.length === 5) && arrayOf(isNumber)(stats),
+    componentOverrides: arrayOf(entry => entry == null || hasFields(entry, { "-1": isNumber, "1": isNumber })),
     adjustments: arrayOf(isNumber), advantages: stringList, disadvantages: stringList,
     talentSkills: stringList, racialAbilities: stringList,
     racialSpecializations: (value) => hasFields(value, {
@@ -72,7 +82,7 @@ function validCharacter(character, allowedRaces) {
     }),
     ancestry: (value) => validAncestor(value, true), ageAllocation: isRecord,
     inheritedTraits: isRecord, traitValues: mapOf((value) => value == null || scalar(value)),
-    startingSkillApprovals: (value) => hasFields(value, { exceptions: mapOf(isRecord) }), skills: ranks, skillEffectBaseline: ranks, creationRacialSkills: ranks,
+    startingSkillApprovals: (value) => hasFields(value, { exceptions: mapOf(isRecord) }), skills: character.gmOverrides === true ? overrideRanks : ranks, skillEffectBaseline: character.gmOverrides === true ? overrideRanks : ranks, creationRacialSkills: ranks,
     creationSkillsUnderGrant: ranks, skillNotes: mapOf(isText), skillFoundations: mapOf(isText),
     trainingPackages: mapOf((record) => hasFields(record, { choices: stringList, paidJp: isNonnegative })),
     skillTraining: mapOf((entry) => isRecord(entry) && isRank(entry.level) && isNonnegative(entry.cost)),

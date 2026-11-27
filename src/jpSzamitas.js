@@ -79,7 +79,7 @@ export function paidLevels(character, name, level) {
   const estimated = character.estimatedSkillJp?.includes(name) ?? false;
   const total = character.skillJpPaid?.[name];
   const knownTotal = !estimated && Number.isFinite(total) && total >= 0;
-  const prices = Array.from({ length: level }, (_, index) => {
+  const prices = Array.from({ length: Math.min(level, Math.max(10, recorded?.length ?? 0)) }, (_, index) => {
     // Old estimated arrays contained only guessed prices. New arrays mark each unknown level with null.
     if (recorded && (!estimated || recorded.includes(null))) return recorded[index] ?? null;
     // A verified aggregate can only be fully refunded when the whole skill is removed.

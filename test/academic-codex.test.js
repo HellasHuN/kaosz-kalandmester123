@@ -14,7 +14,8 @@ test("codex alone controls automatic eligibility and benefits", () => {
   assert.ok(validAcademicSpecialization({ codex: "Skarlát" }));
   assert.ok(new Set(skarlat.map(spell => spell.type)).size > 1);
   for (const spell of skarlat) assert.deepEqual(academicAccess(magic, spell), { allowed: true, bonus: 20, componentFree: true });
-  for (const spell of [azure, independent]) assert.deepEqual(academicAccess(magic, spell), { allowed: false, bonus: 0, componentFree: false });
+  assert.deepEqual(academicAccess(magic, azure), { allowed: false, bonus: 0, componentFree: false });
+  assert.deepEqual(academicAccess(magic, independent), { allowed: true, bonus: 0, componentFree: false });
 });
 
 test("the general theory catalog has one entry and legacy ranks are combined by maximum", () => {

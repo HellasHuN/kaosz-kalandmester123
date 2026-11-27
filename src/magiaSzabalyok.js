@@ -124,12 +124,14 @@ export function spellAccess(character, magic, spell, form) {
   const theory = academicTheoryRank(skills);
   const fromScroll = form === "practical" && spell.codex === "Praktikus mágia" && ownsScroll(character.equipment, spell);
   const baseDifficulty = Number.isInteger(spell.difficulty) ? spell.difficulty : spell.ep?.self?.difficulty;
+  const recorded = magic.acquisitions.some((entry) => entry.spellId === spell.id && entry.form === form);
+  const knownIndependent = recorded && form === "academic" && spell.codex === "Kódexfüggetlen";
   const spellLevel = form === "academic" && Number.isInteger(baseDifficulty) ? baseDifficulty : 0;
-  if (spellLevel > (skills[magicUseSkills[form]] ?? 0)) {
+  if (!knownIndependent && spellLevel > (skills[magicUseSkills[form]] ?? 0)) {
     reasons.push(`${magicUseSkills[form]}: ${skills[magicUseSkills[form]] ?? 0}. szint, szükséges: ${spellLevel}.`);
   }
   if (form === "academic") {
-    if (theory < Math.max(1, spellLevel)) reasons.push(`Mágiaelmélet: ${theory}. szint, szükséges: ${Math.max(1, spellLevel)}.`);
+    if (theory < Math.max(1, knownIndependent ? 0 : spellLevel)) reasons.push(`Mágiaelmélet: ${theory}. szint, szükséges: ${Math.max(1, knownIndependent ? 0 : spellLevel)}.`);
     if (!academicAccess(magic, spell).allowed) reasons.push("Ehhez a kódexen kívüli formulához külön KM-engedély szükséges.");
   }
   if (form === "sacred" && !spell.evilPrayer && !hasCodexPermission(magic.sacredCodices, spell.codex)) {
@@ -143,7 +145,6 @@ export function spellAccess(character, magic, spell, form) {
   if (magic.restrictedSpells.some((entry) => entry.form === form && entry.spellId === spell.id)) {
     reasons.push("A Mesélő a karakter számára ennél a mágiaformánál kizárta a tételt.");
   }
-  const recorded = magic.acquisitions.some((entry) => entry.spellId === spell.id && entry.form === form);
   const needsAcquisition = !fromScroll && !spell.evilPrayer && (form === "academic" || form === "practical" || form === "sacred");
   return { allowed: reasons.length === 0, reasons, recorded, needsAcquisition, fromScroll };
 }

@@ -2,7 +2,9 @@
   --book-gold: #dfad6a;
   --book-paper: #f4deb0;
   color: #ffedcf;
-  border: 3px double #b48754;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   border-radius: 1rem;
   background: radial-gradient(ellipse at 90% 0%, #742e1e 0, transparent 34%),
     repeating-linear-gradient(130deg, #ffffff04 0 1px, transparent 1px 7px), #1c1114;
@@ -426,7 +428,9 @@
   width: min(100%, 64rem);
   margin: .65rem auto;
   padding: clamp(.45rem, 2vw, 1rem);
-  border: 3px double #b48754;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .general-grimoire .grimoire-resources,
@@ -435,9 +439,8 @@
   gap: .45rem;
   margin-block: .65rem;
   padding: .65rem;
-  border: 1px solid #8b5f40;
-  border-radius: .5rem;
-  background: #2c1919;
+  border: 0;
+  background: transparent;
 }
 
 .general-grimoire .grimoire-resources h3,
@@ -456,8 +459,7 @@
   gap: .25rem;
   min-width: 0;
   padding: .4rem;
-  border: 1px solid #866144;
-  border-radius: .3rem;
+  border: 0;
   color: #f3dbb4;
   overflow-wrap: anywhere;
 }

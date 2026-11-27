@@ -25,6 +25,25 @@ const proposals = {
 };
 export const perceptionLimits = Object.fromEntries(Object.entries(proposals).map(([race, [min, suggested, max, note]]) =>
   [race, { range: [min, max], suggested, note }]));
+export const races = {
+  Elf: [[20, 70], [50, 90], [55, 90], [30, 85]],
+  Ember: [[30, 80], [30, 80], [25, 80], [35, 90]],
+  Gennymanó: [[15, 45], [60, 100], [20, 85], [20, 70]],
+  Gilf: [[35, 85], [35, 85], [35, 85], [30, 100]],
+  Gnóm: [[30, 60], [45, 85], [60, 90], [20, 70]],
+  Gyíklény: [[30, 70], [35, 85], [20, 75], [20, 70]],
+  Manó: [[15, 50], [30, 70], [20, 65], [15, 65]],
+  Ogár: [[55, 95], [25, 70], [15, 60], [10, 60]],
+  Ork: [[30, 90], [25, 75], [25, 70], [20, 70]],
+  Törpe: [[45, 85], [25, 70], [25, 75], [20, 70]],
+  Tündérke: [[10, 30], [40, 100], [25, 80], [25, 80]],
+  "Félvér elf": [[35, 75], [45, 85], [35, 80], [25, 80]],
+  "Félvér gilf": [[35, 80], [30, 75], [30, 80], [25, 85]],
+  "Félvér ogár": [[50, 90], [30, 75], [20, 70], [20, 75]],
+  Szürkemanó: [[15, 100], [15, 100], [15, 100], [10, 100]],
+  "Félvér ork": [[45, 85], [30, 80], [25, 80], [15, 75]],
+};
+
 export const PERCEPTION_LIMITS = [0, 100];
 
 export const attributes = [
@@ -86,6 +105,8 @@ export function characterAdjustments(character) {
 }
 
 export function effectiveAttribute(character, index, direction = 0, bonuses = skillAttributeBonuses(character)) {
+  const override = direction && character.componentOverrides?.[index]?.[direction];
+  if (direction && Number.isFinite(override)) return override;
   const base = character.stats?.[index];
   if (!Number.isFinite(base)) return undefined;
   const attribute = attributes[index][direction === 1 ? 1 : direction === -1 ? 2 : 0];
