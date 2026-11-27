@@ -1,7 +1,8 @@
 import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
-import GeneralPage, { CharacterWorkspace, GeneralNavigation } from "./page1/GeneralPage.jsx";
+import GeneralPage, { CharacterWorkspace } from "./page1/GeneralPage.jsx";
 import "./CharacterInterfaces.css";
-import { ApplicationDialog } from "./teszt/ApplicationChrome.jsx";
+import { useApplicationNavigation } from "./teszt/useApplicationNavigation.js";
+import { ApplicationDialog, GlobalNavigation } from "./teszt/ApplicationChrome.jsx";
 import { profileError, readProfile } from "./characterProfile.js";
 import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
 import MainMenu from "./teszt/MainMenu.jsx";
@@ -690,56 +691,73 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     return !hasChanges || window.confirm("Nem mentett módosítások vannak. Biztosan továbblépsz mentés nélkül?");
   }
 
-  function navigate(nextPage, character) {
-    if (!confirmLeaving()) return;
+  function restoreRoute(route) {
+    const character = savedCharacters.find(item => item.id === route.characterId)
+      ?? (route.characterId === sampleCharacter.id ? sampleCharacter : null);
+    if (route.page === "karakterlap" && !character) {
+      setPage("karakterek");
+      loadCharacter(null);
+    } else {
+      loadCharacter(character, route.page === "alkotas");
+      setPage(route.page);
+    }
+    setTestMode(route.testMode);
+    setAdventureCharacterId(route.adventureCharacterId);
+    setAdventureTabOnOpen(route.adventureTab ?? "overview");
+    setSheetPageOnOpen(route.sheetPage ?? 1);
+    setSheetEditingOnOpen(Boolean(route.editing));
+    setCreationTab(route.creationTab ?? "details");
+    window.scrollTo(0, 0);
+  }
+
+  const navigation = useApplicationNavigation({
+    snapshot: { page, characterId: selectedCharacterId, testMode, adventureCharacterId,
+      adventureTab: adventureTabOnOpen, sheetPage: sheetPageOnOpen, creationTab },
+    restore: restoreRoute,
+    confirmLeaving,
+  });
+
+  function navigate(nextPage, character, options = {}) {
     if (nextPage === "alkotas" && character && character.playStatus !== "draft") return;
     if (nextPage === "karakterlap" && character?.playStatus !== "playing") return;
-    if (character !== undefined) loadCharacter(character, nextPage === "alkotas");
-    setSheetPageOnOpen(1);
-    setSheetEditingOnOpen(false);
-    setAdventureTabOnOpen("overview");
-    setPage(nextPage);
-    window.scrollTo(0, 0);
-    return true;
+    const destination = { page: nextPage, characterId: character?.id ?? null, testMode, adventureCharacterId, ...options };
+    if (nextPage === page && destination.characterId === selectedCharacterId) {
+      if (nextPage === "test-adventure" && destination.testMode !== testMode) return navigation.push(destination);
+      return;
+    }
+    return navigation.push(destination);
   }
 
   function returnHome() {
-    if (navigate("fomenu", null)) {
-      setTestMode(null);
-      setAdventureCharacterId(null);
-    }
+    navigation.home();
   }
 
   function selectTestMode(mode) {
-    if (navigate("test-adventure", null)) setTestMode(mode);
+    if (page === "test-adventure") {
+      setAdventureTabOnOpen("overview");
+      setTestMode(mode);
+    } else navigate("test-adventure", null, { testMode: mode });
   }
 
   function openPlayerCharacter(character, initialPage = 1) {
-    if (navigate("karakterlap", character)) {
-      setSheetPageOnOpen(initialPage);
-      setTestMode("player");
-      setAdventureCharacterId(character.id);
-    }
+    navigate("karakterlap", character, { sheetPage: initialPage, testMode: "player", adventureCharacterId: character.id });
   }
 
   function openMenuCharacter(character, edit = false) {
     if (character.playStatus === "draft") navigate("alkotas", character);
     else if (character.playStatus === "playing") {
-      if (navigate("karakterlap", character)) setSheetEditingOnOpen(edit);
+      navigate("karakterlap", character, { editing: edit });
     } else navigate("karakterek", null);
   }
 
   function openMenuChat(character) {
-    if (!navigate("test-adventure", null)) return;
-    setTestMode("player");
-    setAdventureCharacterId(character.id);
-    setAdventureTabOnOpen("messages");
+    if (!navigate("test-adventure", null, { testMode: "player", adventureCharacterId: character.id, adventureTab: "messages" })) return;
     const next = markConversationRead(adventure, character.id, "player");
     if (next !== adventure) updateAdventure(next);
   }
 
   function openAdventureFor(character) {
-    if (navigate("test-adventure", null)) setAdventureCharacterId(character.id);
+    navigate("test-adventure", null, { adventureCharacterId: character.id });
   }
 
   function updateAdventure(next) {
@@ -1496,48 +1514,42 @@ setAncestry((previous) => ({
   const creationIdentity = { name, race, subrace, age, gender };
   const creationHeader = { actions: selectedCharacterId !== null &&
     <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> };
-  const inPlayerView = page === "karakterlap" || (page === "test-adventure" && testMode === "player");
   const selectingForPlay = page === "jatek";
   const selectingCharacter = page === "karakterek" || selectingForPlay;
-  const selectionLinks = [
-    { id: "home", label: "Vissza a főmenübe", onClick: returnHome },
-    { id: "settings", label: "Beállítások", onClick: () => navigate("test-settings", null) },
-    ...(testMode ? [{ id: "skills", label: "Kaland", onClick: () => navigate("test-adventure", null) }] : []),
-    ...(selectingForPlay ? [{ id: "details", label: "Mentett karakterek", onClick: () => navigate("karakterek", null) }] : []),
-  ];
+  const sheetTitles = ["Általános", "Jártasságok", "Felszerelés", "Mágia"];
+  const adventureTitles = { overview: testMode === "km" ? "Kalandmester" : testMode === "player" ? "Játékos mód" : "Kaland kezdete",
+    messages: "Üzenetek", segments: "Harci szegmensek", map: "Világtérkép", bestiary: "Bestiárium",
+    generator: "Generátor", trials: "Titkos próbák", overrides: "Felülbírálások", notes: "KM-jegyzetek" };
+  const pageTitle = { alkotas: "Karakteralkotás", karakterek: "Karakterbetöltés", jatek: "Játék",
+    karakterlap: sheetTitles[sheetPageOnOpen - 1], "test-settings": "Beállítások",
+    "test-adventure": adventureTitles[adventureTabOnOpen] }[page];
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
 
   return (
     <div className="app test-app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
+        {page !== "fomenu" && <GlobalNavigation title={pageTitle} onBack={navigation.back} onHome={returnHome} />}
         {saveBlocked && <p className="campaign-notice" role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
-          <MainMenu characters={savedCharacters} adventure={adventure}
+          <MainMenu viewMemory={navigation.viewMemory} characters={savedCharacters} adventure={adventure}
             onNew={() => navigate("alkotas", null)} onLoad={openMenuCharacter}
             onEdit={(character) => openMenuCharacter(character, true)} onDelete={startDelete}
-            onSheet={openPlayerCharacter} onCodex={(character) => openPlayerCharacter(character, 4)} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
+            onCodex={(character) => openPlayerCharacter(character, 4)} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
             onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
             onGM={() => selectTestMode("km")} />
-        ) : !selectingCharacter && (
-          <nav className={`workspace-nav${page === "test-settings" || page === "test-adventure" ? " campaign-navigation" : ""}`} aria-label="Visszalépés">
-            {!inPlayerView && page !== "test-settings" &&
-              <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
-            {page !== "test-settings" && <button className="workspace-settings" type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>}
-            {testMode && page !== "test-adventure" &&
-              <button type="button" onClick={() => navigate("test-adventure", null)}>Kaland</button>}
-            {page !== "karakterek" && (
-              <button className="workspace-saved" type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>
-            )}
-          </nav>
-        )}
-        {page === "test-settings" && <Suspense fallback={<p className="campaign-notice" role="status">Beállítások betöltése…</p>}><TestSettings mode={testMode} onMode={selectTestMode}
-          onHome={() => {
-            if (window.confirm("Visszatérsz a főmenübe?")) returnHome();
-          }} onExport={exportCharacters} onImport={importCharacters} /></Suspense>}
+        ) : null}
+        {(page === "alkotas" || page === "test-adventure" || selectingCharacter) &&
+          <nav className="campaign-navigation context-navigation" aria-label="Kapcsolódó nézetek">
+            <button type="button" onClick={() => navigate("test-settings", null)}>Beállítások</button>
+            {page !== "karakterek" && <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>}
+          </nav>}
+        {page === "test-settings" && <Suspense fallback={<p className="campaign-notice" role="status">Beállítások betöltése…</p>}>
+          <TestSettings mode={testMode} onMode={selectTestMode} onExport={exportCharacters} onImport={importCharacters} />
+        </Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p className="campaign-notice" role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p className="campaign-notice" role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
-          <TestMode key={testMode} mode={testMode} initialTab={adventureTabOnOpen} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
+          <TestMode viewMemory={navigation.viewMemory} key={`${navigation.viewId}-${testMode}`} mode={testMode} onTabChange={setAdventureTabOnOpen} onRecipientChange={setAdventureCharacterId} initialTab={adventureTabOnOpen} initialCharacterId={adventureCharacterId} characters={savedCharacters.some(({ id }) => String(id) === sampleCharacter.id)
             ? playingCharacters : [...playingCharacters, sampleCharacter]}
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
@@ -1546,7 +1558,7 @@ setAncestry((previous) => ({
           creationEditable && creationTab !== "details" ?
             <CharacterWorkspace character={creationIdentity} subtitle={creationLinks.find(link => link.current)?.label}
               mode="creation" className="character-creation" header={creationHeader} links={creationLinks}>
-              {creationTab === "skills" ? <AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
+              {creationTab === "skills" ? <AlkotasiJartassagok viewMemory={navigation.viewMemory} character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
             original={creationOriginal} onAcademicCodex={(codex) => {
               const academicSpecialization = selectAcademicCodex(creationCharacter.magic?.academicSpecialization, codex);
@@ -1554,7 +1566,7 @@ setAncestry((previous) => ({
                   !window.confirm("A Kalandmester jóváhagyta az akadémikus szakosodás módosítását?")) return;
               setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization } }));
             }} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
-                : creationTab === "equipment" ? <AlkotasiFelszereles equipment={creationCharacter.equipment}
+                : creationTab === "equipment" ? <AlkotasiFelszereles viewMemory={navigation.viewMemory} equipment={creationCharacter.equipment}
               onChange={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />
                 : <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
               onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} /></Suspense>}
@@ -1563,7 +1575,8 @@ setAncestry((previous) => ({
             : renderCharacterFields(creationActions)
         )}
         {page === "karakterlap" && (
-          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
+          <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={`${navigation.viewId}-${selectedCharacterId}`} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
+            viewMemory={navigation.viewMemory} onPageChange={setSheetPageOnOpen}
             character={selectedCharacter}
             stage={ageStage(selectedCharacter?.age, selectedCharacter?.ancestry?.parents?.length === 2
               ? getAncestryAgeLimits(selectedCharacter.ancestry) : ageLimits[selectedCharacter?.race])}
@@ -1644,7 +1657,6 @@ setAncestry((previous) => ({
                 </div>
               </article>
             ))}</div>
-            <GeneralNavigation links={selectionLinks} label="Visszalépés" />
           </section>
         )}
 {deletingCharacter && (

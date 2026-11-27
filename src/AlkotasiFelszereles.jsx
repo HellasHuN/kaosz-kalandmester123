@@ -1,3 +1,4 @@
+import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { useId, useState } from "react";
 import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 import { catalog, equipmentDetails, formatStat, labels, readEquipment, statOptions, validEquipmentStat,
@@ -31,11 +32,12 @@ function EquipmentFields({ item, entry, onQuantity, onStat, onWear }) {
   </div>;
 }
 
-export default function AlkotasiFelszereles({ equipment, onChange }) {
+export default function AlkotasiFelszereles({ equipment, onChange, viewMemory }) {
   const headingId = useId();
   const searchId = useId();
   const pendingId = useId();
-  const [query, setQuery] = useState("");
+  const [query, updateQuery] = useState(viewMemory?.creationEquipmentQuery ?? "");
+  const setQuery = rememberViewValue(viewMemory, "creationEquipmentQuery", updateQuery);
   const [pending, setPending] = useState(null);
   const [message, setMessage] = useState("");
   const current = readEquipment(equipment);

@@ -276,7 +276,7 @@
 
 .menu-bottom {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: .12rem;
   margin-top: .65rem;
   padding: .25rem .1rem max(.15rem, env(safe-area-inset-bottom));

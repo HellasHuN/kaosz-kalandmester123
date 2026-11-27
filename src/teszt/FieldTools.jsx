@@ -1,3 +1,4 @@
+import { rememberViewValue } from "./useApplicationNavigation.js";
 import { BookOpen, Compass, MapPin, Minus, PawPrint, Plus } from "lucide-react";
 import { useState } from "react";
 import { generateNpc, npcRoles } from "./npcDraft.js";
@@ -9,9 +10,10 @@ const samplePlaces = [
   { id: "domb", name: "Szeles dombvidék", x: 71, y: 75, layer: "Táj" },
 ];
 
-export function MapTool({ markers, onChange }) {
+export function MapTool({ markers, onChange, viewMemory }) {
   const [zoom, setZoom] = useState(1);
-  const [query, setQuery] = useState("");
+  const [query, updateQuery] = useState(viewMemory?.mapQuery ?? "");
+  const setQuery = rememberViewValue(viewMemory, "mapQuery", updateQuery);
   const [chosen, setChosen] = useState(null);
   const [layers, setLayers] = useState(["Helyszínek", "Táj", "Saját jelölők"]);
   const places = [...samplePlaces, ...markers].filter(place => layers.includes(place.layer) &&
@@ -69,8 +71,9 @@ const fields = {
   reference: "Forrás vagy megjegyzés",
 };
 
-export function Bestiary({ entries, onChange }) {
-  const [query, setQuery] = useState("");
+export function Bestiary({ entries, onChange, viewMemory }) {
+  const [query, updateQuery] = useState(viewMemory?.bestiaryQuery ?? "");
+  const setQuery = rememberViewValue(viewMemory, "bestiaryQuery", updateQuery);
   const [editing, setEditing] = useState(null);
   const [type, setType] = useState("");
   const types = [...new Set(entries.map(entry => entry.type).filter(value => typeof value === "string" && value))].sort((a, b) => a.localeCompare(b, "hu"));

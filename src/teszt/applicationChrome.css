@@ -147,3 +147,37 @@
   .campaign-surface .adventure-desk-navigation button { min-width: 0; }
   .campaign-surface .adventure-desk-content { padding: .55rem; }
 }
+
+.global-navigation {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: clamp(4.65rem,14vw,6rem) minmax(0,1fr) clamp(4.65rem,14vw,6rem);
+  align-items: center;
+  gap: .28rem;
+  margin: 0 auto .5rem;
+  padding: max(.32rem,env(safe-area-inset-top)) max(.35rem,env(safe-area-inset-right)) .32rem max(.35rem,env(safe-area-inset-left));
+  width: min(100%,82rem);
+  border-bottom: 1px solid #aa7949;
+  background: #090f17;
+  box-shadow: 0 3px 7px #0009;
+  font-family: Georgia, serif;
+}
+.global-navigation > button { min-width: 44px; padding: .18rem .4rem; }
+.global-navigation [aria-current] {
+  min-width: 0;
+  color: var(--gold);
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-size: clamp(.86rem, 2.5vw, 1.15rem);
+  font-weight: bold;
+}
+.context-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .32rem;
+  margin-bottom: .45rem;
+}
+.context-navigation button { padding: .25rem .55rem; }

@@ -1,6 +1,7 @@
+import { rememberViewValue } from "./useApplicationNavigation.js";
 import { useState } from "react";
-import { Bell, BookOpen, Compass, Feather, HeartPulse, Home, Hourglass, Info, MessageCircle,
-  Pencil, Play, Plus, Search, Settings, Shield, Sparkles, Star, Swords, Trash2, UserRound, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, Feather, HeartPulse, Hourglass, Info, MessageCircle,
+  Pencil, Play, Search, Settings, Shield, Sparkles, Star, Swords, Trash2, UserRound, Users, X } from "lucide-react";
 import { pageAncestryTheme } from "./ancestryTheme.js";
 import { unreadMessages } from "./localAdventure.js";
 import { maxHealth } from "../eletero.js";
@@ -56,9 +57,11 @@ function CharacterPreview({ character, onLoad, onEdit, onDelete }) {
   </section>;
 }
 
-export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit, onDelete, onSheet, onCodex, onSettings, onChat, onPlay, onSaved, onGM }) {
-  const [selection, setSelection] = useState(null);
-  const [query, setQuery] = useState("");
+export default function MainMenu({ characters, adventure, viewMemory, onNew, onLoad, onEdit, onDelete, onCodex, onSettings, onChat, onPlay, onSaved, onGM }) {
+  const [selection, updateSelection] = useState(viewMemory.selection ?? null);
+  const [query, updateQuery] = useState(viewMemory.query ?? "");
+  const setSelection = rememberViewValue(viewMemory, "selection", updateSelection);
+  const setQuery = rememberViewValue(viewMemory, "query", updateQuery);
   const [message, setMessage] = useState("");
   const selected = characters.find(character => character.id === selection) ?? characters[0];
   const matches = searchable(query.trim());
@@ -77,7 +80,6 @@ export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit,
   return <section className="main-menu" aria-labelledby="main-menu-title">
     <header className="menu-masthead">
       <div className="menu-corner-left">
-        <button type="button" aria-label="Kódex megnyitása" onClick={openCodex}><BookOpen aria-hidden="true" /></button>
         <button type="button" aria-label={unread ? `Értesítések · ${unread} olvasatlan üzenet` : "Értesítések"}
           onClick={() => unread ? openChat() : setMessage("A kiválasztott karakternek nincs olvasatlan helyi üzenete.")}>
           <Bell aria-hidden="true" />{unread > 0 && <span className="menu-badge" aria-hidden="true">{unread}</span>}
@@ -119,7 +121,6 @@ export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit,
           })}
         </ul>
         {visible.length === 0 && <p className="menu-empty">{characters.length === 0 ? "Nincs mentett karakter." : "Nincs ilyen karakter."}</p>}
-        <button className="menu-new" type="button" onClick={onNew}><Plus aria-hidden="true" />Új karakter létrehozása</button>
       </section>
       {selected ? <CharacterPreview key={selected.id} character={selected} onLoad={onLoad} onEdit={onEdit} onDelete={onDelete} />
         : <section className="menu-frame menu-empty-preview" aria-label="Karakter előnézete"><UserRound aria-hidden="true" /><p>Hozz létre egy karaktert az előnézethez.</p></section>}
@@ -131,10 +132,7 @@ export default function MainMenu({ characters, adventure, onNew, onLoad, onEdit,
       <button type="button" onClick={onGM} aria-label="Kalandmester" aria-describedby="menu-km-test"><Swords aria-hidden="true" />Kalandmester <small id="menu-km-test">TESZT</small></button>
     </nav>
     <nav className="menu-bottom" aria-label="Fő navigáció">
-      <button type="button" aria-current="page" onClick={() => { setQuery(""); setMessage(""); window.scrollTo(0, 0); }}><Home aria-hidden="true" />Főmenü</button>
       <button type="button" onClick={onNew}><Feather aria-hidden="true" />Karakteralkotás</button>
-      <button type="button" onClick={() => selected?.playStatus === "playing" ? onSheet(selected) :
-        setMessage("A karakterlaphoz válassz játékba helyezett karaktert.")}><UserRound aria-hidden="true" />Karakterlap</button>
       <button type="button" onClick={openCodex}><BookOpen aria-hidden="true" />Kódex</button>
       <button type="button" onClick={openChat}><MessageCircle aria-hidden="true" />Chat</button>
     </nav>

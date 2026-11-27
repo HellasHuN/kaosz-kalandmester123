@@ -13,7 +13,7 @@ const missing = "—";
 const componentIcons = [[Hand, ShieldCheck], [Feather, Crosshair], [BookOpen, Sun], [Sparkles, Shield], [Eye, ScanEye]];
 const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, equipment: Backpack, chat: MessageCircle, home: House, settings: Settings };
 
-export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread, subtitle = "Általános", title = creation ? "Karakteralkotás" : "Karakterlap", showTools = true }) {
+export function IllustratedHeader({ character, creation, actions, onChat, onSettings, unread, subtitle = "Általános", title = creation ? "Karakteralkotás" : "Karakterlap", showTools = true }) {
   const { race, subrace, gender, age, name } = character;
   const illustratedHuman = race === "Ember" && !subrace && gender === "Férfi";
   return <header className="general-hero" data-illustrated-human={illustratedHuman}
@@ -33,7 +33,6 @@ export function IllustratedHeader({ character, creation, actions, onCodex, onCha
     </div>
     {creation ? actions && <div className="general-new">{actions}</div> : showTools && <>
       <div className="general-hero-tools">
-        <button type="button" aria-label="Kódex" onClick={onCodex}><BookOpen /></button>
         <button type="button" aria-label={unread ? `Értesítések · ${unread} olvasatlan üzenet` : "Értesítések"} onClick={onChat}>
           <Bell />{unread > 0 && <sup aria-hidden="true">{unread}</sup>}
         </button>

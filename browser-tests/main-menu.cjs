@@ -20,7 +20,7 @@ async function verify(page, width, height) {
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek")));
   async function returnHome() {
     await button("Beállítások").click();
-    await button("Vissza a főmenübe").click();
+    await button("Főmenü").click();
   }
   await page.goto(url);
   await page.getByText("Nincs mentett karakter.").waitFor();
@@ -63,18 +63,18 @@ async function verify(page, width, height) {
   await registry.getByRole("button", { name: /Ködjáró/ }).click();
   await button("Betöltés").click();
   assert.equal(await page.getByPlaceholder("Karakter neve").inputValue(), "Ködjáró");
-  await button("Vissza a főmenübe").click();
-  await button("Új karakter létrehozása").click();
+  await button("Főmenü").click();
+  await button("Karakteralkotás").click();
   assert.equal(await page.getByPlaceholder("Karakter neve").inputValue(), "");
   await page.getByPlaceholder("Karakter neve").fill("Mentetlen módosítás");
-  await button("Vissza a főmenübe").click();
+  await button("Főmenü").click();
   await registry.getByRole("button", { name: /Ködjáró/ }).click();
   await button("Kódex").click();
   await page.getByRole("status").filter({ hasText: /játékba helyezett karaktert/ }).waitFor();
   await registry.getByRole("button", { name: /Szentmihályi/ }).click();
   await button("Kódex").click();
   await page.getByRole("heading", { name: "Mágia és varázslatok" }).waitFor();
-  assert.equal(await button("Vissza a főmenübe").count(), 0);
+  assert.equal(await button("Főmenü").count(), 1);
   await returnHome();
   await page.evaluate(() => {
     localStorage.setItem("kaosz-teszt-kaland", JSON.stringify({ notes: "", messages: [

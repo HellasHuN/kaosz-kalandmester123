@@ -1,3 +1,4 @@
+import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { legacyTheoryNames } from "./teszt/academic.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
@@ -17,11 +18,13 @@ const ordinarySkills = Object.keys(jpKoltsegek).filter((name) => !legacyTheoryNa
 const icons = { Fizikum: 0, Rátermettség: 1, Ügyesség: 3, Reflex: 4, Tudat: 9, Intelligencia: 8, Lelkierő: 14, Esszencia: 11, Varázserő: 11 };
 const blank = { level: 0, prices: [], note: "", estimated: false, training: null };
 
-export default function Jartassagok({ character, onSave, ref }) {
+export default function Jartassagok({ character, onSave, ref, viewMemory }) {
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState("");
-  const [listQuery, setListQuery] = useState("");
-  const [status, setStatus] = useState("all");
+  const [listQuery, updateListQuery] = useState(viewMemory?.skillQuery ?? "");
+  const setListQuery = rememberViewValue(viewMemory, "skillQuery", updateListQuery);
+  const [status, updateStatus] = useState(viewMemory?.skillStatus ?? "all");
+  const setStatus = rememberViewValue(viewMemory, "skillStatus", updateStatus);
   const [candidate, setCandidate] = useState("");
   const [method, setMethod] = useState("mentor");
   const [clarifiedCharacter, setClarifiedCharacter] = useState(null);

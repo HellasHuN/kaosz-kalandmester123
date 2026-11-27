@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ApplicationHeading } from "./ApplicationChrome.jsx";
 
-export default function TestSettings({ mode, onMode, onHome, onExport, onImport }) {
+export default function TestSettings({ mode, onMode, onExport, onImport }) {
   const fileInput = useRef(null);
   const [message, setMessage] = useState("");
 
@@ -27,7 +27,6 @@ export default function TestSettings({ mode, onMode, onHome, onExport, onImport 
       {mode && <button type="button" onClick={() => onMode(mode === "km" ? "player" : "km")}>
         Váltás {mode === "km" ? "játékos" : "kalandmester"} módra
       </button>}
-      <button type="button" onClick={onHome}>Vissza a főmenübe</button>
       <button type="button" onClick={onExport}>Karakterek exportálása (JSON)</button>
       <button type="button" onClick={() => fileInput.current.click()}>Karakterek importálása (JSON)</button>
       <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={importFile} />

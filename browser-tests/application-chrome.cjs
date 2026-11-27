@@ -88,7 +88,7 @@ async function verify(page, width) {
   await heading("Beállítások").waitFor();
   await fit();
   await photo("beallitasok");
-  await button("Vissza a főmenübe").click();
+  await button("Főmenü").click();
   await heading("Főmenü").waitFor();
   const keys = await page.evaluate(() => ({
     roster: JSON.parse(localStorage.getItem("kaosz-karakterek")),

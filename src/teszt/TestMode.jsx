@@ -14,8 +14,12 @@ const quickMessages = [
   "A következő cselekvésed előtt várd meg a KM jelzését.",
 ];
 
-export default function TestMode({ mode, initialTab = "overview", initialCharacterId, characters, adventure, onChange, onSelectMode, onOpenCharacter }) {
+export default function TestMode({ mode, viewMemory, initialTab = "overview", initialCharacterId, characters, adventure, onChange, onSelectMode, onOpenCharacter, onTabChange, onRecipientChange }) {
   const [tab, setTab] = useState(initialTab);
+  function openTab(next) {
+    setTab(next);
+    onTabChange(next);
+  }
   const [recipient, setRecipient] = useState(() => String(initialCharacterId ?? ""));
   const [text, setText] = useState("");
   if (!mode) return (
@@ -54,18 +58,18 @@ export default function TestMode({ mode, initialTab = "overview", initialCharact
       : <ApplicationHeading>{km ? "Kalandmesteri irányítópult" : "Játékos mód"}</ApplicationHeading>}
     <div className="adventure-desk-layout">
     <nav className="test-actions adventure-desk-navigation" aria-label="Tesztkaland">
-      <button type="button" aria-pressed={tab === "overview"} onClick={() => setTab("overview")}><Compass aria-hidden="true" size={16} />Kaland áttekintése</button>
+      <button type="button" aria-pressed={tab === "overview"} onClick={() => openTab("overview")}><Compass aria-hidden="true" size={16} />Kaland áttekintése</button>
       <button type="button" aria-pressed={tab === "messages"} onClick={() => {
-        setTab("messages");
+        openTab("messages");
         readThread(selected?.id);
       }}><MessageCircle aria-hidden="true" size={16} />Üzenetek{unread > 0 && <span aria-label={`${unread} olvasatlan üzenet`}> ({unread})</span>}</button>
-      <button type="button" aria-pressed={tab === "segments"} onClick={() => setTab("segments")}><Swords aria-hidden="true" size={16} />Harci szegmensek</button>
-      {km && <button type="button" aria-pressed={tab === "map"} onClick={() => setTab("map")}><Map aria-hidden="true" size={16} />Világtérkép</button>}
-      {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}><BookOpen aria-hidden="true" size={16} />Bestiárium</button>}
-      {km && <button type="button" aria-pressed={tab === "generator"} onClick={() => setTab("generator")}><Dices aria-hidden="true" size={16} />Generátor</button>}
-      {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => setTab("trials")}><Shield aria-hidden="true" size={16} />Titkos próbák</button>}
-      {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => setTab("overrides")}><ClipboardList aria-hidden="true" size={16} />Felülbírálások</button>}
-      {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => setTab("notes")}><ScrollText aria-hidden="true" size={16} />KM-jegyzetek</button>}
+      <button type="button" aria-pressed={tab === "segments"} onClick={() => openTab("segments")}><Swords aria-hidden="true" size={16} />Harci szegmensek</button>
+      {km && <button type="button" aria-pressed={tab === "map"} onClick={() => openTab("map")}><Map aria-hidden="true" size={16} />Világtérkép</button>}
+      {km && <button type="button" aria-pressed={tab === "bestiary"} onClick={() => openTab("bestiary")}><BookOpen aria-hidden="true" size={16} />Bestiárium</button>}
+      {km && <button type="button" aria-pressed={tab === "generator"} onClick={() => openTab("generator")}><Dices aria-hidden="true" size={16} />Generátor</button>}
+      {km && <button type="button" aria-pressed={tab === "trials"} onClick={() => openTab("trials")}><Shield aria-hidden="true" size={16} />Titkos próbák</button>}
+      {km && <button type="button" aria-pressed={tab === "overrides"} onClick={() => openTab("overrides")}><ClipboardList aria-hidden="true" size={16} />Felülbírálások</button>}
+      {km && <button type="button" aria-pressed={tab === "notes"} onClick={() => openTab("notes")}><ScrollText aria-hidden="true" size={16} />KM-jegyzetek</button>}
     </nav>
     <div className="adventure-desk-content">
     {((tab === "notes" && !km) || tab === "overview") && <>
@@ -75,6 +79,7 @@ export default function TestMode({ mode, initialTab = "overview", initialCharact
     {(tab === "overview" || tab === "messages") && <>
       <label>Karakter <select value={selected ? String(selected.id) : ""} onChange={event => {
         setRecipient(event.target.value);
+        onRecipientChange(event.target.value);
         if (tab === "messages") readThread(event.target.value);
       }}>
         {characters.map(character => <option key={character.id} value={String(character.id)}>{character.name}</option>)}
@@ -85,9 +90,9 @@ export default function TestMode({ mode, initialTab = "overview", initialCharact
       onChange={overrides => onChange({ ...adventure, overrides })} />}
     {km && tab === "trials" && <SecretTrials characters={characters} history={adventure.trials ?? []} overrides={adventure.overrides ?? []}
       onRecord={record => onChange({ ...adventure, trials: [...(adventure.trials ?? []), record] })} />}
-    {km && tab === "map" && <MapTool markers={adventure.markers ?? []}
+    {km && tab === "map" && <MapTool viewMemory={viewMemory} markers={adventure.markers ?? []}
       onChange={markers => onChange({ ...adventure, markers })} />}
-    {km && tab === "bestiary" && <Bestiary entries={adventure.bestiary ?? []}
+    {km && tab === "bestiary" && <Bestiary viewMemory={viewMemory} entries={adventure.bestiary ?? []}
       onChange={bestiary => onChange({ ...adventure, bestiary })} />}
     {km && tab === "generator" && <CreatureGenerator
       onSave={entry => onChange({ ...adventure, bestiary: [...(adventure.bestiary ?? []), entry] })} />}

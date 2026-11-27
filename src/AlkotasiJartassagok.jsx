@@ -1,3 +1,4 @@
+import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { devotionSkill } from "./elhivatottsag.js";
 import ElhivatottsagValaszto from "./ElhivatottsagValaszto.jsx";
 import { useState } from "react";
@@ -14,8 +15,9 @@ import { artSkillName, genericSpecializations, hasWeaponFoundation, racialWeapon
   specializationLearningRank, specializationRefinementOptions } from "./jartassagSzakosodasok.js";
 import "./Jartassagok.css";
 
-export default function AlkotasiJartassagok({ character, budget, costs, grants, racialGrants, trainingGrants, original, onChange, onClarify, onPackageChange, onAcademicCodex }) {
-  const [query, setQuery] = useState("");
+export default function AlkotasiJartassagok({ character, budget, costs, grants, racialGrants, trainingGrants, original, onChange, onClarify, onPackageChange, onAcademicCodex, viewMemory }) {
+  const [query, updateQuery] = useState(viewMemory?.creationSkillsQuery ?? "");
+  const setQuery = rememberViewValue(viewMemory, "creationSkillsQuery", updateQuery);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(null);
   const search = query.trim().toLocaleLowerCase("hu");

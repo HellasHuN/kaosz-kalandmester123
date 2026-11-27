@@ -1,3 +1,4 @@
+import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { ArmorDiagram } from "./ArmorDiagram.jsx";
 import "./Felszereles.css";
@@ -6,10 +7,11 @@ import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 import { catalog, labels, formatStat, readEquipment, variableStats, statOptions, equipmentDetails,
   validQuantity, validEquipmentStat } from "./felszerelesSzerkesztes.js";
 
-export default function Felszereles({ character, onSave, ref }) {
+export default function Felszereles({ character, onSave, ref, viewMemory }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
-  const [inventoryQuery, setInventoryQuery] = useState("");
+  const [inventoryQuery, updateInventoryQuery] = useState(viewMemory?.inventoryQuery ?? "");
+  const setInventoryQuery = rememberViewValue(viewMemory, "inventoryQuery", updateInventoryQuery);
   const [draft, setDraft] = useState(null);
   const [newEntryId, setNewEntryId] = useState(null);
   const newStatInput = useRef(null);

@@ -35,7 +35,7 @@ async function verify(page, width) {
   const fit = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   async function backFromSheet() {
     await button("Beállítások").click();
-    await button("Vissza a főmenübe").click();
+    await button("Főmenü").click();
   }
   await page.goto(process.env.PREVIEW_URL || "http://localhost:4173/");
   await page.evaluate(record => localStorage.setItem("kaosz-karakterek", JSON.stringify([record])), saved);
@@ -65,7 +65,7 @@ async function verify(page, width) {
     ["Fizikum","Erő","Szívósság","Rátermettség","Ügyesség","Reflex","Tudat","Intelligencia","Lelkierő",
       "Esszencia","Varázserő","Esszenciapajzs","Érzékelés","Érzékszerv","Intuíció"]);
   assert.ok(await button("Életerő növelése").isDisabled());
-  assert.equal(await button("Vissza a főmenübe").count(), 0);
+  assert.equal(await button("Főmenü").count(), 1);
   assert.match(await body.innerText(), /20 \/ 55/);
   await fit();
   await photo("jatekos");
@@ -142,9 +142,9 @@ async function verify(page, width) {
   await photo("gilf");
   assert.equal(await button("Kódex").count(), 0);
   accept = false;
-  await button("Vissza a főmenübe").click();
+  await button("Főmenü").click();
   await header.waitFor();
-  await button("Vissza a főmenübe").click();
+  await button("Főmenü").click();
   await button("Kalandmester").click();
   await button("Karakterlap megnyitása").click();
   assert.equal(await button("Életerő növelése").isEnabled(), true);
@@ -157,7 +157,7 @@ async function verify(page, width) {
   await button("Véglegesítés").click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.activeEp === 18);
   assert.equal((await read())[0].profile.hairColor, "Barna");
-  await button("Chat").click();
+  await button("Értesítések").click();
   await page.getByRole("button", { name: "Üzenetek", exact: true }).waitFor();
   assert.deepEqual(errors, []);
 }

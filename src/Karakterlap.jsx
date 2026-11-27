@@ -6,7 +6,7 @@ import GeneralPage, { CharacterWorkspace, GeneralEditActions } from "./page1/Gen
 
 function Karakterlap({
   character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
-  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving,
+  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving, onPageChange, viewMemory,
 }) {
   const [activePage, setActivePage] = React.useState(initialPage);
   const [editing, setEditing] = React.useState(initialEditing);
@@ -25,6 +25,7 @@ function Karakterlap({
       if (activePage === 1 && editing) onCancelCharacterEdit();
       setEditing(false);
       setActivePage(page);
+      onPageChange(page);
     }
   }
 
@@ -46,11 +47,10 @@ function Karakterlap({
     setEditing(false);
   }
 
-  const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["magic", "Mágia", 4], ["equipment", "Felszerelés", 3]]
+  const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["equipment", "Felszerelés", 3], ["magic", "Mágia", 4]]
     .map(([id, label, page]) => ({ id, label, current: page === activePage, onClick: () => openPage(page) }));
-  links.push({ id: "chat", label: "Chat", onClick: onChat });
   const actions = <GeneralEditActions editing={editing} onEdit={startEditing} onSave={finalizeEditing} onCancel={cancelEditing} />;
-  const header = { onCodex: () => openPage(4), onChat, onSettings, unread };
+  const header = { onChat, onSettings, unread };
 
   if (activePage === 1) return <GeneralPage character={character}
     identity={editing ? { ...character, ...characterEditor.identity } : character}
@@ -58,8 +58,8 @@ function Karakterlap({
     header={header} links={links} actions={actions} />;
 
   const [subtitle, className, content] = {
-    2: ["Jártasságok", "skills-sheet", <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />],
-    3: ["Felszerelés", "equipment-sheet", <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />],
+    2: ["Jártasságok", "skills-sheet", <Jartassagok viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveSkills} />],
+    3: ["Felszerelés", "equipment-sheet", <Felszereles viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveEquipment} />],
     4: ["Mágia", "magic-sheet", <Magia ref={editor} character={character} onSave={onSaveMagic} />],
   }[activePage];
   return <CharacterWorkspace character={character} subtitle={subtitle} mode={mode}

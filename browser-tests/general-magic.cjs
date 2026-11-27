@@ -132,7 +132,7 @@ async function verify(page) {
   await assertResources(22);
 
   await button('Beállítások').click();
-  await button('Vissza a főmenübe').click();
+  await button('Főmenü').click();
   await button('Karakteralkotás').click();
   await page.getByPlaceholder('Karakter neve').fill('Új mágikus próba');
   await page.getByRole('region', { name: 'Karakter adatai' }).getByLabel(/^Faj/).selectOption('Ember');
