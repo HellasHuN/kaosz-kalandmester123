@@ -1,4 +1,5 @@
-import { IndependentCodex } from "./magic/IndependentCodex.jsx";
+import { codexEdition, editionArtwork, editionColors, remainingCodexNames } from "./magic/codexEditions.js";
+import { CastingRecord, IndependentCodex } from "./magic/IndependentCodex.jsx";
 import { BookOpen, Dice5, Feather, Sparkles, Sun, Zap } from "lucide-react";
 import "./MagicBook.css";
 import { rollDie } from "./teszt/dice.js";
@@ -65,9 +66,11 @@ function spellArtwork(spell) {
   return `${import.meta.env.BASE_URL}${folder}/${spell.id.slice("official:".length)}.webp`;
 }
 
-function SpellDetails({ spell, character, magic, form, gm, editing, onChange, onCast, independent = false, scarlet = false, azure = false }) {
-  const illustrated = independent || scarlet || azure;
+function SpellDetails({ spell, character, magic, form, gm, editing, onChange, onCast, independent = false, scarlet = false, azure = false, edition }) {
+  const illustrated = independent || scarlet || azure || Boolean(edition);
   const playerCasting = form === "academic";
+  const knownFpCost = spell.fp == null || (edition && spell.fp === 0);
+  const trackFailure = form === "academic" && (edition || azure || [independentCodex, scarletCodex].includes(spell.codex)) && Boolean(onCast);
   const castDialog = useRef(null);
   const entry = magic.acquisitions.find((item) => item.spellId === spell.id && item.form === form);
   const [units, setUnits] = useState(entry?.units ?? "");
@@ -115,10 +118,10 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
         recordAcademicPendingFailure(latestCharacter, latestMagic, spell, context, operation));
     }
   }
-
-  function commitAcademicCast(attempt, dice) {
-    const operation = { id: attempt.id, roll: attempt.roll, method: attempt.method, recordedAt: new Date().toISOString(), damageDice: dice };
-    onCast?.(character.id, (latestCharacter, latestMagic) =>
+  function commitAcademicCast(attempt, dice, fpConfirmed = false) {
+    const operation = { id: attempt.id, roll: attempt.roll, method: attempt.method, recordedAt: new Date().toISOString(), damageDice: dice, fpConfirmed };
+    if (editing) onChange(previous => logAcademicCasting(character, previous, spell, context, operation));
+    else onCast?.(character.id, (latestCharacter, latestMagic) =>
       logAcademicCasting(latestCharacter, latestMagic, spell, context, operation));
   }
   const restricted = magic.restrictedSpells.some((item) => item.spellId === spell.id && item.form === form);
@@ -153,7 +156,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
             <input type="number" min={spell.ep.min} max={spell.ep.max} step={spell.ep.step ?? 1} value={approvedEp}
               onChange={event => setApprovedEp(event.target.value)} />
           </label>}
-          {azure && spell.ep?.kind === "epChoice" && <div className="azure-variants" role="group" aria-label="Varázslat változata">
+          {(azure || edition) && spell.ep?.kind === "epChoice" && <div className="azure-variants" role="group" aria-label="Varázslat változata">
             {spell.ep.choices.map(choice => <button key={choice.amount} type="button"
               aria-pressed={context.approvedEp === choice.amount} onClick={() => setApprovedEp(String(choice.amount))}>
               {choice.label} · {choice.amount} Ep
@@ -180,7 +183,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
               <input type="number" min="1" max={spell.ep.maxUnits} step="1" disabled={!editing && form !== "academic"} value={units} onChange={(event) => setUnits(event.target.value)} />
             </label>
           )}
-          {scarlet && spell.ep?.kind === "targetVariant" && <div className="scarlet-targets" role="group" aria-label="Célpont">
+          {(scarlet || edition) && spell.ep?.kind === "targetVariant" && <div className="scarlet-targets" role="group" aria-label="Célpont">
             {[["self", "Önmaga"], ["other", "Másik célpont"]].map(([value, label]) =>
               <button key={value} type="button" aria-pressed={target === value} onClick={() => setTarget(value)}>{label}</button>)}
           </div>}
@@ -188,7 +191,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
             <>
               <label>
                 Célpont
-                <select value={target} disabled={!editing && spell.ep.kind === "flight"} onChange={(event) => setTarget(event.target.value)}>
+                <select value={target} disabled={!edition && !editing && spell.ep.kind === "flight"} onChange={(event) => setTarget(event.target.value)}>
                   <option value="">Válassz célpontot</option>
                   <option value="self">Önmaga</option>
                   <option value="other">Másik célpont</option>
@@ -257,10 +260,16 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
               {damageDice && <p role="status">Dobott sebzés: {damageDice.reduce((sum, die) => sum + die, 0)} Fp ({damageDice.join(" + ")})</p>}
             </form>
           )}
-          {playerCasting && currentOutcome && !recordedAttempt && trialResult.method !== "manual" && trialResult.outcome === "success" && spell.fp == null &&
+          {playerCasting && currentOutcome && !recordedAttempt && trialResult.method !== "manual" && trialResult.outcome === "success" && knownFpCost &&
             <button type="button" disabled={editing || result.state !== "ready"} onClick={() => commitAcademicCast(trialResult, damageDice)}>
               Sikeres elmondás és Ep-levonás rögzítése
             </button>}
+          {edition && gm && editing && currentOutcome && !recordedAttempt && trialResult.outcome === "success" && !knownFpCost &&
+            <button type="button" onClick={() => {
+              if (window.confirm("A külön Fp-igényt ellenőrizted és elszámoltad? A program csak az Ep-t vonja le.")) {
+                commitAcademicCast(trialResult, undefined, true);
+              }
+            }}>Ep rögzítése az Fp-elszámolás után (KM)</button>}
           {playerCasting && currentOutcome && !recordedAttempt && trialResult.outcome !== "success" && (!gm || !editing) &&
             <p>A kudarc Ep-veszteségét és következményét a KM állapítja meg.</p>}
         </div>
@@ -316,6 +325,7 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
         </fieldset>
       )}
       {spell.note && <p>{spell.note}</p>}
+      {edition && !spell.note && <p>A részletes hatás az alapkönyvi hivatkozásnál olvasható.</p>}
       {spell.requiredSkill && <p>Szükséges jártasság: {spell.requiredSkill}.</p>}
       {!gm && form === "wild" && (
         <p>Vadmágikus nehézség: {cost.difficulty ?? "Mesélői elbírálás"} · Ep: {cost.ep ?? costLabel(spell.ep)}.
@@ -332,11 +342,11 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
         <p className="independent-condition">{access.recorded ? "Ismert formula" : "Még nincs megtanulva"} · {states[result.state]}</p>
         {result.reasons.length > 0 && <p>{result.reasons.join(" ")}</p>}
         {spell.ep?.kind === "variable" && <p>KM ellenőrzése szükséges a pontos Ep-igényhez és a külön feltételekhez.</p>}
-        {azure && cost.difficulty == null && !Number.isFinite(spell.difficulty) && <p>KM ellenőrzése szükséges a próba pontos nehézségéhez.</p>}
+        {(azure || edition) && cost.difficulty == null && !Number.isFinite(spell.difficulty) && <p>KM ellenőrzése szükséges a próba pontos nehézségéhez.</p>}
         {playerCasting && !onCast && <p>A varázslás játékba helyezett, menthető karakterrel érhető el.</p>}
         <button className="independent-cast-button" type="button" disabled={!access.allowed || !access.recorded || (playerCasting && !onCast)}
           onClick={() => castDialog.current.showModal()}>Varázslás</button>
-        <dialog className={`independent-cast-dialog${independent ? " codex-neutral-dialog" : ""}${scarlet ? " codex-neutral-dialog scarlet-codex-dialog" : azure ? " codex-neutral-dialog azure-codex-dialog" : ""}`} ref={castDialog} aria-labelledby="independent-cast-title">
+        <dialog className={`independent-cast-dialog${independent ? " codex-neutral-dialog" : ""}${scarlet ? " codex-neutral-dialog scarlet-codex-dialog" : azure ? " codex-neutral-dialog azure-codex-dialog" : edition ? " codex-neutral-dialog codex-edition-dialog" : ""}`} ref={castDialog} style={edition ? editionColors(edition) : undefined} aria-labelledby="independent-cast-title">
           <header><h4 id="independent-cast-title">Varázslás · {spell.name}</h4>
             <button type="button" onClick={() => castDialog.current.close()} aria-label="Varázslási ablak bezárása">×</button>
           </header>
@@ -347,7 +357,8 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
               <div><dt>Célszám</dt><dd>{trial?.target != null ? `${trial.target}%` : "—"}</dd></div>
             </dl>}
             {scarlet && <p>KM ellenőrzése szükséges a célpont ellenállásához, a sebzéshez és az egyedi tűzhatásokhoz.</p>}
-            {azure && <p>A környezeti feltételek, a célpont ellenállása és az egyedi hatások elbírálása a KM feladata.</p>}
+            {(azure || edition) && <p>A környezeti feltételek, a célpont ellenállása és az egyedi hatások elbírálása a KM feladata.</p>}
+            {edition && !knownFpCost && <p>A külön Fp-igény és az ehhez tartozó elszámolás KM-ellenőrzést igényel.</p>}
             {castControls}
             <p aria-live="polite">{states[result.state]}{result.reasons.length > 0 && ` · ${result.reasons.join(" ")}`}</p>
             {notice && <p role="status">{notice}</p>}
@@ -403,6 +414,8 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
   const [independentPage, setIndependentPage] = useState("home");
   const [showExternal, setShowExternal] = useState(false);
   const [knownOnly, setKnownOnly] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
   const saved = readMagic(character);
   const magic = draft ?? saved;
   const editing = draft !== null;
@@ -426,7 +439,10 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
   const independent = illustratedCodex === independentCodex;
   const scarlet = illustratedCodex === scarletCodex;
   const azure = illustratedCodex === azureCodex;
-  const illustrated = independent || scarlet || azure;
+  const edition = codexEdition(illustratedCodex);
+  const combinedCodex = illustratedCodex === "__osszesitett__";
+  const illustrated = independent || scarlet || azure || Boolean(edition) || combinedCodex;
+  const EssenceIcon = azure || edition ? getCodexIcon(illustratedCodex) : Flame;
   const showAcademic = illustrated || selectedForm === "academic";
   const showSacred = selectedForm === "sacred";
   const formCatalog = spells.filter((spell) => (selectedForm === "practical") === (spell.codex === "Praktikus mágia"));
@@ -643,19 +659,6 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
           ))}</ul>
         </section>
       )}
-      {magic.castingLog?.length > 0 && (
-        <details>
-          <summary>Varázslási napló</summary>
-          <ol>{magic.castingLog.map(record => <li key={record.id}>
-            {record.spellName} · {record.status === "pending" ? "KM elbírálására vár" : `${record.previousEp - record.remainingEp} Ep`} · {record.outcome} ·{" "}
-            <time dateTime={record.recordedAt}>{new Date(record.recordedAt).toLocaleString("hu-HU")}</time>
-            {record.consequence && <p>{record.consequence}</p>}
-          </li>)}</ol>
-          {gm && editing && <button type="button" disabled={undoSacredCasting(magic) === magic} onClick={() => {
-            if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és az esetleges szakrális kikérést?")) setDraft(undoSacredCasting);
-          }}>Utolsó elmondás visszavonása</button>}
-        </details>
-      )}
       {(hasAcademicSkill || specialization || kmMode) && <fieldset className="grimoire-settings academic-specialization">
         <legend>Akadémikus szakosodás · TESZT háziszabály</legend>
         {hasAcademicSkill && <p>Általános Mágiaelmélet: {theoryRank}. szint</p>}
@@ -721,10 +724,18 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
       </div>}
       {(illustrated || selectedForm === "academic" || !hasAcademicSkill) &&
         <nav className="independent-navigation" aria-label="Varázslatkatalógus nézetei">
+          <button type="button" aria-pressed={!illustrated && selectedForm === "academic"}
+            onClick={() => { setChosenForm("academic"); openIllustration(""); }}>Teljes katalógus</button>
           <button type="button" aria-pressed={independent} onClick={() => openIllustration(independentCodex)}>Kódexfüggetlen</button>
           {showCodex(scarletCodex) && <button type="button" aria-pressed={scarlet} onClick={() => openIllustration(scarletCodex)}>Skarlát Kódex</button>}
           {showCodex(azureCodex) && <button type="button" aria-pressed={azure} onClick={() => openIllustration(azureCodex)}>Azúr Kódex</button>}
-          {illustrated && <button type="button" onClick={() => openIllustration("")}>Teljes katalógus</button>}
+          <button type="button" aria-pressed={combinedCodex} onClick={() => openIllustration("__osszesitett__")}>Összesített kódex</button>
+          <label>További akadémikus kódexek
+            <select value={edition ? illustratedCodex : ""} onChange={event => openIllustration(event.target.value)}>
+              <option value="">Válassz kódexet</option>
+              {remainingCodexNames.map(name => <option key={name} value={name}>{name} Kódex</option>)}
+            </select>
+          </label>
         </nav>}
       {!illustrated && selectedForm === "academic" && specialization && !gm && <label className="magic-checkbox">
         <input type="checkbox" checked={showExternal} onChange={event => setShowExternal(event.target.checked)} />
@@ -753,32 +764,24 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
         )}
       </div>}
       {illustrated && (() => {
-        const catalog = azure ? azureSpells : scarlet ? scarletSpells : independentSpells;
-        const all = catalog.map(spell => ({ spell, access: spellAccess(character, magic, spell, "academic") }))
-          .filter(({ spell, access }) => kmMode || !specialization || spell.codex === specialization.codex ||
-            spell.codex === independentCodex || access.recorded);
+        const catalog = combinedCodex ? spells.filter(spell => magic.acquisitions.some(entry => entry.form === "academic" && entry.spellId === spell.id))
+          : edition ? spells.filter(spell => spell.codex === illustratedCodex) : azure ? azureSpells : scarlet ? scarletSpells : independentSpells;
+        const all = catalog.map(spell => ({ spell, access: spellAccess(character, magic, spell, "academic") }));
         const selected = all.find(({ spell }) => spell.id === selectedSpell);
         const rows = all.filter(({ spell, access }) => (!spellType || spell.type === spellType) &&
           spell.name.toLocaleLowerCase("hu").includes(search) && (!knownOnly || access.recorded));
-        return <IndependentCodex scarlet={scarlet} azure={azure} catalog={all} costLabel={costLabel} activeEp={magic.activeEp} availableEp={freeEp} release={limits.release}
+        return <IndependentCodex combined={combinedCodex} edition={edition} editionName={illustratedCodex} scarlet={scarlet} azure={azure} catalog={all} costLabel={costLabel} activeEp={magic.activeEp} availableEp={freeEp} release={limits.release}
           known={all.filter(({ access }) => access.recorded)}
-          log={(magic.castingLog ?? []).filter(entry => catalog.some(spell => entry.spellId === spell.id || entry.spellName === spell.name))}
-          onAdjudicate={kmMode && editing && onCast ? (id, epLoss, consequence) => {
-            const operation = { id, epLoss, consequence, adjudicatedAt: new Date().toISOString() };
-            if (adjudicateAcademicFailure(character, magic, operation) === magic) return false;
-            setDraft(previous => adjudicateAcademicFailure(character, previous, operation));
-            return true;
-          } : undefined}
           page={independentPage} onPage={setIndependentPage} selected={selected} onSelect={setSelectedSpell} rows={rows}
-          artwork={spellArtwork} filters={<div className="codex-neutral-filters">
+          artwork={spell => codexEdition(spell.codex) ? editionArtwork(codexEdition(spell.codex), spell.id) : spellArtwork(spell)} filters={<div className="codex-neutral-filters">
             <label>Varázslat keresése<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
             <label>Varázslattípus<select value={spellType} onChange={event => setSpellType(event.target.value)}>
               <option value="">Minden típus</option>
-              {(azure ? azureTypes : scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
+              {(combinedCodex || edition ? catalogTypes(catalog) : azure ? azureTypes : scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
             </select></label>
             <label className="magic-checkbox"><input type="checkbox" checked={knownOnly} onChange={event => setKnownOnly(event.target.checked)} /> Csak ismert formulák</label>
           </div>}>
-          {selected && <SpellDetails key={selected.spell.id} spell={selected.spell} form="academic" independent={independent} scarlet={scarlet} azure={azure}
+          {selected && <SpellDetails key={selected.spell.id} spell={selected.spell} form="academic" independent={selected.spell.codex === independentCodex} scarlet={selected.spell.codex === scarletCodex} azure={selected.spell.codex === azureCodex} edition={codexEdition(selected.spell.codex)}
             character={character} magic={magic} gm={kmMode} editing={editing} onChange={setDraft} onCast={onCast} />}
         </IndependentCodex>;
       })()}
@@ -865,6 +868,38 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
           {renderSpellList(generalRows, { free: true })}
         </section>
       )}
+      <nav className="magic-history-navigation" aria-label="Mágiaelőzmények">
+        <button type="button" aria-expanded={historyOpen} aria-controls="magic-history-panel"
+          onClick={() => setHistoryOpen(previous => !previous)}>
+          Mágiaelőzmények ({magic.castingLog?.length ?? 0})
+        </button>
+      </nav>
+      {historyOpen && <section id="magic-history-panel" className="magic-history-panel" aria-label="Összes mágiaelőzmény">
+        <h3>Mágiaelőzmények</h3>
+        <p>Az összes kódex varázslási előzményei, legújabb elöl.</p>
+        <label>Előzmények keresése
+          <input type="search" value={historySearch} onChange={event => setHistorySearch(event.target.value)}
+            placeholder="Varázslat vagy eredmény" />
+        </label>
+        {(() => {
+          const records = [...(magic.castingLog ?? [])].reverse().filter(record =>
+            [record.spellName, record.outcome, record.consequence].some(value =>
+              String(value ?? "").toLocaleLowerCase("hu").includes(historySearch.trim().toLocaleLowerCase("hu"))));
+          return records.length
+            ? <ol>{records.map(record => <CastingRecord key={record.id} record={record}
+                onAdjudicate={kmMode && editing && onCast ? (id, epLoss, consequence) => {
+                  const operation = { id, epLoss, consequence, adjudicatedAt: new Date().toISOString() };
+                  if (adjudicateAcademicFailure(character, magic, operation) === magic) return false;
+                  setDraft(previous => adjudicateAcademicFailure(character, previous, operation));
+                  return true;
+                } : undefined} />)}</ol>
+            : <p>{magic.castingLog?.length ? "Nincs a keresésnek megfelelő előzmény." : "Még nincs rögzített varázslás."}</p>;
+        })()}
+        {gm && editing && <button type="button" disabled={undoSacredCasting(magic) === magic}
+          onClick={() => {
+            if (window.confirm("Visszaállítod az utolsó elmondás előtti Ep-t és az esetleges szakrális kikérést?")) setDraft(undoSacredCasting);
+          }}>Utolsó elmondás visszavonása</button>}
+      </section>}
     </section>
   );
 }

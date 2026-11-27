@@ -525,3 +525,11 @@
   background: linear-gradient(90deg, #081928f5 10%, #10345399 70%, #0a29433b),
     var(--codex-header-image) center 48% / cover no-repeat;
 }
+
+.magic-history-navigation { display:flex; justify-content:center; margin:1.5rem 0 .75rem; }
+.magic-history-navigation button { padding:.75rem 1.5rem; border:1px solid currentColor; border-radius:12px; font:inherit; cursor:pointer; }
+.magic-history-panel { max-width:100%; padding:1rem; border:1px solid currentColor; border-radius:12px; }
+.magic-history-panel label { display:grid; gap:.4rem; margin:.75rem 0; }
+.magic-history-panel input { max-width:100%; min-width:0; }
+.magic-history-panel ol { padding-left:1.5rem; }
+.magic-history-panel li { margin-bottom:1rem; overflow-wrap:anywhere; }

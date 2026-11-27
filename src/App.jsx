@@ -178,6 +178,8 @@ function App() {
   const [resourceDraft, setResourceDraft] = useState({});
   const [page, setPage] = useState("fomenu");
   const [sheetPageOnOpen, setSheetPageOnOpen] = useState(1);
+  const [settingsFromPlayingSheet, setSettingsFromPlayingSheet] = useState(false);
+  const openingPlayingSettings = useRef(false);
   const [sheetEditingOnOpen, setSheetEditingOnOpen] = useState(false);
   const [adventureTabOnOpen, setAdventureTabOnOpen] = useState("overview");
   const [testMode, setTestMode] = useState(null);
@@ -688,7 +690,9 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
       Object.keys(creationExtras).length > 0 || Object.keys(creationClarifications).length > 0 ||
       JSON.stringify(creationSkills) !== JSON.stringify(purchasedCreationSkills(creationOriginal))))
       || document.querySelector('[data-unsaved="true"]');
-    return !hasChanges || window.confirm("Nem mentett módosítások vannak. Biztosan továbblépsz mentés nélkül?");
+    if (hasChanges && !window.confirm("Nem mentett módosítások vannak. Biztosan továbblépsz mentés nélkül?")) return false;
+    return openingPlayingSettings.current || page !== "karakterlap" || selectedCharacter?.playStatus !== "playing"
+      || window.confirm("Elhagyod a játékban lévő karakterlapot? Ez megszakíthatja az aktív játéknézetet.");
   }
 
   function restoreRoute(route) {
@@ -706,13 +710,15 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
     setAdventureTabOnOpen(route.adventureTab ?? "overview");
     setSheetPageOnOpen(route.sheetPage ?? 1);
     setSheetEditingOnOpen(Boolean(route.editing));
+    setSettingsFromPlayingSheet(route.page === "test-settings" && route.fromPlayingSheet === true);
     setCreationTab(route.creationTab ?? "details");
     window.scrollTo(0, 0);
   }
 
   const navigation = useApplicationNavigation({
     snapshot: { page, characterId: selectedCharacterId, testMode, adventureCharacterId,
-      adventureTab: adventureTabOnOpen, sheetPage: sheetPageOnOpen, creationTab },
+      adventureTab: adventureTabOnOpen, sheetPage: sheetPageOnOpen, creationTab,
+      fromPlayingSheet: settingsFromPlayingSheet },
     restore: restoreRoute,
     confirmLeaving,
   });
@@ -730,6 +736,15 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
 
   function returnHome() {
     navigation.home();
+  }
+
+  function openPlayingCharacterSettings() {
+    openingPlayingSettings.current = true;
+    try {
+      navigate("test-settings", null, { fromPlayingSheet: true });
+    } finally {
+      openingPlayingSettings.current = false;
+    }
   }
 
   function selectTestMode(mode) {
@@ -1528,7 +1543,9 @@ setAncestry((previous) => ({
   return (
     <div className="app test-app">
       <main className={page === "fomenu" ? "home-screen" : "workspace-screen"}>
-        {page !== "fomenu" && <GlobalNavigation title={pageTitle} onBack={navigation.back} onHome={returnHome} />}
+        {page !== "fomenu" && <GlobalNavigation title={pageTitle} onBack={navigation.back} onHome={returnHome}
+          protectedView={(page === "karakterlap" && selectedCharacter?.playStatus === "playing")
+            || (page === "test-settings" && settingsFromPlayingSheet)} />}
         {saveBlocked && <p className="campaign-notice" role="alert">A helyi karaktermentés nem írható felül. A betölthető karaktereken végzett
           módosítások csak az aktuális munkamenetben érhetők el.</p>}
         {page === "fomenu" ? (
@@ -1545,7 +1562,8 @@ setAncestry((previous) => ({
             {page !== "karakterek" && <button type="button" onClick={() => navigate("karakterek", null)}>Mentett karakterek</button>}
           </nav>}
         {page === "test-settings" && <Suspense fallback={<p className="campaign-notice" role="status">Beállítások betöltése…</p>}>
-          <TestSettings mode={testMode} onMode={selectTestMode} onExport={exportCharacters} onImport={importCharacters} />
+          <TestSettings mode={testMode} onMode={selectTestMode} onExport={exportCharacters} onImport={importCharacters}
+            onReturnToCharacter={settingsFromPlayingSheet ? navigation.back : undefined} />
         </Suspense>}
         {page === "test-adventure" && <Suspense fallback={<p className="campaign-notice" role="status">Kaland betöltése…</p>}>
           {(adventure.blocked || adventureWriteFailed) && <p className="campaign-notice" role="alert">A kaland adatai csak az aktuális munkamenetben módosíthatók.</p>}
@@ -1586,7 +1604,8 @@ setAncestry((previous) => ({
             onCancelCharacterEdit={() => loadCharacter(selectedCharacter)}
             onFinalizeCharacterEdit={() => !characterFieldsChanged || saveCharacter({ notify: false })}
             mode={testMode === "km" ? "gm" : "player"}
-            onSettings={() => navigate("test-settings", null)}
+            onSettings={() => selectedCharacter?.playStatus === "playing"
+              ? openPlayingCharacterSettings() : navigate("test-settings", null)}
             onChat={() => openMenuChat(selectedCharacter)}
             unread={unreadMessages(adventure, selectedCharacterId, "player")}
             onChangeHealth={(amount, staged) => {

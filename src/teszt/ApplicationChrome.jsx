@@ -5,11 +5,11 @@ export function ApplicationHeading({ children }) {
   return <header className="campaign-heading"><h2 className="character-section-title">{children}</h2></header>;
 }
 
-export function GlobalNavigation({ title, onBack, onHome }) {
+export function GlobalNavigation({ title, onBack, onHome, protectedView = false }) {
   return <nav className="campaign-navigation global-navigation" aria-label="Alkalmazásnavigáció">
-    <button type="button" onClick={onBack}>Vissza</button>
+    {!protectedView && <button type="button" onClick={onBack}>Vissza</button>}
     <span aria-current="page">{title}</span>
-    <button type="button" onClick={onHome}>Főmenü</button>
+    {!protectedView && <button type="button" onClick={onHome}>Főmenü</button>}
   </nav>;
 }
 
