@@ -101,6 +101,7 @@ async function verify(page, width, height) {
   await button("Bezárás").click();
   assert.deepEqual(await saved(), [fixture[0], fixture[2]]);
   await page.reload();
+  await registry.getByRole("button", { name: /Szentmihályi/ }).waitFor();
   assert.equal(await registry.locator("li").count(), 2);
   await button("Kalandmester").click();
   await page.getByRole("heading", { name: "Kalandmesteri irányítópult" }).waitFor();

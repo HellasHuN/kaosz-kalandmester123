@@ -15,8 +15,10 @@ const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, e
 
 export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread }) {
   const { race, subrace, gender, age, name } = character;
-  return <header className="general-hero" style={pageAncestryTheme(race, subrace, gender)}>
-    <div className="general-hero-portrait" aria-hidden="true" />
+  const illustratedHuman = race === "Ember" && !subrace && gender === "Férfi";
+  return <header className="general-hero" data-illustrated-human={illustratedHuman}
+    style={pageAncestryTheme(race, subrace, gender)}>
+    {!illustratedHuman && <div className="general-hero-portrait" aria-hidden="true" />}
     <div className="general-ribbon">
       <h2>{creation ? "Karakteralkotás" : "Karakterlap"}</h2>
       <span>Általános</span>

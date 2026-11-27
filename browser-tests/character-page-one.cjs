@@ -43,6 +43,23 @@ async function verify(page, width) {
   await button("Betöltés").click();
   await body.waitFor();
   await assertPortrait("human-male.webp");
+  const engravedAssets = [
+    [header, "backgroundImage", "human-hero"],
+    [header.locator("h2"), "backgroundImage", "title-engraving"],
+    [body.locator('.general-attribute[data-attribute="0"] i'), "backgroundImage", "physique-engraving"],
+    [body.locator(".general-info"), "borderImageSource", "panel-engraving"],
+  ];
+  for (const [element, property, name] of engravedAssets) {
+    const image = await element.evaluate((el, key) => getComputedStyle(el)[key], property);
+    const url = image.match(/url\("([^"]+)"\)/)?.[1];
+    assert.ok(url?.includes(name), image);
+    assert.ok(await page.evaluate(async source => {
+      const graphic = new Image();
+      graphic.src = source;
+      await graphic.decode();
+      return graphic.naturalWidth > 0;
+    }, url), url);
+  }
   assert.equal(await button("Mentett karakterek").count(), 0);
   assert.deepEqual(await body.locator(".general-attribute output").evaluateAll(els => els.map(el => el.getAttribute("aria-label"))),
     ["Fizikum","Erő","Szívósság","Rátermettség","Ügyesség","Reflex","Tudat","Intelligencia","Lelkierő",
@@ -52,6 +69,24 @@ async function verify(page, width) {
   assert.match(await body.innerText(), /20 \/ 55/);
   await fit();
   await photo("jatekos");
+  const navigation = page.getByRole("navigation", { name: "Karakterlap oldalai" });
+  for (const [tab, heading] of [
+    ["Jártasságok", "Jártasságok"], ["Felszerelés", "Páncélzat és védettségi zónák"], ["Mágia", "Mágia és varázslatok"],
+  ]) {
+    await navigation.getByRole("button", { name: tab, exact: true }).click();
+    const panel = page.getByRole("heading", { name: heading });
+    await panel.waitFor();
+    await fit();
+    if (tab === "Felszerelés") {
+      assert.equal(await page.locator(".armor-label").count(), 11);
+      assert.ok(await page.locator(".armor-figure img").evaluate(async image => {
+        await image.decode();
+        return image.naturalWidth > 0;
+      }));
+    }
+  }
+  await navigation.getByRole("button", { name: "Karakter", exact: true }).click();
+  await body.waitFor();
   await button("Életerő csökkentése").click();
   assert.equal(await fp.innerText(), "41");
   assert.match(await body.innerText(), /Sebszint: 4 \/ 10/);

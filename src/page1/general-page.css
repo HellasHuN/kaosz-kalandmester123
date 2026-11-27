@@ -2,7 +2,8 @@
 .test-app .workspace-screen:has(.general-sheet:not([data-mode="creation"])) > .workspace-nav:not(:has(> button:not(.workspace-settings,.workspace-home,.workspace-saved))) { display:none; }
 
 .general-sheet {
-  --ornament: url("./assets/cornerwork.svg");
+  --ornament: url("./assets/panel-engraving.webp");
+  --small-ornament: url("./assets/cornerwork.svg");
   --spark: url("./assets/sun-pin.svg");
   --stone: url("../assets/sheet/obsidian.webp");
   --gold: #ffdb89;
@@ -22,9 +23,10 @@
 .general-sheet svg { width:1.15em; height:1.15em; flex:none; color:var(--gold); vertical-align:middle; }
 .general-sheet :is(.general-frame,.general-hero,.general-attribute-title,.general-components,button) {
   border: 1px solid #c28946;
-  border-image: var(--ornament) 27 / 12px stretch;
+  border-image: var(--ornament) 39 / 12px stretch;
   border-radius:0;
 }
+.general-sheet button { border-image:var(--small-ornament) 27 / 8px stretch; }
 .general-sheet .general-frame { background:var(--enamel); padding:.32rem; min-width:0; }
 .test-app .general-sheet button {
   min-width: 44px;
@@ -59,6 +61,10 @@
   min-height:clamp(10.2rem,47vw,20rem);
   background: linear-gradient(0deg,#03090eea,transparent 56%),var(--ancestry-background) center 42% / cover no-repeat,var(--sheet-shade);
 }
+.general-hero[data-illustrated-human="true"] {
+  background: linear-gradient(0deg,#03070edf,transparent 48%),
+    url("./assets/human-hero.webp") center clamp(12px,4vw,21px) / cover no-repeat, #111b2a;
+}
 .general-hero::after,.general-navigation::before {
   content:"";
   position:absolute;
@@ -78,21 +84,22 @@
   filter:brightness(1.14) contrast(1.06);
 }
 .general-ribbon {
+  isolation:isolate;
   display:grid;
   justify-items:center;
   justify-self:center;
-  width:min(80%,39rem);
+  width:min(78%,39rem);
   filter:drop-shadow(0 2px 2px #160500) drop-shadow(0 0 .24rem #ed641d);
 }
 .general-ribbon h2,.general-ribbon > span {
   width:100%;
-  padding:.58rem 0;
-  background:url("../assets/sheet/banner.svg") center / 100% 100% no-repeat;
+  padding:.64rem .2rem .75rem;
+  background:url("./assets/title-engraving.webp") center / 100% 100% no-repeat;
   text-align:center;
   color:#fff0bd;
 }
 .general-ribbon h2 { font:700 clamp(1.15rem,5.15vw,2.68rem)/1 Georgia,serif; }
-.general-ribbon > span { width:54%; padding:.21rem; margin-top:-.18rem; font-size:clamp(.78rem,3.15vw,1.13rem); }
+.general-ribbon > span { width:54%; padding:.29rem .16rem; margin-top:-.18rem; font-size:clamp(.78rem,3.15vw,1.13rem); }
 .general-identity { align-self:end; justify-self:end; width:65%; padding:.2rem .3rem .48rem; text-align:center; }
 .general-sheet .general-identity h1 { color:#fff4cd; font:700 clamp(1.12rem,5.45vw,2.55rem)/1.13 Georgia,serif; overflow-wrap:anywhere; text-shadow:0 1px 2px black,0 0 .48rem black; }
 .general-identity-tags {
@@ -125,14 +132,14 @@
   background:var(--medal) center / contain no-repeat;
   filter: drop-shadow(0 0 .23rem var(--tint));
 }
-.general-attribute[data-attribute="0"] { --medal:url("../assets/sheet/stat-physique.svg"); --tint:#dd441f94; }
+.general-attribute[data-attribute="0"] { --medal:url("./assets/physique-engraving.webp"); --tint:#dd441f94; }
 .general-attribute[data-attribute="1"] { --medal:url("../assets/sheet/stat-agility.svg"); --tint:#689f2c94; }
 .general-attribute[data-attribute="2"] { --medal:url("../assets/sheet/stat-mind.svg"); --tint:#219fe694; }
 .general-attribute[data-attribute="3"] { --medal:url("../assets/sheet/stat-essence.svg"); --tint:#ac36d394; }
 .general-attribute[data-attribute="4"] { --medal:url("../assets/sheet/stat-senses.svg"); --tint:#c77e1c94; }
 .general-attribute-title output,.general-vitals strong {
   border:1px solid #f6b960;
-  border-image:var(--ornament) 27 / 7px stretch;
+  border-image:var(--small-ornament) 27 / 7px stretch;
   padding:.2em .29em;
   color:#fff4cd;
   background:linear-gradient(#81210b,#240809 68%,#5c160a);
@@ -237,7 +244,7 @@
   background:none;
 }
 .test-app .creation-workspace .general-sheet button:not(.skills-remove) {
-  border-image:var(--ornament) 27 / 12px stretch;
+  border-image:var(--small-ornament) 27 / 8px stretch;
   background:radial-gradient(ellipse at 49% -5%,#b5813e72,transparent 60%),var(--enamel);
 }
 .test-app .creation-workspace .general-vitals button:first-of-type { background:linear-gradient(#a52d0d,#240505); }
