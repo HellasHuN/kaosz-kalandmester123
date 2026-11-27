@@ -1,0 +1,510 @@
+@media (max-width: 600px) {
+  .test-app .workspace-screen { padding-inline: .6rem; }
+  .test-app .workspace-nav button,
+  .test-app .karakterlap-nav button,
+  .test-app .character-sheet-actions button { min-height: 44px; }
+  .test-app :is(.karakterlap-nav, .character-sheet-actions) { flex-wrap: wrap; }
+}
+
+/* Shared visual system for the mobile-first release. */
+.test-app {
+  --kaosz-ink: #111219;
+  --kaosz-brass: #e2bd76;
+  --kaosz-copy: #f6e9d5;
+  --kaosz-surface: #1d1e27;
+  --kaosz-line: #61543e;
+}
+
+.character-cover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  min-height: clamp(10rem, 26vw, 17rem);
+  align-content: end;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid var(--sheet-accent);
+  border-radius: .8rem;
+  background: var(--sheet-shade);
+  color: var(--kaosz-copy);
+}
+
+.character-cover-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, #10101599, #10101515);
+}
+.character-cover-caption { position: relative; text-shadow: 0 1px 5px #08080d; }
+.character-cover h1 { margin: 0; font: 600 clamp(2rem, 8vw, 4rem)/1 Georgia, serif; overflow-wrap: anywhere; }
+.character-cover p { margin: 0 0 .5rem; color: #f3d696; }
+
+.themed-sheet .karakterlap-nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  justify-content: center;
+}
+
+.test-panel .test-actions button { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+.test-heading { font: 600 clamp(2rem, 8vw, 3rem)/1.1 Georgia, serif; }
+
+@media (max-width: 600px) {
+  .themed-sheet .karakterlap-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .2rem; width: 100%; }
+  .themed-sheet .karakterlap-nav button { flex-direction: column; padding-inline: .15rem; font-size: .72rem; white-space: normal; }
+  .test-panel nav.test-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .character-cover { animation: kaosz-reveal .35s ease-out both; }
+  .online-panel button, .test-panel button { transition: background-color .18s, border-color .18s, color .18s; }
+  @keyframes kaosz-reveal { from { opacity: .65; transform: translateY(.3rem); } to { opacity: 1; transform: translateY(0); } }
+}
+
+.test-app .test-panel {
+  width: min(100%, 62rem);
+  background: linear-gradient(155deg, #282736, #1c1d27 43%, #161720);
+  color: var(--kaosz-copy);
+  border-color: var(--kaosz-line);
+}
+
+.test-feature-title { display: flex; align-items: center; gap: .6rem; color: var(--kaosz-brass); }
+.test-feature-title h3 { font: 600 clamp(1.5rem, 5vw, 2.4rem)/1.1 Georgia, serif; margin-block: .65rem; }
+
+.test-panel .test-map-viewport {
+  height: clamp(16rem, 48svh, 28rem);
+  border: .38rem double #aa905b;
+  border-radius: .6rem;
+  box-shadow: 0 .8rem 2rem #08091375;
+}
+
+.test-panel .atlas-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  padding: .25rem .4rem;
+  min-height: 34px;
+  max-width: 8.5rem;
+  color: #291d15;
+  background: #f3ddb0;
+  border-color: #674928;
+  font-size: .72rem;
+  overflow-wrap: anywhere;
+}
+
+.test-panel .atlas-pin[aria-pressed="true"] { background: #402d23; color: #fff0cb; }
+.atlas-pin svg { flex: 0 0 auto; }
+.atlas-results { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: .35rem; }
+.atlas-results li, .atlas-selected { padding: .45rem .6rem; border: 1px solid #61543e; border-radius: .35rem; }
+.bestiary-cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .65rem; }
+.bestiary-cards details, .bestiary-empty {
+  padding: .75rem;
+  border: 1px solid #8e7652;
+  border-radius: .55rem;
+  background: linear-gradient(125deg, #383033, #252431);
+}
+.bestiary-cards summary { display: flex; align-items: center; gap: .55rem; cursor: pointer; }
+.bestiary-cards summary svg, .bestiary-empty svg { color: var(--kaosz-brass); flex: 0 0 auto; }
+.bestiary-cards dl { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bestiary-cards dt { color: var(--kaosz-brass); }
+.bestiary-cards dd { margin: .1rem 0 .55rem; }
+.bestiary-empty { display: flex; align-items: center; gap: .55rem; }
+
+.test-panel .test-map {
+  background: #ded0a5 url('../assets/theme/atlas.webp') center / 100% 100% no-repeat;
+}
+
+.themed-sheet .character-sheet-toolbar {
+  display: grid;
+  gap: .55rem;
+  margin-block: .55rem .85rem;
+}
+
+.themed-sheet .karakterlap-nav {
+  margin: 0;
+  width: 100%;
+}
+
+.themed-sheet.skills-reference-page .character-sheet-actions {
+  position: static;
+  justify-content: flex-end;
+}
+
+.themed-sheet .character-sheet-actions { display: flex; gap: .35rem; }
+
+.test-app .workspace-screen:not(:has(.parchment-page)) > .workspace-nav {
+  border-bottom: 1px solid #625343;
+  padding-bottom: .5rem;
+}
+
+.test-app .creation-workspace .creation-panel {
+  border-radius: .75rem;
+  border-color: #917348;
+}
+
+.test-app .themed-sheet .magic-panel,
+.test-app .themed-sheet .equipment-panel {
+  border-radius: .75rem;
+  border-color: var(--sheet-accent);
+  overflow: hidden;
+}
+
+.bestiary-panel .test-feature-title {
+  align-items: end;
+  min-height: clamp(8rem, 28vw, 14rem);
+  box-sizing: border-box;
+  padding: .9rem;
+  border: 1px solid #917348;
+  border-radius: .6rem;
+  background: linear-gradient(0deg, #101015d9, #10101508 90%),
+    url('../assets/theme/bestiary.webp') center 43% / cover;
+}
+.bestiary-panel .test-feature-title h3 { margin: 0; }
+
+.test-app .themed-sheet .karakterlap-nav { margin: 0; }
+
+.themed-sheet {
+  min-width: 0;
+  border-radius: .8rem;
+  background: radial-gradient(ellipse at 50% 15%, var(--sheet-shade), #191711 75%);
+  box-shadow: 0 0 0 1px #9b794a, 0 0 0 3px #2a1b15;
+}
+
+.themed-sheet .character-cover {
+  min-height: clamp(12rem, 26vw, 19rem);
+  border: 4px double #ce9f57;
+  border-radius: .7rem .7rem .35rem .35rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+.themed-sheet .character-cover-caption {
+  justify-self: start;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: .65rem clamp(.75rem, 2.5vw, 1.4rem);
+  border: 3px double #a27344;
+  border-radius: .35rem;
+  background: url('../assets/pergamen-rostok.png'), linear-gradient(105deg, #f7e4bb, #d9b37edb);
+  color: #291d16;
+  text-shadow: none;
+  box-shadow: 0 .4rem 1rem #130d0b80;
+}
+.themed-sheet .character-cover-caption h1 { font-size: clamp(1.65rem, 5vw, 3.4rem); font-style: italic; }
+.themed-sheet .character-cover-caption p { color: #4e2e1d; margin: 0 0 .3rem; font-weight: 700; }
+.themed-sheet .character-sheet-toolbar { padding: .3rem; border: 0; }
+.themed-sheet .karakterlap-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.themed-sheet .karakterlap-nav button {
+  min-width: 0;
+  min-height: 46px;
+  color: #f5dfb3;
+  border: 2px solid #9b7449;
+  background: linear-gradient(#4d2925, #251713);
+  box-shadow: inset 0 0 0 1px #39291a;
+}
+.themed-sheet .karakterlap-nav button[aria-current="page"] {
+  color: #fff0c9;
+  border-color: #e7b779;
+  background: linear-gradient(145deg, var(--sheet-shade), #612a25);
+  box-shadow: inset 0 0 .7rem #e9ab6766;
+}
+.themed-sheet .karakterlap-nav button svg { flex: none; color: #ebc689; }
+.themed-sheet .character-sheet-actions { justify-content: flex-end; }
+.themed-sheet .parchment-sheet { padding: .35rem; }
+.themed-sheet .parchment-card { border-color: #b1874e; }
+
+@media (max-width: 640px) {
+  .themed-sheet .character-cover { align-content: end; padding: .7rem; }
+  .themed-sheet .parchment-sheet { padding: .2rem; }
+}
+
+.themed-sheet .sheet-left,
+.themed-sheet .sheet-center,
+.themed-sheet .sheet-right {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: .5rem;
+}
+.themed-sheet .sheet-featured button { min-height: 44px; }
+.themed-sheet .sheet-featured dt { overflow-wrap: anywhere; }
+.themed-sheet .armor-figure {
+  border: 3px double #9a7849;
+  border-radius: .5rem;
+  background: radial-gradient(ellipse, #e1ce9461, transparent 62%), linear-gradient(150deg, #ece5bd, #a2955d);
+}
+@media (max-width: 640px) {
+  .themed-sheet .sheet-center { grid-row: 2; }
+  .themed-sheet .sheet-left { grid-row: 1; }
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover {
+  isolation: isolate;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .55rem;
+  min-height: clamp(12rem, 28vw, 20rem);
+  padding: clamp(.65rem, 3vw, 1.5rem);
+  border: 4px double #d3a568;
+  background: var(--sheet-shade);
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-art {
+  background: linear-gradient(0deg, #1c151bdd, transparent 46%),
+    var(--ancestry-background) center 44% / cover;
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-art::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(57%, 27rem);
+  background: var(--ancestry-portrait) center 36% / cover no-repeat;
+  mask-image: linear-gradient(90deg, #000 72%, transparent);
+}
+
+.test-app :is(.creation-workspace, .themed-sheet) .character-cover-caption {
+  margin-inline-start: min(35%, 15rem);
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  padding: .55rem clamp(.65rem, 2vw, 1.15rem);
+  border: 3px double #865631;
+  border-radius: .45rem;
+  color: #341b16;
+  background: url('../assets/pergamen-rostok.png'), linear-gradient(125deg, #fff0cd, #ddae72);
+  text-shadow: none;
+  box-shadow: 0 .3rem 1rem #20101296;
+}
+
+.character-cover-caption h2 {
+  margin: 0;
+  color: #63262a;
+  font: 700 clamp(1.25rem, 4vw, 2.55rem)/1.05 Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.test-app .creation-cover .character-cover-caption p { color: #46231c; margin: .38rem 0 0; }
+.test-app .creation-cover > button { align-self: end; }
+
+.test-app .creation-workspace {
+  --creation-gold: #c59656;
+  min-width: 0;
+  padding: clamp(.4rem, 2vw, 1rem);
+  border: 3px double var(--creation-gold);
+  border-radius: .65rem;
+  background: radial-gradient(ellipse at top, var(--sheet-shade), #28171a 75%);
+}
+
+.test-app .creation-workspace .creation-panel {
+  border: 4px double #a77947;
+  background: url('../assets/pergamen-rostok.png'), radial-gradient(ellipse at 60% 20%, #fff0ce, #efd39e);
+  box-shadow: inset 0 0 1.1rem #8f552644;
+}
+
+.test-app .creation-panel h3 {
+  padding: .45rem .65rem;
+  color: #ffeac1;
+  background: linear-gradient(#652b2e, #3e161c);
+  border: 3px double #af824b;
+  border-radius: .38rem;
+}
+
+.test-app .creation-workspace :is(input:not([type="checkbox"], [type="range"]), select, textarea) {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #9c6b41;
+  box-shadow: inset 0 1px .3rem #98643529;
+}
+
+.test-app .creation-workspace button:not(.skills-remove),
+.test-app .themed-sheet .character-sheet-actions button {
+  min-height: 44px;
+  border: 2px solid #a27646;
+  background: linear-gradient(#652c32, #35171d);
+  color: #fff1cd;
+  font-family: Georgia, serif;
+}
+.test-app .creation-workspace button:is([aria-pressed="true"], :hover:not(:disabled)),
+.test-app .themed-sheet .character-sheet-actions button:hover:not(:disabled) {
+  border-color: #e2b474;
+  box-shadow: inset 0 0 .6rem #e1a5625c;
+}
+
+.test-app .creation-workspace .workspace-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .35rem;
+  margin-block: .6rem;
+}
+
+.test-app .creation-workspace .workspace-nav button {
+  min-width: 0;
+  padding-inline: .25rem;
+  overflow-wrap: anywhere;
+}
+
+.test-app .themed-sheet .equipment-sheet {
+  display: grid;
+  gap: .6rem;
+  padding: .4rem;
+  min-width: 0;
+}
+.equipment-sheet > .armor-card {
+  --paper-grain: url('../assets/pergamen-rostok.png');
+  width: min(100%, 41rem);
+  box-sizing: border-box;
+  justify-self: center;
+  color: #382219;
+}
+.equipment-sheet > .equipment-panel { min-width: 0; }
+.armor-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem .8rem; color: #36271a; font-size: .83rem; }
+.armor-legend span::before { content: ""; display: inline-block; width: .75rem; height: .75rem; margin-right: .35rem; border: 1px solid #493221; background: #e9b553; }
+.armor-legend span + span::before { background: #64514a; }
+.themed-sheet .armor-label.has-armor { color: #2a1a10; background: #e9b553; border-color: #825223; }
+.themed-sheet .armor-label.has-armor strong { color: #2b190f; }
+.themed-sheet .armor-figure g:not(.has-armor) polyline { stroke-dasharray: 2 1.2; }
+
+@media (max-width: 35rem) {
+  .test-app .creation-workspace .workspace-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .test-app :is(.creation-workspace, .themed-sheet) .character-cover-caption { margin-inline-start: min(24%, 5rem); }
+}
+
+/* The character details tab uses a narrow, single-column parchment layout. */
+.test-app .compact-creation {
+  width: min(100%, 30rem);
+  margin-inline: auto;
+  padding: clamp(.3rem, 2vw, .65rem);
+}
+
+.test-app .workspace-screen:has(> .compact-creation) > .workspace-nav {
+  width: min(100%, 30rem);
+  margin: .55rem auto;
+  gap: .35rem;
+}
+
+.test-app .compact-creation .creation-cover {
+  min-height: clamp(6rem, 23vw, 9rem);
+  padding: .5rem;
+}
+
+.test-app .compact-creation > .workspace-nav { margin-block: .4rem; }
+
+.compact-creation .panel {
+  margin-block: .45rem;
+  padding: .65rem;
+}
+
+.test-app .compact-creation .creation-panel h3 {
+  margin-bottom: .45rem;
+  padding: .3rem .45rem;
+}
+
+.compact-creation .creation-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: .4rem;
+}
+
+.compact-creation .creation-grid > label,
+.compact-creation .creation-ancestry label {
+  display: grid;
+  gap: .15rem;
+  margin: 0;
+}
+
+.compact-creation .creation-grid > label > :is(input, select) { width: 100%; }
+.compact-creation .creation-grid p { margin: .1rem 0; }
+
+.compact-creation .creation-points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .25rem;
+  font-size: .85rem;
+}
+
+.compact-creation .creation-points div { padding: .3rem; }
+
+.compact-creation .creation-stats {
+  display: grid;
+  gap: .35rem;
+  margin: .45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compact-creation .creation-stat {
+  padding: .25rem .35rem;
+  border: 1px solid #bd9a65;
+  border-radius: .3rem;
+  background: #fff3d6;
+}
+
+.compact-creation .creation-stat-line,
+.compact-creation .creation-stat-components > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 .25rem;
+}
+
+.compact-creation .creation-stat-components {
+  margin: 0;
+  padding-top: .2rem;
+  border-top: 1px solid #d6bb8a;
+}
+
+.compact-creation .creation-stat-components dd { margin: 0; }
+.compact-creation .creation-stat small { color: #654734; }
+.compact-creation .creation-stat-line small { display: block; }
+
+.test-app .compact-creation .creation-stepper button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: .2rem;
+}
+
+.compact-creation .creation-traits .trait-list { display: grid; gap: .2rem; }
+.compact-creation .creation-traits .trait-item { padding-inline: .35rem; }
+
+.compact-creation .creation-traits .trait-item > label:first-child {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: .4rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.compact-creation .creation-trait-price {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  color: #62302e;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.compact-creation .creation-traits .trait-item > label:not(:first-child) { margin: .3rem 0; }
+.compact-creation .creation-traits .trait-summary p { margin: .25rem 0; }
+
+.compact-creation .creation-ancestry > select { margin-bottom: .4rem; }
+.compact-creation .creation-ancestry h4 { margin: .45rem 0 .2rem; }
+.compact-creation .creation-ancestry label:has([type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: .4rem;
+}
+
+.compact-creation .creation-cover-caption h2 { font-size: clamp(1.15rem, 4vw, 1.6rem); }
+
+.test-app .compact-creation > .workspace-nav {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-creation :is(.creation-traits, .creation-ancestry) input[type="checkbox"] {
+  width: auto;
+  flex: none;
+  margin: 0;
+}

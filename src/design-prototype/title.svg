@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 104" preserveAspectRatio="none">
+ <defs>
+  <linearGradient id="g" x2="0" y2="1"><stop stop-color="#522204"/><stop offset=".18" stop-color="#fff3b8"/><stop offset=".34" stop-color="#a15620"/><stop offset=".52" stop-color="#f8cc77"/><stop offset=".66" stop-color="#9d4e14"/><stop offset=".84" stop-color="#fff2a0"/><stop offset="1" stop-color="#a24b18"/></linearGradient>
+  <radialGradient id="r" cy=".86" r=".82"><stop stop-color="#a6260c"/><stop offset=".63" stop-color="#560b06"/><stop offset="1" stop-color="#15070b"/></radialGradient>
+  <g id="wing" fill="none">
+   <path d="M154 14q-55 17-86-12 6 18 26 29Q60 29 33 17q18 24 42 25L2 51l76 8q-24 5-47 27 38-16 65-13-19 12-26 29 35-23 82-11Z" fill="#1d1313" stroke="url(#g)" stroke-width="2"/>
+   <path d="M141 34 77 15l22 21-48-9 60 20-88 4 88 5-59 20 47-8-19 21 61-20M125 20l-22-3 15 14m9 52-25 6 14-14" stroke="#e3a34f" stroke-width="1.4"/>
+   <path d="M38 51h51m34-10 20 10-20 10m-36 6 21-5m0-23-21-5" stroke="#fff2a9" stroke-width="1.1"/>
+  </g>
+ </defs>
+ <use href="#wing"/><use href="#wing" transform="translate(512) scale(-1 1)"/>
+ <path d="M91 51q31-10 51-36l103-5L256 1l11 9 103 5q20 26 51 36-31 10-51 37l-103 5-11 10-11-10-103-5q-20-27-51-37Z" fill="url(#r)" stroke="#2c0f02" stroke-width="7"/>
+ <path d="M91 51q31-10 51-36l103-5L256 1l11 9 103 5q20 26 51 36-31 10-51 37l-103 5-11 10-11-10-103-5q-20-27-51-37Z" fill="url(#r)" stroke="url(#g)" stroke-width="4"/>
+ <path d="M111 51q23-12 37-30l97-5 11-8 11 8 97 5q14 18 37 30-23 12-37 31l-97 5-11 8-11-8-97-5q-14-19-37-31Z" fill="none" stroke="#e8a654" stroke-width="1.4"/>
+ <path d="M157 25q-18 17-28 22m254 0q-10-5-28-22M155 78q-14-13-25-18m252 0q-11 5-25 18" fill="none" stroke="#f1b45b"/>
+ <path d="M209 90h34l13-10 13 10h34" fill="none" stroke="#ff883b" stroke-width="1.6"/>
+ <path d="m256 82 4 7 9 3-9 3-4 7-4-7-9-3 9-3Z" fill="#fff6bb"/>
+</svg>

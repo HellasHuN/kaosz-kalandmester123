@@ -51,3 +51,13 @@ test("a package with separately purchased ranks built on its grants cannot be re
   assert.match(removeTrainingPackage(chosen, "druid", { Természetismeret: 3 }).error, /fejlesztést/);
   assert.deepEqual(removeTrainingPackage(chosen, "druid", {}).packages, {});
 });
+
+
+test("new theory packages grant the general skill and legacy packages protect dependent advancement", () => {
+  const record = { choices: ["Alabástrom"], approved: true };
+  const added = addTrainingPackage(character, "heraldAdept", record, {}, {}, 5000);
+  assert.equal(packageGrants(added.packages).Mágiaelmélet, 2);
+  assert.equal(packageGrants(added.packages)[theory], undefined);
+  const legacy = { heraldAdept: { ...record, choices: [theory] } };
+  assert.match(removeTrainingPackage(legacy, "heraldAdept", { Mágiaelmélet: 3 }).error, /fejlesztést/);
+});

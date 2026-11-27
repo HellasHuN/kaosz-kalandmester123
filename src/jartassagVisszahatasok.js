@@ -1,5 +1,5 @@
 import { specialization } from "./jartassagSzakosodasok.js";
-import { gilfFreeTheory } from "./gilfMagia.js";
+import { academicTheoryRank } from "./teszt/academic.js";
 
 // Alapkönyv, 123–125. oldal. Minden jelölt pont egyszer jár az adott szintért.
 const shared = [
@@ -90,9 +90,7 @@ export function skillAttributeBonuses(character) {
   };
   function ranks(skills) {
     const totals = { ...skills };
-    if (character.race === "Gilf") {
-      totals.Mágiaelmélet = Math.max(totals.Mágiaelmélet ?? 0, totals[gilfFreeTheory] ?? 0);
-    }
+    totals.Mágiaelmélet = academicTheoryRank(skills);
     for (const [name, level] of Object.entries(skills)) {
       const item = specialization(name);
       if (!item) continue;

@@ -1,26 +1,27 @@
-﻿import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
+import { generalTheory, legacyTheoryNames, legacyTheoryRank } from "./teszt/academic.js";
+import { levelCost, paidLevels, skillPrices, skillRequirement } from "./jpSzamitas.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
 import { learningMethods, skillPrerequisiteMessage } from "./jartassagElofeltetelek.js";
 import { traitSkillModifier } from "./karakterTulajdonsagok.js";
 import { racialSkillModifier } from "./fajiSzakosodasok.js";
 import { inheritedModifier } from "./felverOrokles.js";
 import { packagePlayModifier } from "./kepzesiCsomagok.js";
-import { gilfFreeTheory } from "./gilfMagia.js";
 
 import { baseSkillName, racialWeaponTraining, specialization, specializationLearningRank } from "./jartassagSzakosodasok.js";
 
 export function relatedAttribute(name) {
-  return skillRequirement(name)?.[0];
+  return name === "Vakharc" ? "Érzékszerv / Intuíció" : skillRequirement(name)?.[0];
 }
 
 export function trainingQuote(character, name, current, method = "mentor") {
   const foundation = character.skillFoundations?.[name];
   const item = specialization(name);
   const base = baseSkillName(name);
-  const prior = specializationLearningRank(name, current, character);
+  const prior = name === generalTheory ? Math.max(current, legacyTheoryRank(character.skills))
+    : specializationLearningRank(name, current, character);
   const relearn = foundation === "practice" && current === 1;
   const level = relearn ? 1 : prior + 1;
-  if (name === "Mágiaelmélet" || name === devotionSkill || (name === gilfFreeTheory && character.race !== "Gilf") ||
+  if (legacyTheoryNames.has(name) || name === devotionSkill ||
       !skillPrices(name) || level > skillPrices(name).length) return null;
   if (item?.base === "Fegyverforgatás" && !item.branch && racialWeaponTraining(character)?.id === item.id) return null;
   // Alapkönyv, 96–97. oldal. A Mesélő igazolja a jártasság tanulási kódját.
@@ -33,7 +34,7 @@ export function trainingQuote(character, name, current, method = "mentor") {
     traitSkillModifier(character, base) + packagePlayModifier(character, base)));
   // Az Oktatás szabálya (117. o.) pontosítja az általános mentorleírást.
   return { level, cost, mentorLevel: Math.max(7, Math.min(10, level + 2)), ...(relearn && { relearn }),
-    ...(item?.branch && { from: prior }) };
+    ...((item?.branch || prior > current) && { from: prior }) };
 }
 
 export function skillRows(character) {
@@ -61,7 +62,8 @@ export function completeTraining(row, name) {
   if (training?.relearn && row.level === 1 && row.foundation === "practice") {
     return { ...row, prices: [training.cost], sunk: (row.sunk ?? 0) + paidTotal(row), foundation: undefined, training: null };
   }
-  const prior = specialization(name)?.branch ? Math.max(1, row.level, training?.from ?? 0) : row.level;
+  const prior = specialization(name)?.branch ? Math.max(1, row.level, training?.from ?? 0)
+    : name === generalTheory ? Math.max(row.level, training?.from ?? 0) : row.level;
   if (!training || training.level !== prior + 1) return row;
   const prices = Array.from({ length: prior }, (_, index) => index < row.level ? (row.prices[index] ?? null) : 0);
   return { ...row, level: training.level, prices: [...prices, training.cost], training: null,

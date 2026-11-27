@@ -1,3 +1,4 @@
+import { blindCombatAttribute } from "./teszt/blindCombat.js";
 import { codexTheorySkills, jpKoltsegek } from "./jpKoltsegek.js";
 import { jartassagKovetelmenyek } from "./jartassagKovetelmenyek.js";
 import { roundPercentageResult } from "./kerekites.js";
@@ -9,13 +10,14 @@ import { baseSkillName, genericSpecializations, racialWeaponSkillModifier, sameG
 export const TEHETSEG = "Született tehetség";
 const codexSkills = new Set(Object.values(codexTheorySkills));
 export const talentEligibleSkills = [...Object.keys(jpKoltsegek), ...specializationNames]
-  .filter((name) => name !== "Mágiaelmélet" && !genericSpecializations.has(name) &&
+  .filter((name) => name !== "Mágiaelmélet" && name !== gilfFreeTheory && !codexSkills.has(name) && !genericSpecializations.has(name) &&
     !specialization(name)?.branch && skillRequirement(name) !== null).sort((a, b) => a.localeCompare(b, "hu"));
 const talentDiscount = 15;
 const attributes = {
   Fizikum: [0, 0], Erő: [0, 1], Szívósság: [0, -1],
   Rátermettség: [1, 0], Ügyesség: [1, 1], Reflex: [1, -1],
   Tudat: [2, 0], Intelligencia: [2, 1], Lelkierő: [2, -1],
+  Érzékszerv: [4, 1], Intuíció: [4, -1],
   Esszencia: [3, 0], Varázserő: [3, 1], Esszenciapajzs: [3, -1],
 };
 
@@ -37,6 +39,7 @@ export function talentCost(name) {
 }
 
 export function skillPrices(name) {
+  if (codexSkills.has(name) || name === gilfFreeTheory) return jpKoltsegek.Mágiaelmélet;
   return specialization(name)?.prices ?? (name === "Fegyverforgatás" ? [600] : jpKoltsegek[baseSkillName(name)]);
 }
 
@@ -56,7 +59,7 @@ export function levelCost(character, name, level, learningModifier = 0, groupSki
     skill === name || skill === item?.foundation || skill === baseSkillName(name)) ? -talentDiscount : 0);
   if (requirement) {
     const [attribute, ...thresholds] = requirement;
-    const [index, direction] = attributes[attribute];
+    const [index, direction] = attributes[baseSkillName(name) === "Vakharc" ? blindCombatAttribute(level) : attribute];
     const value = effectiveAttribute(character, index, direction);
     if (Number.isFinite(value)) {
       modifier += attributeModifier(value, thresholds[Math.floor((level - 1) / 3)]);
@@ -99,6 +102,15 @@ export function preserveUnchangedSkillCosts(original, skills, skillJpPaid, skill
     if (Object.hasOwn(original.skillJpByLevel ?? {}, name)) byLevel[name] = original.skillJpByLevel[name];
     else delete byLevel[name];
     if (!original.estimatedSkillJp?.includes(name)) estimates.delete(name);
+  }
+  for (const name of [...codexSkills, gilfFreeTheory]) {
+    if (!original || original.skills?.[name] !== skills[name]) continue;
+    if (Object.hasOwn(original.skillJpPaid ?? {}, name)) paid[name] = original.skillJpPaid[name];
+    else delete paid[name];
+    if (Object.hasOwn(original.skillJpByLevel ?? {}, name)) byLevel[name] = original.skillJpByLevel[name];
+    else delete byLevel[name];
+    if (original.estimatedSkillJp?.includes(name)) estimates.add(name);
+    else estimates.delete(name);
   }
   return { skillJpPaid: paid, skillJpByLevel: byLevel, estimatedSkillJp: [...estimates] };
 }

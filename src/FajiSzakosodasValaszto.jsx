@@ -1,8 +1,8 @@
 import { artGenres, ogreLimbOptions } from "./fajiSzakosodasok.js";
-import { creationSkillNames } from "./alkotasiJartassagok.js";
 
 export default function FajiSzakosodasValaszto({ race, subrace, choices, onChange, weaponJp, stage }) {
   const tecath = race === "Gyíklény" && subrace === "Tecath";
+  const forestElf = race === "Elf" && subrace === "Erdei elf";
   const weaponRace = race === "Gennymanó" || race === "Gnóm";
   const weaponTraining = choices.weaponTraining ?? {};
   const ranks = tecath || stage === "senius" ? [0, 1, 2, 3, 4] : [0, 1, 2, 3];
@@ -13,33 +13,18 @@ export default function FajiSzakosodasValaszto({ race, subrace, choices, onChang
     else set("weaponTraining", { attack: 1, defense: 1, ...weaponTraining, [track]: level });
   }
 
-  if (!tecath && !weaponRace && !["Elf", "Ogár"].includes(race)) return null;
+  if (!tecath && !weaponRace && !forestElf && race !== "Ogár") return null;
   return <section className="panel creation-panel">
     <h3>Faji szakosodások</h3>
     <div className="creation-grid">
-      {race === "Elf" && <>
-        {subrace === "Erdei elf" && <label>Ingyenes Művészet (6. szint)
-          <select value={choices.artGenre ?? ""} onChange={(event) => set("artGenre", event.target.value)}>
-            <option value="">Válassz műfajt!</option>
-            {artGenres.map((genre) => <option key={genre}>{genre}</option>)}
-          </select>
-        </label>}
-        <label>Mesélő által jóváhagyott természeti jártasság (4. szint)
-          <select value="" onChange={(event) => {
-            if (event.target.value) set("approvedNatureSkills", [...(choices.approvedNatureSkills ?? []), event.target.value]);
-          }}>
-            <option value="">Jártasság kiválasztása</option>
-            {creationSkillNames.filter((skill) => !choices.approvedNatureSkills?.includes(skill)).map((skill) =>
-              <option key={skill}>{skill}</option>)}
-          </select>
-        </label>
-        {(choices.approvedNatureSkills ?? []).map((skill) => <button type="button" key={skill}
-          onClick={() => set("approvedNatureSkills", choices.approvedNatureSkills.filter((name) => name !== skill))}>
-          {skill} törlése a jóváhagyottak közül
-        </button>)}
-      </>}
+      {forestElf && <label>Ingyenes Művészet (6. szint)
+        <select value={choices.artGenre ?? ""} onChange={(event) => set("artGenre", event.target.value)}>
+          <option value="">Válassz műfajt!</option>
+          {artGenres.map((genre) => <option key={genre}>{genre}</option>)}
+        </select>
+      </label>}
       {tecath && <label><input type="checkbox" checked={choices.waterHunting === true}
-        onChange={(event) => set("waterHunting", event.target.checked)} /> Vadászat vízi specializációval, legfeljebb 4. szinten</label>}
+        onChange={(event) => set("waterHunting", event.target.checked)} /> Vadászat vízi specializációval</label>}
       {race === "Ogár" && <>
         <label>Extra végtag (30 főértékpont darabonként)
           <input type="number" min="0" step="1" value={choices.extraLimbs ?? ""}

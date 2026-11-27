@@ -1,4 +1,3 @@
-import Karakterlap from "./Karakterlap";
 import { useState, useEffect } from "react";
 import "./App.css";
 
@@ -73,37 +72,6 @@ function getBreedingStatus(race1, race2) {
     breedingRules[race2]?.[race1] ??
     "N"
   );
-}
-function getBloodlines(node) {
-  if (!node?.race) return [];
-
-  const knownParents = (node.parents || []).filter(
-    (parent) => parent?.race
-  );
-
-  if (knownParents.length === 0) {
-    return [node.race];
-  }
-
-  return knownParents.flatMap(getBloodlines);
-}
-
-function getAncestryBreedingStatus(node1, node2) {
-  const bloodlines1 = getBloodlines(node1);
-  const bloodlines2 = getBloodlines(node2);
-
-  if (!bloodlines1.length || !bloodlines2.length) return "";
-
-  const results = bloodlines1.flatMap((race1) =>
-    bloodlines2.map((race2) =>
-      getBreedingStatus(race1, race2)
-    )
-  );
-
-  if (results.includes("N")) return "N";
-  if (results.includes("M")) return "M";
-
-  return "T";
 }
 const ageLimits = {
   Elf: [33, 300, 350, 550],
@@ -219,7 +187,6 @@ const [savedCharacters, setSavedCharacters] = useState(() => {
     return [];
   }
 });
-const [selectedCharacter, setSelectedCharacter] = useState(null);
 const [deletingCharacter, setDeletingCharacter] = useState(null);
 const [deleteStep, setDeleteStep] = useState(0);
 const [farewellMessage, setFarewellMessage] = useState("");

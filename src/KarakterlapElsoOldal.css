@@ -340,7 +340,7 @@
 .workspace-screen:has(.parchment-page) { max-width: 100rem; padding-inline: clamp(0.35rem, 1vw, 0.9rem); }
 
 .parchment-page {
-  --reference-art: url("./assets/karakterlap-diszites-forras.png");
+  --reference-art: url("./assets/theme/karakterlap-diszites-forras.webp");
   position: relative;
   padding: 0.6rem;
   border: 4px double #ba843a;

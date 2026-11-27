@@ -16,31 +16,6 @@ body {
   background: #10131b;
 }
 
-.home-screen {
-  display: grid;
-  place-items: center;
-  padding: 2rem 1rem;
-  background: radial-gradient(ellipse at 50% 30%, #541c24, #29151a 58%, #10131b);
-}
-
-.home-content {
-  width: min(100%, 44rem);
-  text-align: center;
-}
-
-.home-content h1 {
-  margin: 0 0 2rem;
-  color: #edc66e;
-  font: 700 clamp(2rem, 7vw, 4rem)/1.08 Georgia, serif;
-}
-
-.home-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-  gap: 1rem;
-}
-
-.home-actions button,
 .workspace-nav button,
 .karakterlap-nav button,
 .character-sheet-actions button {
@@ -52,21 +27,6 @@ body {
   font: inherit;
 }
 
-.home-actions button {
-  min-height: 6rem;
-  padding: 1rem;
-  font-size: 1.2rem;
-  background: url("./assets/pergamen-rostok.png"), #f3dfb1;
-  color: #431721;
-  font-family: Georgia, serif;
-  font-weight: bold;
-}
-
-.home-actions button:hover {
-  background: #741d2b;
-  color: #fff0c5;
-}
-
 .workspace-nav button:hover,
 .character-sheet-actions button:hover:not(:disabled),
 .karakterlap-nav button:hover,
@@ -75,7 +35,6 @@ body {
   color: #fff0c5;
 }
 
-.home-actions button:focus-visible,
 .workspace-nav button:focus-visible,
 .character-sheet-actions button:focus-visible,
 .karakterlap-nav button:focus-visible {

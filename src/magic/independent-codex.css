@@ -1,0 +1,162 @@
+.codex-neutral, .codex-neutral-dialog {
+  --neutral-gold: #f2cd87;
+  --neutral-ink: #26170f;
+  --neutral-violet: #bfa2fb;
+  --neutral-frame: url("./independent-assets/panel-engraving.webp");
+  --neutral-title: url("./independent-assets/title-engraving.webp");
+  --neutral-paper: url("../assets/pergamen-rostok.png"),linear-gradient(115deg,#f7e4bf,#d7b78a);
+  color: #fff2d1;
+  font-family: Georgia, serif;
+  background: url("../assets/sheet/obsidian.webp"),#12111c;
+  border: 1px solid #ae8147;
+  border-image: var(--neutral-frame) 39 / 12px stretch;
+  padding: clamp(.55rem,2vw,1rem);
+  min-width: 0;
+}
+.magic-panel .codex-neutral .codex-neutral-hero {
+  display: grid;
+  justify-content: center;
+  justify-items: center;
+  gap: .15rem;
+  text-align: center;
+  padding: .48rem .3rem .65rem;
+  background: linear-gradient(#130e1b54,#18101abf),url("./independent-assets/sigil-vault.webp") center / cover;
+  color: #f7e4ff;
+}
+.codex-neutral-hero svg { width: 2.1rem; height: 2.1rem; filter: drop-shadow(0 0 .38rem #b985ff); }
+.magic-panel .codex-neutral :is(h3,h4), .magic-panel .codex-neutral-dialog > header h4 {
+  margin: .2rem 0;
+  padding: .45rem clamp(.3rem, 5vw, 2rem);
+  color: #fff0cf;
+  text-align: center;
+  background: var(--neutral-title) center / 100% 100% no-repeat;
+  text-shadow: 0 1px 2px #050306;
+  overflow-wrap: anywhere;
+}
+.magic-panel .codex-neutral-hero h3 { padding: .65rem clamp(.65rem, 6vw, 3rem); font-size: clamp(1rem,5vw,1.9rem); }
+.codex-neutral-tabs,.codex-neutral-resources {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: .25rem;
+  margin: .42rem 0;
+}
+.magic-panel .codex-neutral button, .magic-panel .codex-neutral-dialog button {
+  min-height: 44px;
+  min-width: 0;
+  padding: .3rem .45rem;
+  border: 1px solid #a26e36;
+  border-image: url("../page1/assets/cornerwork.svg") 27 / 8px stretch;
+  border-radius: 0;
+  color: #ffebc7;
+  background: linear-gradient(#47344e,#181224);
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+.magic-panel .codex-neutral-tabs button[aria-current="page"],
+.magic-panel .codex-neutral-dialog .spell-roll button:not(:disabled) { background: linear-gradient(#7a2417,#2e0d0d); }
+.codex-neutral-resources > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: .1rem;
+  text-align: center;
+  padding: .25rem;
+  border: 1px solid #977342;
+  color: #fff0cf;
+  background: radial-gradient(ellipse at 50% 0,#554172,#170f21 72%);
+}
+.codex-neutral-resources dt { font-size: .76rem; overflow-wrap: anywhere; }
+.codex-neutral-resources dd { margin: 0; font-weight: bold; overflow-wrap: anywhere; }
+.codex-neutral-spread { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .45rem; }
+.codex-neutral-paper {
+  min-width: 0;
+  padding: .48rem;
+  color: var(--neutral-ink);
+  border: 1px solid #ae8147;
+  border-image: var(--neutral-frame) 39 / 10px stretch;
+  background: var(--neutral-paper);
+  text-shadow: none;
+}
+.codex-neutral-book, .codex-neutral-detail header img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 22rem;
+  object-fit: contain;
+  border: 1px solid #a47950;
+  background: #1d1527;
+}
+.codex-neutral-detail header { display: grid; justify-items: center; gap: .25rem; }
+.codex-neutral-detail header img { max-height: clamp(9rem,46vw,22rem); }
+.codex-neutral-index {
+  display: grid;
+  gap: .3rem;
+  padding: 0;
+  list-style: none;
+  margin: .4rem 0;
+}
+.magic-panel .codex-neutral-index button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(2.4rem,4.8rem) minmax(0,1fr);
+  align-items: center;
+  gap: .12rem .45rem;
+  text-align: start;
+  color: var(--neutral-ink);
+  background: var(--neutral-paper);
+}
+.codex-neutral-index img { width: 100%; height: auto; aspect-ratio: 1.35; object-fit: cover; grid-row: span 2; border: 1px solid #805d45; }
+.codex-neutral-index span small { display: block; }
+.codex-neutral-status { justify-self: start; padding: .08rem .2rem; color: #fff2d1; background: #533657; }
+.codex-neutral-status[data-known="true"] { background: #3e512c; }
+.codex-neutral-filters {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,.72fr);
+  gap: .3rem;
+  align-items: end;
+}
+.codex-neutral-filters .magic-checkbox { grid-column: 1 / -1; }
+.magic-panel .codex-neutral :is(label,summary) { color: var(--neutral-ink); }
+.magic-panel .codex-neutral-filters :is(input:not([type="checkbox"]),select) {
+  min-height: 44px;
+  min-width: 0;
+  width: 100%;
+  color: var(--neutral-ink);
+  background: #fff2d8;
+}
+.codex-neutral .spell-details { color: var(--neutral-ink); }
+.codex-neutral .spell-details a { color: #602d51; }
+.magic-panel .codex-neutral-dialog {
+  max-height: min(90dvh,52rem);
+  max-width: min(42rem, calc(100% - 1rem));
+  color: #fff0d2;
+  background: radial-gradient(ellipse at top,#573b70,#13101e 68%),#13101e;
+}
+.magic-panel .codex-neutral-dialog .independent-cast-body {
+  color: var(--neutral-ink);
+  text-shadow: none;
+  background: var(--neutral-paper);
+}
+.magic-panel .codex-neutral-dialog :is(.spell-roll,fieldset) {
+  color: var(--neutral-ink);
+  background: #f2dfbc;
+  border: 1px solid #9f734e;
+}
+.magic-panel .codex-neutral-dialog label { color: var(--neutral-ink); }
+.magic-panel .codex-neutral :focus-visible, .magic-panel .codex-neutral-dialog :focus-visible { outline: 2px solid #8853b3; outline-offset: 1px; }
+@media (max-width: 45rem) {
+  .codex-neutral-spread, .codex-neutral-filters { grid-template-columns: minmax(0,1fr); }
+}
+
+.magic-panel .codex-neutral-adjudication {
+  display: grid;
+  gap: .4rem;
+  margin-block: .4rem .75rem;
+}
+.magic-panel .codex-neutral-adjudication :is(input, textarea) {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  color: var(--neutral-ink);
+  background: #fff2d8;
+}

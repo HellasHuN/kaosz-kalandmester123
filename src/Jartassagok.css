@@ -3,7 +3,7 @@
 .workspace-screen:has(.skills-reference-page) > .workspace-nav { margin-block: 0.3rem; }
 
 .skills-reference-page {
-  --skill-art: url("./assets/jartassagok-referencia.png");
+  --skill-art: url("./assets/theme/jartassagok-referencia.webp");
   --skill-paper: url("./assets/pergamen-rostok.png");
   position: relative;
   border: 1px solid #c99750;
@@ -213,4 +213,84 @@
   .skills-reference-page .character-sheet-actions { position: static; padding: 0 0.3rem 0.3rem; }
   .skills-reference-page .karakterlap-nav { margin-inline: 0; }
   .skills-reference h2 { width: min(85%, 22rem); margin-bottom: 1rem; }
+}
+
+/* Creation has its own compact search, purchase controls and acquired list. */
+.skills-reference-page:is(.creation-skills, .creation-equipment) {
+  width: min(100%, 44rem);
+  margin-inline: auto;
+  padding: .25rem;
+}
+
+:is(.creation-skills, .creation-equipment) .skills-reference { padding: .5rem; }
+:is(.creation-skills, .creation-equipment) .skills-reference h2 { margin: 0 auto .45rem; }
+:is(.creation-skills, .creation-equipment) .skills-reference :is(p, label) { margin: .35rem 0; }
+:is(.creation-skills, .creation-equipment) .skills-reference :is(button, input, select) { min-height: 44px; }
+:is(.creation-skills, .creation-equipment) .skills-reference button { margin: 0; }
+
+:is(.creation-skills, .creation-equipment) .skills-results {
+  display: grid;
+  gap: .2rem;
+  list-style: none;
+  padding: 0;
+  margin: .25rem 0;
+}
+
+:is(.creation-skills, .creation-equipment) .skills-results button { width: 100%; text-align: start; }
+:is(.creation-skills, .creation-equipment) .creation-skill-pending {
+  padding: .45rem;
+  margin-block: .35rem;
+  border: 1px solid #a1713b;
+  border-radius: .35rem;
+  background: #ffecc1;
+}
+
+:is(.creation-skills, .creation-equipment) .creation-skill-pending h3 { margin: 0; }
+:is(.creation-skills, .creation-equipment) .creation-skill-controls { display: flex; flex-wrap: wrap; gap: .35rem; }
+:is(.creation-skills, .creation-equipment) .skills-reference-scroll { max-height: none; margin-block: .45rem; }
+:is(.creation-skills, .creation-equipment) .skills-reference table { min-width: 0; }
+:is(.creation-skills, .creation-equipment) .skills-reference :is(th, td) { padding: .25rem; overflow-wrap: anywhere; }
+:is(.creation-skills, .creation-equipment) .skills-reference thead th { font-size: .85rem; white-space: normal; }
+:is(.creation-skills, .creation-equipment) .skills-reference tr { height: auto; }
+:is(.creation-skills, .creation-equipment) .skills-reference :is(th, td):first-child { width: 48%; }
+:is(.creation-skills, .creation-equipment) .skills-reference :is(th, td):nth-child(2) { width: 25%; }
+:is(.creation-skills, .creation-equipment) .skills-reference td select { padding-inline: .25rem; }
+:is(.creation-skills, .creation-equipment) .skills-reference td button { display: block; min-width: 44px; margin-top: .2rem; }
+:is(.creation-skills, .creation-equipment) tbody small { display: block; font-weight: normal; }
+:is(.creation-skills, .creation-equipment) .creation-devotion { border-top: 1px solid #a1713b; margin-top: .45rem; }
+
+
+.creation-equipment .equipment-creation-options {
+  display: grid;
+  gap: .25rem;
+}
+
+.creation-equipment .equipment-creation-options :is(input[type="number"], select) {
+  width: 100%;
+  max-width: 100%;
+  padding: .3rem;
+}
+
+.creation-equipment .equipment-creation-options .magic-checkbox {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 44px;
+}
+
+.creation-equipment .equipment-creation-options input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+}
+
+.creation-equipment .skills-reference :is(th, td):first-child { width: 40%; }
+.creation-equipment .skills-reference :is(th, td):nth-child(2) { width: 60%; }
+.creation-equipment .skills-reference td button { margin: .25rem 0; }
+.creation-equipment textarea {
+  width: 100%;
+  background: #fff1cf;
+  color: #321c0c;
+  border: 1px solid #a1713b;
+  border-radius: .3rem;
+  padding: .45rem;
 }

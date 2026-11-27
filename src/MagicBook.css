@@ -1,0 +1,525 @@
+.magic-panel.panel {
+  --book-gold: #dfad6a;
+  --book-paper: #f4deb0;
+  color: #ffedcf;
+  border: 3px double #b48754;
+  border-radius: 1rem;
+  background: radial-gradient(ellipse at 90% 0%, #742e1e 0, transparent 34%),
+    repeating-linear-gradient(130deg, #ffffff04 0 1px, transparent 1px 7px), #1c1114;
+  box-shadow: inset 0 0 2rem #0009, 0 .55rem 1.5rem #08060484;
+}
+
+.magic-panel .grimoire-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: clamp(.75rem, 3vw, 1.4rem);
+  border: 3px double var(--book-gold);
+  border-radius: .75rem;
+  background: linear-gradient(100deg, #210e10 12%, #592315bc 75%, #7c2b12), #36161a;
+  box-shadow: inset 0 0 .75rem #e9824059;
+}
+
+.magic-panel .grimoire-banner p,
+.magic-panel :is(.grimoire-title, .grimoire-heading) {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin: 0;
+  color: #fff0c6;
+}
+
+.magic-panel .grimoire-banner p {
+  flex-wrap: wrap;
+  font-size: .93rem;
+}
+
+.magic-panel .grimoire-banner strong { color: #ffd18b; font-size: 1.2rem; }
+.magic-panel .grimoire-title { font: 700 clamp(1.5rem, 5vw, 2.5rem)/1.1 Georgia, serif; }
+.magic-panel :is(.grimoire-title, .grimoire-heading) svg { flex: none; color: var(--book-gold); }
+.magic-panel.panel > h3,
+.magic-panel.panel > details > summary { color: #f1cf91; }
+
+.magic-panel .grimoire-section {
+  --folio-dark: #33120c;
+  --folio-medium: #68280f;
+  --folio-light: #ffae58;
+  --folio-paper: #f2cea0;
+  --folio-pattern: repeating-radial-gradient(ellipse at 90% 0%, #ffb16425 0 1px, transparent 2px 17px);
+  min-width: 0;
+  padding: clamp(.6rem, 2vw, 1.1rem);
+  border: 3px double var(--folio-light);
+  border-radius: .7rem;
+  background: var(--folio-pattern), radial-gradient(ellipse at 75% 0%, var(--folio-medium), var(--folio-dark) 75%);
+  box-shadow: inset 0 0 1rem #000a;
+}
+
+.magic-panel .grimoire-section[data-form="sacred"] {
+  --folio-dark: #292109;
+  --folio-medium: #675019;
+  --folio-light: #f8d784;
+  --folio-paper: #f9edbd;
+  --folio-pattern: repeating-conic-gradient(from 10deg at 72% 0%, #ffe6a91c 0deg 2deg, transparent 3deg 16deg);
+}
+
+.magic-panel .grimoire-section[data-form="practical"] {
+  --folio-dark: #261a12;
+  --folio-medium: #644b32;
+  --folio-light: #dcb181;
+  --folio-paper: #ecd6ab;
+  --folio-pattern: repeating-linear-gradient(0deg, #f0c29316 0 1px, transparent 1px 21px);
+}
+
+.magic-panel .grimoire-section[data-form="wild"] {
+  --folio-dark: #23122a;
+  --folio-medium: #613266;
+  --folio-light: #efb0db;
+  --folio-paper: #f2d5e6;
+  --folio-pattern: repeating-linear-gradient(122deg, transparent 0 25px, #f798e32b 26px 27px, transparent 28px 44px);
+}
+
+.magic-panel .grimoire-section[data-form="free"] {
+  --folio-dark: #102725;
+  --folio-medium: #225452;
+  --folio-light: #9cddd0;
+  --folio-paper: #d5efe2;
+  --folio-pattern: radial-gradient(circle at center, #9fe9eb27 1px, transparent 2px) 0 0 / 19px 19px;
+}
+
+.magic-panel .grimoire-heading {
+  padding: .65rem .85rem;
+  margin-bottom: .8rem;
+  border: 1px solid var(--folio-light);
+  border-radius: .45rem;
+  background: linear-gradient(90deg, var(--folio-dark), var(--folio-medium));
+  font-family: Georgia, serif;
+}
+
+.magic-panel .grimoire-heading svg { color: var(--folio-light); }
+.spellbook-spread { display: grid; gap: .75rem; align-items: start; }
+.spellbook-index { display: grid; gap: .4rem; list-style: none; margin: 0; padding: .15rem; max-height: 19rem; overflow: auto; }
+.spellbook-index li { min-width: 0; }
+
+.magic-panel .spellbook-index button:not(.skills-remove) {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  width: 100%;
+  min-height: 47px;
+  padding: .38rem .52rem;
+  text-align: left;
+  color: #271709;
+  border: 1px solid var(--folio-light);
+  border-radius: .4rem;
+  background: url('./assets/pergamen-rostok.png'), linear-gradient(110deg, var(--folio-paper), #f8e8c9);
+}
+
+.magic-panel .spellbook-index button:not(.skills-remove):is(:hover, [aria-pressed="true"]) {
+  color: #fff0ce;
+  background: linear-gradient(120deg, var(--folio-dark), var(--folio-medium));
+  box-shadow: inset 0 0 .65rem var(--folio-light);
+}
+
+.spellbook-index button svg,
+.spellbook-sigil {
+  flex: none;
+  color: var(--folio-light);
+  background: var(--folio-dark);
+  border: 1px solid var(--folio-light);
+  border-radius: .3rem;
+  box-shadow: inset 0 0 .4rem var(--folio-medium);
+}
+.spellbook-index button svg { padding: .2rem; }
+.spellbook-index button small, .spellbook-access { display: block; font-size: .79rem; overflow-wrap: anywhere; }
+.spellbook-access { padding: .18rem .45rem; color: #fff3df; }
+
+.spellbook-folio {
+  min-width: 0;
+  padding: clamp(.65rem, 2vw, 1.3rem);
+  border: 4px double #a67446;
+  border-radius: .7rem;
+  color: #27190d;
+  background: url('./assets/pergamen-rostok.png'), linear-gradient(130deg, var(--folio-paper), #fbe7bd 54%, var(--folio-paper));
+  box-shadow: inset 0 0 1.45rem #97512255, 0 .35rem .9rem #090407a0;
+  overflow-wrap: anywhere;
+}
+
+.spellbook-folio > header { display: flex; align-items: center; gap: .8rem; padding-bottom: .6rem; border-bottom: 1px solid #ad8450; }
+.spellbook-folio > header h4 { margin: 0; color: var(--folio-dark); font: bold clamp(1.25rem, 4vw, 2rem)/1.15 Georgia, serif; }
+.spellbook-sigil { display: inline-grid; place-items: center; width: 3.4rem; height: 3.4rem; border-radius: 50%; box-shadow: inset 0 0 .7rem var(--folio-medium), 0 0 0 .2rem var(--folio-light); }
+.spell-values { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: .35rem .6rem; }
+.spellbook-folio .spell-values > :is(dt, dd) { margin: 0; padding: .25rem 0; border-bottom: 1px solid #7f512739; }
+.spellbook-folio .spell-roll { padding: .7rem; border: 3px double #a46b42; border-radius: .45rem; background: #fff2d16e; }
+.spell-roll h4 { display: flex; align-items: center; gap: .4rem; margin: 0; }
+.spell-roll > button { min-height: 44px; margin: .2rem .3rem .2rem 0; }
+.spell-outcome { padding: .65rem; border: 2px solid #a2573e; border-radius: .4rem; background: #f3c8b5; color: #54221a; }
+.spell-outcome[data-outcome="success"] { background: #e0ecc9; border-color: #537642; color: #294524; }
+.spell-outcome[data-outcome="invalid"] { background: #fff0bc; border-color: #9a732c; color: #422e16; }
+
+@media (min-width: 49rem) {
+  .spellbook-spread:has(.spellbook-folio) { grid-template-columns: minmax(12rem, 2fr) minmax(0, 4fr); }
+  .spellbook-index { max-height: 30rem; }
+}
+
+.magic-panel .grimoire-banner {
+  background: linear-gradient(95deg, #250e0ce8 25%, #4b1c0ecf 60%, #702b1c88),
+    url('./assets/theme/gate.webp') center 44% / cover;
+}
+
+.magic-panel .grimoire-settings {
+  padding: .65rem;
+  border: 1px solid #ab7960;
+  border-radius: .4rem;
+}
+.grimoire-settings summary { cursor: pointer; }
+.grimoire-navigation {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.1rem, 1fr));
+  gap: .35rem;
+}
+
+.magic-panel .grimoire-navigation button:not(.skills-remove) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-height: 44px;
+  padding: .4rem;
+  color: #ffecc7;
+  border: 2px solid #98694f;
+  background: linear-gradient(#412a1a, #211313);
+  font-family: Georgia, serif;
+}
+.grimoire-navigation button svg { color: var(--magic-tab-accent, #ffae58); flex: none; }
+.grimoire-navigation button[data-form="sacred"] { --magic-tab-accent: #f8d784; }
+.grimoire-navigation button[data-form="practical"] { --magic-tab-accent: #dcb181; }
+.grimoire-navigation button[data-form="wild"] { --magic-tab-accent: #efb0db; }
+.grimoire-navigation button[data-form="free"] { --magic-tab-accent: #9cddd0; }
+.magic-panel .grimoire-navigation button:not(.skills-remove)[aria-pressed="true"] {
+  background: linear-gradient(#612c20, #381811);
+  border-color: var(--magic-tab-accent, #ffae58);
+  box-shadow: inset 0 0 .55rem #e6824669;
+}
+
+@media (max-width: 48.99rem) {
+  .spellbook-spread:has(.spellbook-folio) .spellbook-index { max-height: 10rem; }
+}
+
+.magic-panel.panel label { color: #f1dabb; }
+.magic-panel.panel .spellbook-folio label,
+.magic-panel .spellbook-folio .spell-values dt { color: #4a2e1c; }
+.magic-panel.panel .grimoire-section > details > summary { color: #ffe5bf; }
+.magic-panel.panel :is(input, select, textarea, button, summary):focus-visible {
+  outline: 2px solid #ebb36e;
+  outline-offset: 2px;
+}
+.magic-panel.panel .spellbook-folio :focus-visible { outline-color: #843d21; }
+
+.magic-panel .academic-specialization { min-width: 0; margin-block: .85rem; }
+.codex-badge { display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
+.codex-badge svg { flex: none; }
+.spellbook-folio .codex-badge { margin-top: .25rem; color: #4d311e; }
+.spellbook-folio .codex-badge[data-codex="Azúr"] { color: #215370; }
+.spellbook-sigil[data-codex="Azúr"],
+.spellbook-index button:has([data-codex="Azúr"]) > svg { color: #9ee3ff; background: #163e58; border-color: #80c9ed; }
+
+.magic-panel:has(.independent-grimoire) {
+  border-color: #d5a157;
+  background: radial-gradient(ellipse at 80% 0%, #612418, transparent 42%),
+    repeating-linear-gradient(137deg, #ffffff05 0 1px, transparent 1px 7px), #180d10;
+}
+.magic-panel .independent-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-block: .9rem;
+}
+.magic-panel .independent-navigation button:not(.skills-remove),
+.magic-panel .independent-cast-button:not(.skills-remove),
+.magic-panel .independent-cast-dialog button:not(.skills-remove) {
+  min-height: 44px;
+  padding-inline: .7rem;
+  border: 3px double #e1a05e;
+  border-radius: .42rem;
+  background: linear-gradient(#7a3426, #391319);
+  color: #fff0c9;
+  box-shadow: inset 0 0 .55rem #eb8e544a;
+}
+.magic-panel .independent-navigation button[aria-pressed="true"],
+.magic-panel .independent-cast-button:not(:disabled) {
+  box-shadow: inset 0 0 .7rem #ffa35e9e, 0 0 .4rem #ff8b433d;
+}
+.magic-panel .independent-grimoire {
+  --folio-dark: #2b1012;
+  --folio-medium: #663024;
+  --folio-light: #dba568;
+  --folio-paper: #f3d5a6;
+  border: 4px double #c39455;
+  background: radial-gradient(ellipse at 76% 0%, #5d271b, #1b1011 70%);
+}
+.independent-spread .independent-icon,
+.independent-illustration {
+  display: block;
+  flex: none;
+  object-fit: cover;
+  border: 2px solid #ad7040;
+  border-radius: .32rem;
+  box-shadow: 0 0 .4rem #ac5d3790;
+}
+.independent-spread .independent-icon { width: 2.65rem; height: 2.65rem; }
+.independent-spread .independent-illustration {
+  width: clamp(3.65rem, 15vw, 7.75rem);
+  height: auto;
+  aspect-ratio: 1;
+  border: 4px double #a37147;
+  border-radius: 50%;
+}
+.independent-condition { padding: .55rem; background: #fff2ccaa; border: 1px solid #a77043; border-radius: .3rem; }
+.magic-panel .independent-cast-dialog {
+  box-sizing: border-box;
+  width: min(37rem, calc(100vw - 1.2rem));
+  max-height: calc(100dvh - 1.2rem);
+  padding: 0;
+  color: #362216;
+  border: 5px double #b67a49;
+  border-radius: .85rem;
+  background: url('./assets/pergamen-rostok.png'), radial-gradient(ellipse at center, #ffedc5, #e0b77e);
+  box-shadow: 0 0 1.2rem #df7e4888, 0 1rem 4rem #000a;
+}
+.independent-cast-dialog::backdrop { background: #13080cd9; }
+.independent-cast-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .55rem;
+  padding: .55rem .7rem;
+  background: linear-gradient(#63261f, #331319);
+  border-bottom: 3px double #bd824f;
+}
+.magic-panel .independent-cast-dialog header h4 {
+  margin: 0;
+  color: #fff0c9;
+  font-size: clamp(1.05rem, 4vw, 1.45rem);
+  overflow-wrap: anywhere;
+}
+.independent-cast-body { padding: .7rem; }
+.magic-panel .independent-cast-body label { color: #472719; }
+.independent-cast-body .independent-cost {
+  color: #662923;
+  border-block: 1px solid #a06e45;
+  padding: .45rem .25rem;
+  font-weight: bold;
+}
+.independent-cast-body .spell-roll { background: #fff4d990; }
+.independent-cast-body [data-outcome="critical-failure"] { background: #69251f; color: #fff1d6; border-color: #df9c72; }
+
+.independent-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: .5rem;
+  padding: .6rem;
+  border: 3px double #976238;
+  border-radius: .55rem;
+  background: #2a1516;
+}
+.magic-panel .independent-filters label { margin: 0; min-width: 0; }
+.independent-filters label:first-child { grid-column: 1 / -1; }
+.independent-filters button { justify-self: start; grid-column: 1 / -1; }
+
+@media (min-width: 54rem) {
+  .independent-filters { grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(8rem, 1fr)); }
+  .independent-filters label:first-child { grid-column: auto; }
+}
+
+.magic-panel:has(.scarlet-grimoire) {
+  border-color: #e4a954;
+  background: radial-gradient(ellipse at 78% 8%, #96381c88, transparent 43%),
+    radial-gradient(ellipse at 9% 88%, #8d251b96, transparent 42%),
+    linear-gradient(145deg, #210a0d, #14090c 58%, #3b160f);
+}
+.magic-panel:has(.scarlet-grimoire) .grimoire-banner {
+  background: linear-gradient(95deg, #29080be6 24%, #7f260ec4 61%, #841c0996),
+    url('/magic-scarlet/langtenger.webp') center 45% / cover;
+  box-shadow: inset 0 0 1.1rem #ff8b4165, 0 0 .75rem #e1492655;
+}
+.magic-panel .scarlet-grimoire {
+  --folio-dark: #3c0e0b;
+  --folio-medium: #86260e;
+  --folio-light: #fbbb63;
+  --folio-paper: #f2c190;
+  border-color: #e0a552;
+  background: repeating-linear-gradient(148deg, #fa8b3720 0 1px, transparent 1px 26px),
+    radial-gradient(ellipse at 0% 100%, #8e2514, transparent 56%), linear-gradient(130deg, #5c1d13, #240a0c 80%);
+  box-shadow: inset 0 0 1.3rem #070103b6, 0 0 .6rem #f173303b;
+}
+.scarlet-grimoire .spellbook-index button[aria-pressed="true"] {
+  border-color: #ffcb7b;
+  outline: 1px solid #ffb353;
+  outline-offset: 1px;
+}
+.scarlet-grimoire .independent-illustration { box-shadow: 0 0 .85rem #d758376b; }
+.magic-panel .scarlet-cast-dialog {
+  border-color: #e59b54;
+  box-shadow: 0 0 1.3rem #ff641890, 0 1rem 4rem #000c;
+}
+.scarlet-cast-dialog header { background: linear-gradient(#842e18, #3c0c0a); }
+
+.magic-panel:has(.azure-grimoire) {
+  --book-gold: #bedee7;
+  color: #e4f2f3;
+  border-color: #a6d6e2;
+  background: radial-gradient(ellipse at 86% 0%, #285c79, transparent 46%),
+    radial-gradient(ellipse at 6% 95%, #123c55, transparent 48%), #0e202e;
+}
+.magic-panel:has(.azure-grimoire) .grimoire-banner {
+  background: linear-gradient(95deg, #071c2af6 22%, #123854bd 59%, #0e334268),
+    url('/magic-azure/orveny.webp') center 48% / cover;
+  box-shadow: inset 0 0 1rem #a7e6ff76, 0 0 .75rem #4aa8c64d;
+}
+.magic-panel:has(.azure-grimoire) .grimoire-banner strong { color: #baf0ff; }
+.magic-panel:has(.azure-grimoire) .independent-filters {
+  border-color: #8fb9ca;
+  background: #142b3c;
+}
+.magic-panel:has(.azure-grimoire) .independent-navigation button:not(.skills-remove),
+.magic-panel .azure-grimoire .independent-cast-button:not(.skills-remove),
+.magic-panel .azure-cast-dialog button:not(.skills-remove) {
+  border-color: #b0e6f1;
+  color: #e8f9ff;
+  background: linear-gradient(#236078, #14293f);
+  box-shadow: inset 0 0 .65rem #6fc6e360;
+}
+.magic-panel .azure-grimoire {
+  --folio-dark: #102535;
+  --folio-medium: #226382;
+  --folio-light: #bce2ec;
+  --folio-paper: #e0ebe8;
+  border-color: #9bcbd8;
+  background: repeating-radial-gradient(ellipse at 100% 1%, #9adbf226 0 1px, transparent 3px 23px),
+    radial-gradient(ellipse at 83% 0%, #24657d, #102738 78%);
+}
+.azure-grimoire .independent-icon,
+.azure-grimoire .independent-illustration {
+  border-color: #54a1b6;
+  box-shadow: 0 0 .58rem #ceeaff4d;
+}
+.azure-grimoire .independent-condition {
+  background: #e2f1eb;
+  border-color: #578799;
+}
+.magic-panel .azure-cast-dialog {
+  border-color: #a8d9e7;
+  background: url('./assets/pergamen-rostok.png'), radial-gradient(ellipse at 35% 20%, #f1f0dd, #ccdfe3);
+  box-shadow: 0 0 1.35rem #6fc6e388, 0 1rem 4rem #000b;
+}
+.azure-cast-dialog header { background: linear-gradient(#1c556e, #12273f); border-color: #9ac7d8; }
+.azure-cast-dialog::backdrop { background: #091928dc; }
+
+.azure-cast-dialog .independent-cost { color: #254f64; border-color: #729cae; }
+
+/* The general grimoire uses the same internal layout in either workspace. */
+.test-app .magic-panel.panel.general-grimoire {
+  container-type: inline-size;
+  width: min(100%, 64rem);
+  margin: .65rem auto;
+  padding: clamp(.45rem, 2vw, 1rem);
+  border: 3px double #b48754;
+}
+
+.general-grimoire .grimoire-resources,
+.general-grimoire .grimoire-filters {
+  display: grid;
+  gap: .45rem;
+  margin-block: .65rem;
+  padding: .65rem;
+  border: 1px solid #8b5f40;
+  border-radius: .5rem;
+  background: #2c1919;
+}
+
+.general-grimoire .grimoire-resources h3,
+.general-grimoire .grimoire-resources p,
+.general-grimoire .grimoire-form-description p { margin: 0; color: #f1dabb; }
+
+.general-grimoire .magic-resource-grid,
+.general-grimoire .grimoire-filters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+
+.general-grimoire .grimoire-resource {
+  display: grid;
+  align-content: start;
+  gap: .25rem;
+  min-width: 0;
+  padding: .4rem;
+  border: 1px solid #866144;
+  border-radius: .3rem;
+  color: #f3dbb4;
+  overflow-wrap: anywhere;
+}
+
+.general-grimoire .grimoire-resource strong { color: #ffe2a1; }
+.general-grimoire .grimoire-form-description { display: grid; gap: .35rem; margin-block: .65rem; }
+.general-grimoire .grimoire-filters label { min-width: 0; margin: 0; }
+.general-grimoire .grimoire-filters :is(label:first-child, button) { grid-column: 1 / -1; }
+.general-grimoire .grimoire-filters :is(select, input, button) { min-height: 44px; }
+.general-grimoire .grimoire-filters button { justify-self: start; }
+.general-grimoire .grimoire-section { margin-block: .65rem 0; overflow-wrap: anywhere; }
+.general-grimoire .spellbook-spread { grid-template-columns: minmax(0, 1fr); }
+.general-grimoire .spellbook-placeholder { margin: 0; }
+.grimoire-spell-art {
+  flex: none;
+  width: clamp(3rem, 12cqw, 5rem);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 2px solid #93633e;
+  border-radius: .35rem;
+}
+
+@container (min-width: 40rem) {
+  .general-grimoire .magic-resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .general-grimoire .spellbook-spread:has(.spellbook-folio) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
+
+@container (max-width: 23rem) {
+  .general-grimoire .grimoire-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .general-grimoire .grimoire-navigation button svg { width: 16px; }
+  .general-grimoire .grimoire-filters button { max-width: 100%; }
+}
+
+/* Use the same controls regardless of the parent editor's defaults. */
+.test-app .magic-panel.general-grimoire :is(input:not([type="checkbox"]), select, textarea) {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #9c6b41;
+  box-shadow: inset 0 1px .3rem #98643529;
+}
+
+.test-app .magic-panel.general-grimoire :is(.grimoire-filters, .spellbook-folio, .grimoire-settings) button {
+  min-height: 44px;
+  border: 2px solid #a27646;
+  color: #fff1cd;
+  background: linear-gradient(#652c32, #35171d);
+  font-family: Georgia, serif;
+}
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex] {
+  background: linear-gradient(90deg, #170f16fa 10%, #170f16b0 60%, #170f1655),
+    var(--codex-header-image) center 45% / cover no-repeat;
+}
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex="Skarlát"] {
+  background: linear-gradient(90deg, #260c10f5 10%, #5e210f99 70%, #50140835),
+    var(--codex-header-image) center 45% / cover no-repeat;
+}
+
+.magic-panel.general-grimoire .grimoire-banner[data-specialization-codex="Azúr"] {
+  background: linear-gradient(90deg, #081928f5 10%, #10345399 70%, #0a29433b),
+    var(--codex-header-image) center 48% / cover no-repeat;
+}

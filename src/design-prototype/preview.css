@@ -1,0 +1,152 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: #fff0c5;
+  background: radial-gradient(ellipse at 50% 0, #253344, #050912 72%) fixed;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.forge-preview {
+  --frame: url("./forge-frame.svg");
+  --metal: linear-gradient(169deg, #313035 0%, #141a20 22%, #080b0f 60%, #241609 100%);
+  width: min(100%, 460px);
+  margin-inline: auto;
+  padding: 4px;
+  display: grid;
+  gap: 5px;
+  text-shadow: 0 2px 3px #000;
+}
+
+.forge-frame {
+  min-width: 0;
+  border: 4px solid transparent;
+  border-image: var(--frame) 22 / 9px stretch;
+  background: radial-gradient(ellipse at 30% 0, #bc8c4932, transparent 56%), var(--metal);
+  box-shadow: inset 0 0 5px #000, 0 3px 4px #0009;
+}
+
+.forge-hero {
+  position: relative;
+  min-height: clamp(141px, 37.5vw, 174px);
+  isolation: isolate;
+  background: linear-gradient(0deg, #03070bd2 0%, transparent 43%),
+    var(--ancestry-background) center 30% / cover no-repeat, var(--sheet-shade);
+  box-shadow: 0 5px 12px #000;
+}
+.forge-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 5px solid transparent;
+  border-image: var(--frame) 22 / 11px stretch;
+  pointer-events: none;
+}
+.forge-portrait {
+  position: absolute;
+  inset: 25px auto 2px 1px;
+  width: 44%;
+  background: var(--ancestry-portrait) left bottom / auto 100% no-repeat;
+  mask-image: linear-gradient(90deg, #0000, #000 8% 54%, #0000 78%);
+  filter: brightness(1.23) saturate(1.13) contrast(1.05);
+  z-index: -1;
+}
+.forge-title {
+  position: relative;
+  margin: 0 auto;
+  width: calc(100% - 81px);
+  display: grid;
+  justify-items: center;
+  filter: drop-shadow(0 3px 5px #210800) drop-shadow(0 0 4px #b9431980);
+}
+.forge-title h1, .forge-title span {
+  margin: 0;
+  text-align: center;
+  background: url("./title.svg") center / 100% 100% no-repeat;
+}
+.forge-title h1 {
+  width: 100%;
+  padding: 9px 0 11px;
+  font-size: clamp(21px, 7.1vw, 32px);
+  line-height: 1;
+  text-shadow: 0 1px #fff6bc55, 0 2px 3px #190500;
+}
+.forge-title span {
+  margin-top: -5px;
+  width: 56%;
+  padding: 4px 0 5px;
+  font-size: 13px;
+}
+.forge-identity {
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  width: 66%;
+  text-align: center;
+  background: linear-gradient(90deg, transparent, #080d147d 30%, #05070870 90%, transparent);
+}
+.forge-identity h2 {
+  margin: 0;
+  padding: 1px 4px 4px;
+  font-size: clamp(21px, 6vw, 28px);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+.forge-identity ul {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  padding: 4px 0 0;
+  border-top: 1px solid;
+  border-image: linear-gradient(90deg, transparent, #f6c57b, transparent) 1;
+  font-size: 12px;
+}
+.forge-identity li { display: flex; align-items: center; gap: 4px; padding: 0 5px; }
+.forge-identity li + li { border-left: 1px solid #c8a66c88; }
+.forge-identity :is(img,svg) { width: 15px; height: 15px; color: #ffcd77; }
+.forge-identity li:nth-child(2) svg { color: #65d9ff; }
+
+.forge-controls button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #ffdc89;
+  cursor: pointer;
+}
+.forge-controls svg { width: 23px; height: 23px; fill: #b7682648; filter: drop-shadow(0 0 3px #b97536); }
+.forge-controls [data-position="0"] { top: 5px; left: 5px; }
+.forge-controls [data-position="1"] { top: 50px; left: 5px; }
+.forge-controls [data-position="2"] { top: 5px; right: 5px; clip-path: polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%); }
+button:hover, button[aria-expanded="true"] { filter: brightness(1.25); }
+button:focus-visible, select:focus-visible { outline: 2px solid #ffedb7; outline-offset: -3px; }
+
+.forge-attribute { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 4px; }
+.forge-stat { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 3px; }
+.forge-stat img { width: clamp(28px, 8.25vw, 36px); filter: drop-shadow(0 0 4px #fe4f20a3); }
+.forge-stat h2 { margin: 0; font-size: clamp(13px, 4.15vw, 20px); }
+.forge-stat output {
+  margin-right: 1px;
+  padding: 1px 5px 2px;
+  background: linear-gradient(#983512, #370b09 70%);
+  font-size: clamp(16px, 4.65vw, 22px);
+  font-weight: bold;
+  line-height: 1;
+}
+.forge-pair { margin: 0; display: grid; grid-template-columns: minmax(0,.83fr) minmax(0,1.17fr); align-items: center; }
+.forge-pair > div { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 3px; padding-inline: 5px; }
+.forge-pair > div + div { border-left: 1px solid #c6955685; }
+.forge-pair dt { display: flex; align-items: center; gap: 4px; font-size: clamp(11px, 3.25vw, 15px); }
+.forge-pair svg { flex: none; width: 15px; height: 15px; color: #ffce6d; fill: #c38c3c55; }
+.forge-pair dd { margin: 0; color: #fff5da; font-size: clamp(14px, 4vw, 18px); font-weight: bold; }
+.forge-popover { padding: 7px; display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: center; font-size: .88rem; }
+.forge-popover p { margin: 0; }
+.forge-popover :is(button,select) { min-height: 44px; padding: 0 8px; background: #11171f; color: #fff0c5; border: 1px solid #a47946; font: inherit; }
+@media (max-width: 350px) {
+  .forge-pair dt { gap: 2px; }
+  .forge-pair svg { width: 12px; height: 12px; }
+  .forge-pair > div { padding-inline: 2px; }
+}
