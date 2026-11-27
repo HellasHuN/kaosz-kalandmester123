@@ -6,7 +6,7 @@ import GeneralPage, { CharacterWorkspace, GeneralEditActions } from "./page1/Gen
 
 function Karakterlap({
   character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
-  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving, onPageChange, viewMemory,
+  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving, confirmTabSwitch, onPageChange, viewMemory,
 }) {
   const [activePage, setActivePage] = React.useState(initialPage);
   const [editing, setEditing] = React.useState(initialEditing);
@@ -21,7 +21,7 @@ function Karakterlap({
   }
 
   function openPage(page) {
-    if (page !== activePage && confirmLeaving()) {
+    if (page !== activePage && confirmTabSwitch()) {
       if (activePage === 1 && editing) onCancelCharacterEdit();
       setEditing(false);
       setActivePage(page);
@@ -41,7 +41,7 @@ function Karakterlap({
   }
 
   function cancelEditing() {
-    if (!confirmLeaving()) return;
+    if (!confirmTabSwitch()) return;
     if (activePage === 1) onCancelCharacterEdit();
     else editor.current.cancel();
     setEditing(false);

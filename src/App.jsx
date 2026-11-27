@@ -695,6 +695,11 @@ ancestry: JSON.parse(JSON.stringify(ancestry)),
       || window.confirm("Elhagyod a játékban lévő karakterlapot? Ez megszakíthatja az aktív játéknézetet.");
   }
 
+  function confirmTabSwitch() {
+    return !document.querySelector('[data-unsaved="true"]') ||
+      window.confirm("Nem mentett módosítások vannak. Biztosan továbblépsz mentés nélkül?");
+  }
+
   function restoreRoute(route) {
     const character = savedCharacters.find(item => item.id === route.characterId)
       ?? (route.characterId === sampleCharacter.id ? sampleCharacter : null);
@@ -1639,7 +1644,7 @@ setAncestry((previous) => ({
               ageOptions: renderAgePointOptions(),
               renderTraits,
             }}
-            confirmLeaving={confirmLeaving}
+            confirmLeaving={confirmLeaving} confirmTabSwitch={confirmTabSwitch}
           /></Suspense>
         )}
         {selectingCharacter && (
