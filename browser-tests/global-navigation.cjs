@@ -27,18 +27,18 @@ async function verify(page, width) {
       await page.screenshot({ path: path.join(process.env.SCREENSHOT_DIR, `${name}-${width}.png`) });
   };
 
-  async function layout(expected) {
+  async function layout(expected, { back: showBack = true, home: showHome = true } = {}) {
     await title(expected).waitFor();
-    assert.equal(await button("Vissza").count(), 1);
-    assert.equal(await button("Főmenü").count(), 1);
+    assert.equal(await button("Vissza").count(), Number(showBack));
+    assert.equal(await button("Főmenü").count(), Number(showHome));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     const [back, current, menu] = await Promise.all([
-      global.getByRole("button", { name: "Vissza" }).boundingBox(),
+      showBack && global.getByRole("button", { name: "Vissza" }).boundingBox(),
       title(expected).boundingBox(),
-      global.getByRole("button", { name: "Főmenü" }).boundingBox(),
+      showHome && global.getByRole("button", { name: "Főmenü" }).boundingBox(),
     ]);
-    assert.ok(back.height >= 44 && menu.height >= 44);
-    assert.ok(back.x + back.width <= current.x && current.x + current.width <= menu.x);
+    if (showBack) assert.ok(back.height >= 44 && back.x + back.width <= current.x);
+    if (showHome) assert.ok(menu.height >= 44 && current.x + current.width <= menu.x);
   }
 
   await page.goto(process.env.PREVIEW_URL || "http://localhost:4173/");
@@ -51,12 +51,12 @@ async function verify(page, width) {
   await button("Karakterbetöltés").click();
   await layout("Karakterbetöltés");
   await button("Karakterlap megnyitása").click();
-  await layout("Általános");
+  await layout("Általános", { back: false, home: false });
   await tabs.waitFor();
   assert.deepEqual(await tabs.getByRole("button").allTextContents(), ["Általános", "Jártasságok", "Felszerelés", "Mágia"]);
   for (const tab of ["Jártasságok", "Felszerelés", "Mágia", "Jártasságok"]) {
     await tabs.getByRole("button", { name: tab }).click();
-    await layout(tab);
+    await layout(tab, { back: false, home: false });
   }
   const skillsSearch = page.getByRole("searchbox", { name: "Jártasság keresése", exact: true });
   await skillsSearch.fill("birk");
@@ -64,17 +64,20 @@ async function verify(page, width) {
   assert.ok(await global.evaluate(el => el.getBoundingClientRect().top >= 0));
   await capture("karakterlap");
   await button("Beállítások").click();
-  await layout("Beállítások");
+  await layout("Beállítások", { home: false });
   await button("Vissza").click();
-  await layout("Jártasságok");
+  await layout("Jártasságok", { back: false, home: false });
   assert.equal(await skillsSearch.inputValue(), "birk");
+  accept = true;
   await page.evaluate(() => history.back());
   await layout("Karakterbetöltés");
   await page.evaluate(() => history.forward());
-  await layout("Jártasságok");
+  await layout("Jártasságok", { back: false, home: false });
   assert.equal(await skillsSearch.inputValue(), "birk");
-  await button("Főmenü").click();
+  await button("Beállítások").click();
+  await button("Vissza a főmenübe").click();
   await home.waitFor();
+  accept = false;
   assert.equal(await search.inputValue(), "Őrt");
   await button("Karakteralkotás").click();
   await layout("Karakteralkotás");
@@ -108,11 +111,11 @@ async function verify(page, width) {
   await button("Játék").click();
   await layout("Játék");
   await button("Karakterlap megnyitása").click();
-  await layout("Általános");
+  await layout("Általános", { back: false, home: false });
   assert.equal(await tabs.getByRole("button", { name: "Általános" }).getAttribute("aria-current"), "page");
-  await button("Vissza").click();
-  await layout("Játék");
-  await button("Vissza").click();
+  await button("Beállítások").click();
+  await layout("Beállítások", { home: false });
+  await button("Vissza a főmenübe").click();
   await home.waitFor();
   assert.deepEqual(await saved(), roster);
   assert.deepEqual(errors, []);

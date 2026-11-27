@@ -26,7 +26,7 @@ async function verify(page) {
   const codex = magic.getByRole('combobox', { name: /^Kódex/ });
   const type = magic.getByRole('combobox', { name: /^Varázslattípus/ });
   const activeEp = magic.getByRole('spinbutton', { name: /^Aktuális aktív Ep/ });
-  const gm = magic.getByRole('checkbox', { name: 'Kalandmesteri nézet (helyi)' });
+  const gm = magic.getByRole('checkbox', { name: 'KM-katalógus' });
   const tűzközpont = button('Tűzközpont kiválasztása');
   const read = () => page.evaluate(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0]);
   async function assertResources(ep) {
@@ -77,6 +77,8 @@ async function verify(page) {
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0].magic.activeEp === 35);
   await button('Mentett karakterek').click();
   await button('Játékba helyezés').click();
+  await button('Főmenü').click();
+  await button('Kalandmester').click();
   await button('Karakterlap megnyitása').click();
   await button('Mágia').click();
   await checkCatalog(35);
@@ -106,7 +108,7 @@ async function verify(page) {
   await magic.getByRole('status').filter({ hasText: /Sikeres létrehozási próba/ }).waitFor();
   const log = button('Sikeres elmondás és Ep-levonás rögzítése');
   await log.click();
-  assert.equal(await log.isDisabled(), true);
+  assert.equal(await log.count(), 0);
   await assertResources(22);
   assert.equal((await read()).magic.activeEp, 32);
   await search.fill('Lánghívás');
@@ -117,11 +119,16 @@ async function verify(page) {
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0].magic.activeEp === 22);
   assert.equal((await read()).magic.castingLog.length, 1);
   assert.ok((await read()).magic.acquisitions.some(({ spellId }) => spellId === 'official:langhivas'));
+  await button('Beállítások').click();
+  await button('Vissza a főmenübe').click();
+  await button('Játék').click();
+  await button('Karakterlap megnyitása').click();
+  await button('Mágia').click();
   await button('Szerkesztés').click();
   await magic.getByLabel(/Alapkódex/).selectOption('Azúr');
   await button('Véglegesítés').click();
   assert.equal((await read()).magic.academicSpecialization ?? null, null);
-  await magic.getByRole('checkbox', { name: /jóváhagyta a szakosodás módosítását/ }).check();
+  await magic.getByRole('group', { name: /Akadémikus szakosodás/ }).getByRole('button', { name: 'KM jóváhagyása (TESZT)', exact: true }).click();
   await button('Véglegesítés').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0].magic.academicSpecialization?.codex === 'Azúr');
   assert.deepEqual((await read()).magic.academicSpecialization, { codex: 'Azúr' });
@@ -132,7 +139,7 @@ async function verify(page) {
   await assertResources(22);
 
   await button('Beállítások').click();
-  await button('Főmenü').click();
+  await button('Vissza a főmenübe').click();
   await button('Karakteralkotás').click();
   await page.getByPlaceholder('Karakter neve').fill('Új mágikus próba');
   await page.getByRole('region', { name: 'Karakter adatai' }).getByLabel(/^Faj/).selectOption('Ember');

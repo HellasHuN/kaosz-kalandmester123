@@ -55,7 +55,7 @@ async function verify(page, width) {
     }
   }
   await button("Beállítások").click();
-  await button("Főmenü").click();
+  await button("Vissza a főmenübe").click();
   await button("Karakteralkotás").click();
   await page.getByPlaceholder("Karakter neve").fill("Új próba");
   await page.getByLabel(/^Faj/).first().selectOption("Ember");

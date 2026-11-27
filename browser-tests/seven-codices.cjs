@@ -32,6 +32,11 @@ async function verify(page, width, name, edition, spells, rules) {
   page.on("dialog", dialog => dialog.accept());
   const button = (label, scope = page) => scope.getByRole("button", { name: label, exact: true });
   const codex = page.locator(".codex-edition");
+  const history = page.getByRole("region", { name: "Összes mágiaelőzmény" });
+  const openHistory = async () => {
+    const toggle = page.getByRole("button", { name: /^Mágiaelőzmények/ });
+    if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+  };
   const cast = page.getByRole("dialog");
   const storage = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic);
   const open = async () => {
@@ -56,6 +61,7 @@ async function verify(page, width, name, edition, spells, rules) {
     character, { ...character, id: "second-mage", name: "Második mágus", magic: { activeEp: 31 } },
   ])), fixture);
   await page.reload();
+  await page.getByRole("button", { name: /Próbamágus/ }).click();
   await button("Betöltés").click();
   await open();
   assert.ok(await fit());
@@ -109,23 +115,24 @@ async function verify(page, width, name, edition, spells, rules) {
   }
 
   await page.reload();
+  await page.getByRole("button", { name: /Próbamágus/ }).click();
   await button("Betöltés").click();
   await open();
-  await button("Varázslási napló megnyitása", codex).click();
-  assert.equal(await codex.getByText("KM elbírálására vár", { exact: true }).count(), 2);
-  assert.equal(await codex.getByRole("form").count(), 0);
+  await openHistory();
+  assert.equal(await history.getByText("KM elbírálására vár", { exact: true }).count(), 2);
+  assert.equal(await history.getByRole("form").count(), 0);
   await button("Beállítások").click();
   await button("Vissza a főmenübe").click();
   const openKm = async () => {
     await button("Kalandmester").click();
     await button("Karakterlap megnyitása").click();
     await open();
-    await button("Varázskönyv", codex).click();
+    await openHistory();
     await button("Szerkesztés").click();
   };
   await openKm();
   for (const [value, loss] of [[roll, 2], [100, 0]]) {
-    const form = codex.getByRole("form", { name: `Dobás elbírálása: ${value} / ${target}` });
+    const form = history.getByRole("form", { name: `Dobás elbírálása: ${value} / ${target}` });
     await form.getByLabel(/Ep-veszteség/).fill(String(loss));
     await form.getByLabel(/következménye/).fill("A hatás elmaradt.");
     await button("Elbírálás rögzítése", form).click();
@@ -136,7 +143,7 @@ async function verify(page, width, name, edition, spells, rules) {
   await page.waitForFunction(value => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.activeEp === value, expected);
   await page.reload();
   await openKm();
-  assert.equal(await codex.getByRole("form").count(), 0);
+  assert.equal(await history.getByRole("form").count(), 0);
   const saved = await storage();
   assert.equal(saved.castingLog.length, 3);
   assert.deepEqual(saved.castingLog.slice(0, 2).map(record => [record.status, record.previousEp - record.remainingEp]),
@@ -148,8 +155,8 @@ async function verify(page, width, name, edition, spells, rules) {
   await button("Betöltés").click();
   await open();
   await codex.getByText(`0 ismert formula / ${count}`, { exact: false }).waitFor();
-  await button("Varázslási napló megnyitása", codex).click();
-  await codex.getByText(/Még nincs rögzített/).waitFor();
+  await openHistory();
+  await history.getByText(/Még nincs rögzített/).waitFor();
   assert.equal((await storage()).activeEp, expected);
   assert.deepEqual(errors, []);
 }

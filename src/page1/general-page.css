@@ -258,3 +258,22 @@
 .general-components > div { text-align:left; }
 .general-components output { text-align:right; }
 .general-identity { padding-bottom:.62rem; }
+
+.general-parent-portraits {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-end: 1rem;
+  display: flex;
+  gap: .35rem;
+}
+.general-parent-portraits img {
+  width: clamp(32px, 8vw, 56px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid #d7b77b;
+  border-radius: 50%;
+}
+.general-components input[type="number"] {
+  width: 4rem;
+  min-width: 0;
+}

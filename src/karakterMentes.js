@@ -74,6 +74,8 @@ function validCharacter(character, allowedRaces) {
     religion: isText, gender: isText, parent1: isText, parent2: isText,
     jp: isNumber, currentFp: isNumber, maxFp: isNumber, stats: (stats) =>
       (stats.length === 4 || stats.length === 5) && arrayOf(isNumber)(stats),
+    overrideLog: arrayOf(entry => isRecord(entry) && isText(entry.field) && isText(entry.reason) &&
+      isText(entry.recordedAt) && optional(entry.before, scalar) && optional(entry.after, scalar)),
     componentOverrides: arrayOf(entry => entry == null || hasFields(entry, { "-1": isNumber, "1": isNumber })),
     adjustments: arrayOf(isNumber), advantages: stringList, disadvantages: stringList,
     talentSkills: stringList, racialAbilities: stringList,

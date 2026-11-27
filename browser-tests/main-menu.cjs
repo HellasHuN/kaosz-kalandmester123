@@ -20,7 +20,8 @@ async function verify(page, width, height) {
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek")));
   async function returnHome() {
     await button("Beállítások").click();
-    await button("Főmenü").click();
+    const exit = button("Vissza a főmenübe");
+    await exit.or(button("Főmenü")).click();
   }
   await page.goto(url);
   await page.getByText("Nincs mentett karakter.").waitFor();
@@ -74,7 +75,7 @@ async function verify(page, width, height) {
   await registry.getByRole("button", { name: /Szentmihályi/ }).click();
   await button("Kódex").click();
   await page.getByRole("heading", { name: "Mágia és varázslatok" }).waitFor();
-  assert.equal(await button("Főmenü").count(), 1);
+  assert.equal(await button("Főmenü").count(), 0);
   await returnHome();
   await page.evaluate(() => {
     localStorage.setItem("kaosz-teszt-kaland", JSON.stringify({ notes: "", messages: [

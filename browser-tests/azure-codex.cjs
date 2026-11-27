@@ -15,6 +15,11 @@ async function verify(page, width) {
   page.on("dialog", dialog => dialog.accept());
   const button = (name, scope = page) => scope.getByRole("button", { name, exact: true });
   const codex = page.locator(".azure-codex");
+  const history = page.getByRole("region", { name: "Összes mágiaelőzmény" });
+  const openHistory = async () => {
+    const toggle = page.getByRole("button", { name: /^Mágiaelőzmények/ });
+    if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+  };
   const dialog = page.getByRole("dialog");
   const magic = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic);
   const waitEp = amount => page.waitForFunction(ep => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic.activeEp === ep, amount);
@@ -94,21 +99,21 @@ async function verify(page, width) {
   await page.reload();
   await button("Betöltés").click();
   await openCodex();
-  await button("Varázskönyv", codex).click();
-  assert.equal(await codex.getByText("KM elbírálására vár", { exact: true }).count(), 2);
-  assert.equal(await codex.getByRole("form").count(), 0);
+  await openHistory();
+  assert.equal(await history.getByText("KM elbírálására vár", { exact: true }).count(), 2);
+  assert.equal(await history.getByRole("form").count(), 0);
   await button("Beállítások").click();
   await button("Vissza a főmenübe").click();
   const enterKm = async () => {
     await button("Kalandmester").click();
     await button("Karakterlap megnyitása").click();
     await openCodex();
-    await button("Varázskönyv", codex).click();
+    await openHistory();
     await button("Szerkesztés").click();
   };
   await enterKm();
   for (const [roll, loss] of [[98, 4], [100, 0]]) {
-    const form = codex.getByRole("form", { name: `Dobás elbírálása: ${roll} / 90` });
+    const form = history.getByRole("form", { name: `Dobás elbírálása: ${roll} / 90` });
     await form.getByLabel(/Ep-veszteség/).fill(String(loss));
     await form.getByLabel(/következménye/).fill("Az eső elmaradt.");
     await button("Elbírálás rögzítése", form).click();
@@ -118,7 +123,7 @@ async function verify(page, width) {
   await waitEp(44);
   await page.reload();
   await enterKm();
-  assert.equal(await codex.getByRole("form").count(), 0);
+  assert.equal(await history.getByRole("form").count(), 0);
   const log = (await magic()).castingLog;
   assert.equal(log.length, 3);
   assert.deepEqual(log.slice(0, 2).map(record => [record.status, record.consequence, record.previousEp - record.remainingEp]),

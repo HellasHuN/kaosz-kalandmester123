@@ -14,7 +14,7 @@ async function verify(page, width) {
   page.on("pageerror", error => errors.push(error.message));
   let accept = true;
   page.on("dialog", async dialog => {
-    await (accept ? dialog.accept() : dialog.dismiss());
+    await (accept && dialog.type() !== "prompt" ? dialog.accept() : dialog.dismiss());
     accept = true;
   });
   const button = name => page.getByRole("button", { name, exact: true });
@@ -30,19 +30,19 @@ async function verify(page, width) {
   const assertPortrait = async file => {
     const image = await header.evaluate(el => el.style.getPropertyValue("--ancestry-portrait"));
     assert.ok(image.includes(file), image);
-    assert.ok((await page.request.get(image.match(/url\("([^"]+)"\)/)[1])).ok());
+    assert.ok((await page.request.get(new URL(image.match(/url\("([^"]+)"\)/)[1], page.url()).href)).ok());
   };
   const fit = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   async function backFromSheet() {
     await button("Beállítások").click();
-    await button("Főmenü").click();
+    await button("Vissza a főmenübe").click();
   }
   await page.goto(process.env.PREVIEW_URL || "http://localhost:4173/");
   await page.evaluate(record => localStorage.setItem("kaosz-karakterek", JSON.stringify([record])), saved);
   await page.reload();
   await button("Betöltés").click();
   await body.waitFor();
-  await assertPortrait("human-male.webp");
+  await assertPortrait("race-03.webp");
   const engravedAssets = [
     [header, "backgroundImage", "human-hero"],
     [header.locator("h2"), "backgroundImage", "title-engraving"],
@@ -65,7 +65,7 @@ async function verify(page, width) {
     ["Fizikum","Erő","Szívósság","Rátermettség","Ügyesség","Reflex","Tudat","Intelligencia","Lelkierő",
       "Esszencia","Varázserő","Esszenciapajzs","Érzékelés","Érzékszerv","Intuíció"]);
   assert.ok(await button("Életerő növelése").isDisabled());
-  assert.equal(await button("Főmenü").count(), 1);
+  assert.equal(await button("Főmenü").count(), 0);
   assert.match(await body.innerText(), /20 \/ 55/);
   await fit();
   await photo("jatekos");
@@ -112,7 +112,7 @@ async function verify(page, width) {
   const race = body.getByRole("combobox", { name: /^Faj/ });
   await race.selectOption("Ember");
   await body.getByLabel("Nem", { exact: true }).selectOption("Nő");
-  await assertPortrait("human-female.webp");
+  await assertPortrait("race-04.webp");
   const startingHealth = Number(await fp.innerText());
   await button("Életerő csökkentése").click();
   assert.equal(Number(await fp.innerText()), startingHealth - 1);
@@ -133,12 +133,12 @@ async function verify(page, width) {
   await photo("alkotas");
   await race.selectOption("Elf");
   await body.getByLabel(/^Alfaj/).selectOption("Erdei elf");
-  await assertPortrait("forest-elf-female.webp");
+  await assertPortrait("variant-02.webp");
   await photo("erdei-elf");
   await race.selectOption("Gilf");
   assert.equal(await body.getByLabel("Nem", { exact: true }).locator("option[value='Férfi']").count(), 0);
   assert.equal(await body.getByLabel("Nem", { exact: true }).getByText("Férfi", { exact: true }).count(), 0);
-  await assertPortrait("gilf-female.webp");
+  await assertPortrait("race-06.webp");
   await photo("gilf");
   assert.equal(await button("Kódex").count(), 0);
   accept = false;

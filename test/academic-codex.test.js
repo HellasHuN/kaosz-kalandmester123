@@ -15,7 +15,9 @@ test("codex alone controls automatic eligibility and benefits", () => {
   assert.ok(new Set(skarlat.map(spell => spell.type)).size > 1);
   for (const spell of skarlat) assert.deepEqual(academicAccess(magic, spell), { allowed: true, bonus: 20, componentFree: true });
   assert.deepEqual(academicAccess(magic, azure), { allowed: false, bonus: 0, componentFree: false });
-  assert.deepEqual(academicAccess(magic, independent), { allowed: true, bonus: 0, componentFree: false });
+  for (const spell of spells.filter(entry => entry.codex === independent.codex)) {
+    assert.deepEqual(academicAccess(magic, spell), { allowed: true, bonus: 0, componentFree: false });
+  }
 });
 
 test("the general theory catalog has one entry and legacy ranks are combined by maximum", () => {
@@ -33,6 +35,10 @@ test("individual grants override only codex eligibility and preserve previously 
   assert.equal(spellAccess(character, granted, spell, "academic").recorded, true);
   assert.equal(spellAccess(character, granted, spell, "academic").allowed, true);
   assert.equal(academicMagicTrial(character, granted, spell, 1).target, 96);
+  const untrained = { ...character, skills: { [generalTheory]: 5 } };
+  const grantedBeforeTraining = setAcademicGrant(untrained, initial, spell, true);
+  assert.equal(spellAccess(untrained, grantedBeforeTraining, spell, "academic").recorded, true);
+  assert.equal(spellReadiness(untrained, grantedBeforeTraining, spell, "academic", { conditionsConfirmed: true }).state, "denied");
   const boosted = { ...granted, academicExceptions: {
     [spell.id]: { ...granted.academicExceptions[spell.id], bonus: true },
   } };

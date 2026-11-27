@@ -83,6 +83,22 @@ async function verify(page, width) {
   assert.equal(updated.skills["Fegyverforgatás – Egyenes kard"], 1);
   assert.equal(updated.skillTraining?.Birkózás, undefined);
   assert.equal(updated.jp, 1600);
+  await button("Szerkesztés").click();
+  const newSkill = sheet.getByRole("searchbox", { name: "Új jártasság keresése" });
+  await newSkill.fill("Orvoslás");
+  await button("Orvoslás").click();
+  const immediate = form.getByRole("button", { name: "KM jóváhagyása (TESZT)", exact: true });
+  assert.equal(await immediate.isDisabled(), true);
+  await form.getByRole("button", { name: "Mégse", exact: true }).click();
+  await newSkill.fill("Úszás");
+  await button("Úszás").click();
+  await immediate.click();
+  await button("Véglegesítés").click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].skills.Úszás === 1);
+  const approved = await read();
+  assert.equal(approved.skillApprovals.Úszás.source, "test");
+  assert.equal(approved.skillTraining?.Úszás, undefined);
+  assert.ok(approved.jp < updated.jp);
   assert.deepEqual(errors, []);
 }
 

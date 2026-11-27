@@ -110,6 +110,10 @@ test("Audit: deny unavailable formulas and preserve human-approved Fp costs", ()
       const operation = { id: "fp-" + spell.id, roll: 1, recordedAt: date };
       assert.equal(logAcademicCasting(character, magic, spell, ctx, operation), magic, spell.id + " bypassed Fp");
       assert.notEqual(logAcademicCasting(character, magic, spell, ctx, { ...operation, fpConfirmed: true }), magic);
+      const manual = logAcademicCasting(character, magic, spell, ctx,
+        { id: "manual-" + spell.id, method: "manual", recordedAt: date });
+      assert.equal(manual.castingLog.at(-1).method, "manual");
+      assert.equal(manual.activeEp, magic.activeEp - spell.ep.amount);
       fpChecks++;
     }
   }

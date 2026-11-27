@@ -166,6 +166,7 @@
 }
 .global-navigation > button { min-width: 44px; padding: .18rem .4rem; }
 .global-navigation [aria-current] {
+  grid-column: 2;
   min-width: 0;
   color: var(--gold);
   text-align: center;

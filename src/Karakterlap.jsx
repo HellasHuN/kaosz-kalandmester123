@@ -5,8 +5,8 @@ import Magia from "./Magia";
 import GeneralPage, { CharacterWorkspace, GeneralEditActions } from "./page1/GeneralPage.jsx";
 
 function Karakterlap({
-  character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
-  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmLeaving, confirmTabSwitch, onPageChange, viewMemory,
+  character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onMagicCast, onStartCharacterEdit,
+  onFinalizeCharacterEdit, onCancelCharacterEdit, characterEditor, onChangeHealth, confirmTabSwitch, onPageChange, viewMemory,
 }) {
   const [activePage, setActivePage] = React.useState(initialPage);
   const [editing, setEditing] = React.useState(initialEditing);
@@ -58,9 +58,9 @@ function Karakterlap({
     header={header} links={links} actions={actions} />;
 
   const [subtitle, className, content] = {
-    2: ["Jártasságok", "skills-sheet", <Jartassagok viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveSkills} />],
-    3: ["Felszerelés", "equipment-sheet", <Felszereles viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveEquipment} />],
-    4: ["Mágia", "magic-sheet", <Magia ref={editor} character={character} onSave={onSaveMagic} />],
+    2: ["Jártasságok", "skills-sheet", <Jartassagok kmMode={mode === "gm"} viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveSkills} />],
+    3: ["Felszerelés", "equipment-sheet", <Felszereles kmMode={mode === "gm"} viewMemory={viewMemory} ref={editor} character={character} onSave={onSaveEquipment} />],
+    4: ["Mágia", "magic-sheet", <Magia ref={editor} character={character} onSave={onSaveMagic} kmMode={mode === "gm"} onCast={character.playStatus === "playing" ? onMagicCast : undefined} />],
   }[activePage];
   return <CharacterWorkspace character={character} subtitle={subtitle} mode={mode}
     className={className} header={header} links={links} actions={actions}>

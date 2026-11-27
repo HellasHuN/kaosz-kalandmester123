@@ -14,6 +14,11 @@ async function verify(page, width) {
   page.on("dialog", dialog => dialog.accept());
   const button = name => page.getByRole("button", { name, exact: true });
   const codex = page.locator(".codex-neutral");
+  const history = page.getByRole("region", { name: "Összes mágiaelőzmény" });
+  const openHistory = async () => {
+    const toggle = page.getByRole("button", { name: /^Mágiaelőzmények/ });
+    if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+  };
   const cast = page.getByRole("dialog");
   const search = codex.getByRole("searchbox");
   const magic = () => page.evaluate(() => JSON.parse(localStorage.getItem("kaosz-karakterek"))[0].magic);
@@ -84,14 +89,14 @@ async function verify(page, width) {
   const openBook = async () => {
     await button("Mágia").click();
     await button("Kódexfüggetlen").click();
-    await codex.getByRole("button", { name: "Varázskönyv", exact: true }).click();
+    await openHistory();
   };
   await page.reload();
   await button("Betöltés").click();
   await openBook();
-  assert.equal(await codex.getByText("KM elbírálására vár", { exact: true }).count(), 2);
+  assert.equal(await history.getByText("KM elbírálására vár", { exact: true }).count(), 2);
   await button("Szerkesztés").click();
-  assert.equal(await codex.getByRole("button", { name: "Elbírálás rögzítése" }).count(), 0);
+  assert.equal(await history.getByRole("button", { name: "Elbírálás rögzítése" }).count(), 0);
   await button("Mégse").click();
   await button("Beállítások").click();
   await button("Vissza a főmenübe").click();
@@ -102,14 +107,14 @@ async function verify(page, width) {
     await button("Szerkesztés").click();
   };
   await openKm();
-  const normalFailure = codex.getByRole("form", { name: "Dobás elbírálása: 60 / 25" });
+  const normalFailure = history.getByRole("form", { name: "Dobás elbírálása: 60 / 25" });
   await normalFailure.getByLabel(/Ep-veszteség/).fill("23");
   await normalFailure.getByLabel(/következménye/).fill("A fény kialudt.");
   await normalFailure.getByRole("button").click();
   await normalFailure.getByRole("alert").waitFor();
   assert.equal((await magic()).activeEp, 22);
   await normalFailure.getByLabel(/Ep-veszteség/).fill("4");
-  await photo(codex, "km-elbiralas");
+  await photo(history, "km-elbiralas");
   await normalFailure.getByRole("button").click();
   await normalFailure.waitFor({ state: "detached" });
   await button("Mégse").click();
@@ -118,7 +123,7 @@ async function verify(page, width) {
   await normalFailure.getByLabel(/Ep-veszteség/).fill("4");
   await normalFailure.getByLabel(/következménye/).fill("A fény kialudt.");
   await normalFailure.getByRole("button").click();
-  const criticalFailure = codex.getByRole("form", { name: "Dobás elbírálása: 100 / 25" });
+  const criticalFailure = history.getByRole("form", { name: "Dobás elbírálása: 100 / 25" });
   await criticalFailure.getByLabel(/Ep-veszteség/).fill("0");
   await criticalFailure.getByLabel(/következménye/).fill("A felvillanás elárulta a helyzetét.");
   await criticalFailure.getByRole("button").click();
@@ -132,8 +137,8 @@ async function verify(page, width) {
     originalAttempts.map(record => [record.id, record.recordedAt, record.roll, record.target]));
   assert.equal(await normalFailure.count(), 0);
   assert.equal(await criticalFailure.count(), 0);
-  await codex.getByText("A fény kialudt.").waitFor();
-  await photo(codex, "km-elbiralva");
+  await history.getByText("A fény kialudt.").waitFor();
+  await photo(history, "km-elbiralva");
   await openSpell("Varázshéj");
   await button("Formula megadása (KM)").click();
   await button("Véglegesítés").click();

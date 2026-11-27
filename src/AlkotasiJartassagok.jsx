@@ -16,6 +16,7 @@ import { artSkillName, genericSpecializations, hasWeaponFoundation, racialWeapon
 import "./Jartassagok.css";
 
 export default function AlkotasiJartassagok({ character, budget, costs, grants, racialGrants, trainingGrants, original, onChange, onClarify, onPackageChange, onAcademicCodex, viewMemory }) {
+  const [pendingCodex, setPendingCodex] = useState(null);
   const [query, updateQuery] = useState(viewMemory?.creationSkillsQuery ?? "");
   const setQuery = rememberViewValue(viewMemory, "creationSkillsQuery", updateQuery);
   const [message, setMessage] = useState("");
@@ -114,8 +115,12 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                   <th scope="row" role="rowheader">{name}{scope && <small> ({scope})</small>}
                     {relatedAttribute(name) && <small>{relatedAttribute(name)}</small>}
                     {legacyTheoryNames.has(name) && <small>Korábbi Mágiaelmélet-rekord</small>}
-                    {name === academicUse && <AkademikusKodexValaszto specialization={character.magic?.academicSpecialization}
-                      onChange={onAcademicCodex} />}
+                    {name === academicUse && <AkademikusKodexValaszto specialization={pendingCodex === null ? character.magic?.academicSpecialization : { codex: pendingCodex }}
+                      onChange={codex => setPendingCodex(codex || "")} />}
+                    {name === academicUse && pendingCodex !== null && <button type="button" onClick={() => {
+                      onAcademicCodex(pendingCodex);
+                      setPendingCodex(null);
+                    }}>KM jóváhagyása (TESZT)</button>}
                     {racialGrants[name] && <small>Faji jártasság · {racialGrants[name]}. szint</small>}
                     {trainingGrants[name] && <small>Képzési csomag · {trainingGrants[name]}. szint</small>}
                     {character.skillTraining?.[name] && <small>Folyamatban</small>}

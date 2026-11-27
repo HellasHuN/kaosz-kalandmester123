@@ -1,3 +1,4 @@
+import { approveCharacterOverrides } from "./characterOverrides.js";
 import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { ArmorDiagram } from "./ArmorDiagram.jsx";
@@ -7,7 +8,7 @@ import { felszereles, felszerelesTipusok } from "./felszerelesAdatok.js";
 import { catalog, labels, formatStat, readEquipment, variableStats, statOptions, equipmentDetails,
   validQuantity, validEquipmentStat } from "./felszerelesSzerkesztes.js";
 
-export default function Felszereles({ character, onSave, ref, viewMemory }) {
+export default function Felszereles({ character, onSave, ref, viewMemory, kmMode = false }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
   const [inventoryQuery, updateInventoryQuery] = useState(viewMemory?.inventoryQuery ?? "");
@@ -68,6 +69,7 @@ export default function Felszereles({ character, onSave, ref, viewMemory }) {
       return true;
     }
     const items = [];
+    const changes = [];
     for (const entry of draft.items) {
       const quantity = Number(entry.quantity);
       if (!validQuantity(quantity)) {
@@ -79,15 +81,25 @@ export default function Felszereles({ character, onSave, ref, viewMemory }) {
       for (const [key, [min, max]] of variableStats(catalog.get(entry.catalogId))) {
         const raw = values[key];
         const value = Number(raw);
-        if (!validEquipmentStat(key, raw, min, max)) {
+        const existing = saved.items.find(item => item.id === entry.id)?.values[key];
+        const isModifier = key === "speedModifier" || key === "meleeSpeedModifier";
+        const validNumber = validEquipmentStat(key, raw, isModifier ? -Infinity : 0, Infinity);
+        const withinRules = validEquipmentStat(key, raw, min, max);
+        const preserved = character.gmOverrides && raw !== "" && raw != null && Number.isFinite(value) && value === Number(existing);
+        if (!preserved && (!validNumber || (!withinRules && !kmMode))) {
           window.alert("Add meg a tárgy minden pontosítandó értékét a megengedett tartományból.");
           return false;
         }
+        if (!withinRules && !preserved) changes.push({
+          field: `${catalog.get(entry.catalogId).name} · ${labels[key] ?? key}`, before: existing ?? null, after: value,
+        });
         values[key] = value;
       }
       items.push({ ...entry, quantity, values });
     }
-    onSave(character, { ...draft, items });
+    const approved = approveCharacterOverrides(character, changes);
+    if (!approved) return false;
+    onSave(character, { ...draft, items }, approved);
     closeEditor();
     return true;
   }
@@ -145,7 +157,11 @@ export default function Felszereles({ character, onSave, ref, viewMemory }) {
                       {editing && variableStats(item).map(([key, [min, max]], index) => (
                         <label className="equipment-stat" key={key}>
                           {labels[key]} ({formatStat(min)}–{formatStat(max)})
-                          <select
+                          {kmMode ? <input type="number" step={key === "massKg" ? "any" : "1"} ref={entry.id === newEntryId && index === 0 ? newStatInput : undefined} value={entry.values[key] ?? ""}
+                            onChange={event => {
+                              const value = event.target.value;
+                              updateItem(entry.id, current => ({ ...current, values: { ...current.values, [key]: value } }));
+                            }} /> : <select
                             ref={entry.id === newEntryId && index === 0 ? newStatInput : undefined}
                             required
                             value={entry.values[key] ?? ""}
@@ -161,7 +177,7 @@ export default function Felszereles({ character, onSave, ref, viewMemory }) {
                               ? saved.items.find((item) => item.id === entry.id)?.values[key]
                               : undefined)
                               .map((value) => <option key={value} value={value}>{formatStat(value)}</option>)}
-                          </select>
+                          </select>}
                         </label>
                       ))}
                     </td>

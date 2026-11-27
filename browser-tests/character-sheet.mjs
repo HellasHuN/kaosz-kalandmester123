@@ -4,8 +4,8 @@ import { chromium } from "playwright-core";
 
 const base = process.env.KAOSZ_URL ?? "http://127.0.0.1:5173";
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--no-sandbox"] });
-const output = new URL("./screenshots/", import.meta.url);
-await mkdir(output, { recursive: true });
+const output = process.env.SCREENSHOT_DIR;
+if (output) await mkdir(output, { recursive: true });
 
 try {
   for (const [width, height] of [[390, 844], [1440, 900]]) {
@@ -19,13 +19,13 @@ try {
     const nav = () => page.getByRole("navigation", { name: "Karakterlap oldalai" });
     const portrait = () => page.locator(".general-hero-portrait").evaluate(node =>
       getComputedStyle(node).getPropertyValue("--ancestry-portrait"));
-    page.on("dialog", dialog => dialog.accept());
+    page.on("dialog", dialog => dialog.type() === "prompt" ? dialog.accept("Integrációs böngészőpróba") : dialog.accept());
     await page.goto(base);
-    await click("Új karakter létrehozása");
+    await click("Karakteralkotás");
     const race = page.locator("select").first();
     const gender = page.getByLabel("Nem", { exact: true });
     const name = page.getByLabel("Karakter neve");
-    const age = page.getByRole("spinbutton", { name: "Életkor", exact: true });
+    const age = page.getByRole("combobox", { name: "Életkor", exact: true });
     await race.selectOption("Elf");
     await page.getByLabel("Alfaj").selectOption("Erdei elf");
     await gender.selectOption("Nő");
@@ -39,15 +39,15 @@ try {
     assert.equal(await page.locator(".general-parent-portraits img").count(), 2);
     await race.selectOption("Ember");
     await gender.selectOption("Nő");
-    await age.fill("27");
+    await age.selectOption("27");
     await name.fill("Aranyhíd");
     assert.match(await portrait(), /race-04.webp/);
-    await page.screenshot({ path: new URL(`creation-${width}x${height}.png`, output).pathname });
+    if (output) await page.screenshot({ path: output + "/" + `creation-${width}x${height}.png` });
     await click("KARAKTER MENTÉSE");
     assert.equal(Number((await saved()).age), 27);
     assert.equal((await saved()).stats.reduce((a, b) => a + b, 0), 270);
 
-    await click("Vissza a főmenübe");
+    await click("Főmenü");
     await click("Karakterbetöltés");
     await click("Játékba helyezés");
     await click("Karakterlap megnyitása");
@@ -55,8 +55,9 @@ try {
     await click("Jártasságok", nav());
     await click("Felszerelés", nav());
     await click("Mágia", nav());
-    await page.getByRole("heading", { name: "Varázslókönyv" }).waitFor();
-    await click("Karakter", nav());
+    await page.getByRole("heading", { name: "Mágia és varázslatok" }).waitFor();
+    await click("Általános", nav());
+    await click("Beállítások");
     await click("Vissza a főmenübe");
 
     // The fixture adds acquired magic so both casting paths can run independently of creation Jp.
@@ -74,7 +75,7 @@ try {
     await click("Szerkesztés");
     await click("Fizikum növelése");
     await page.getByRole("spinbutton", { name: "Intuíció", exact: true }).fill("101");
-    await age.fill("180");
+    await page.getByRole("spinbutton", { name: "Életkor", exact: true }).fill("180");
     await page.getByLabel("Elkölthető Jp").fill("6000");
     await page.getByLabel("Aktuális aktív Ep", { exact: true }).fill("130");
     await click("Véglegesítés");
@@ -97,7 +98,7 @@ try {
     assert.equal((await saved()).magic.activeEp, 121);
     assert.equal((await saved()).magic.castingLog.length, 1);
     assert.equal(await button("Elvarázsolás").isEnabled(), false);
-    await page.screenshot({ path: new URL(`manual-cast-${width}x${height}.png`, output).pathname });
+    if (output) await page.screenshot({ path: output + "/" + `manual-cast-${width}x${height}.png` });
     await click("Új próba");
     await page.getByLabel("Varázslás módja").selectOption("digital");
     await page.evaluate(() => { Math.random = () => 0.999; });

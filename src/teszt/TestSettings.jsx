@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ApplicationHeading } from "./ApplicationChrome.jsx";
 
-export default function TestSettings({ mode, onMode, onExport, onImport, onReturnToCharacter, onReturnHome }) {
+export default function TestSettings({ mode, onMode, onExport, onImport, onReturnHome }) {
   const fileInput = useRef(null);
   const [message, setMessage] = useState("");
 
@@ -24,7 +24,6 @@ export default function TestSettings({ mode, onMode, onExport, onImport, onRetur
     <ApplicationHeading>Beállítások</ApplicationHeading>
     <p>A tesztadatok ebben a böngészőben maradnak. Más eszközökön külön mentés szükséges.</p>
     <div className="test-actions">
-      {onReturnToCharacter && <button type="button" onClick={onReturnToCharacter}>Vissza</button>}
       {onReturnHome && <button type="button" onClick={onReturnHome}>Vissza a főmenübe</button>}
       {mode && <button type="button" onClick={() => onMode(mode === "km" ? "player" : "km")}>
         Váltás {mode === "km" ? "játékos" : "kalandmester"} módra

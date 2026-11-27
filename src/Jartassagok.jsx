@@ -1,3 +1,4 @@
+import { approveCharacterOverrides } from "./characterOverrides.js";
 import { rememberViewValue } from "./teszt/useApplicationNavigation.js";
 import { legacyTheoryNames } from "./teszt/academic.js";
 import { devotionError, devotionSkill } from "./elhivatottsag.js";
@@ -18,7 +19,7 @@ const ordinarySkills = Object.keys(jpKoltsegek).filter((name) => !legacyTheoryNa
 const icons = { Fizikum: 0, Rátermettség: 1, Ügyesség: 3, Reflex: 4, Tudat: 9, Intelligencia: 8, Lelkierő: 14, Esszencia: 11, Varázserő: 11 };
 const blank = { level: 0, prices: [], note: "", estimated: false, training: null };
 
-export default function Jartassagok({ character, onSave, ref, viewMemory }) {
+export default function Jartassagok({ character, onSave, ref, viewMemory, kmMode = false }) {
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState("");
   const [listQuery, updateListQuery] = useState(viewMemory?.skillQuery ?? "");
@@ -51,15 +52,15 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
     rows[candidate]?.foundation) : [];
   const search = query.trim().toLocaleLowerCase("hu");
   const choices = [...ordinarySkills, ...specializationNames].filter((name) =>
-    !rows[name]?.level && !rows[name]?.training && trainingQuote(skillCharacter, name, 0) &&
-    hasWeaponFoundation(skillCharacter, specialization(name)) &&
+    !rows[name]?.level && !rows[name]?.training && (kmMode || (trainingQuote(skillCharacter, name, 0) &&
+    hasWeaponFoundation(skillCharacter, specialization(name)))) &&
     !(rows.Művészet?.level && name === artSkillName(character.racialSpecializations?.artGenre) &&
       character.race === "Elf" && character.subrace === "Erdei elf") &&
     search && name.toLocaleLowerCase("hu").includes(search));
 
   const listSearch = listQuery.trim().toLocaleLowerCase("hu");
   const visibleRows = Object.entries(rows).filter(([name, row]) =>
-    (row.level || row.training || row.note) &&
+    (row.level || row.training || row.note || (editing && kmMode)) &&
     name.toLocaleLowerCase("hu").includes(listSearch) &&
     (status === "all" || (status === "training" ? row.training : row.level)));
   const showRacial = racialWeapon && status !== "training" &&
@@ -115,11 +116,21 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
     if (!training || rows[name]?.training !== training) return;
     const error = skillPrerequisiteMessage(acquired, name, training.level, skillCharacter);
     if (error) { window.alert(error); return; }
-    const mentor = training?.method == null || training.method === "mentor";
+    const mentor = training.method == null || training.method === "mentor";
     if (!window.confirm(mentor
-      ? "Kalandmesteri jóváhagyás. Teljesültek a tanulás előfeltételei, és sikeres volt az Oktatás próba?"
-      : "Kalandmesteri jóváhagyás. Az alapkönyv szerinti gyakorlás és minden előfeltétel teljesült?")) return;
-    update(name, (row) => completeTraining(row, name));
+      ? "Kalandmesteri jóváhagyás. Teljesültek az előfeltételek, és sikeres volt az Oktatás próba?"
+      : "Kalandmesteri jóváhagyás. Teljesült a gyakorlás és minden előfeltétel?")) return;
+    update(name, row => ({ ...completeTraining(row, name), approval: { source: "test", level: training.level } }));
+  }
+
+  function approveImmediate() {
+    if (!quote || prerequisite || quote.cost > remaining || rows[candidate]?.training) return;
+    const training = { level: quote.level, cost: quote.cost, method, from: quote.from, relearn: quote.relearn,
+      ...(method === "mentor" && { mentor: quote.mentorLevel }) };
+    update(candidate, row => ({ ...completeTraining({ ...row, training }, candidate),
+      approval: { source: "test", level: quote.level } }));
+    setCandidate("");
+    setQuery("");
   }
 
   function withdrawTraining(name) {
@@ -132,7 +143,7 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
   }
 
   function save() {
-    if (remaining < 0 && changed) {
+    if (!kmMode && remaining < 0 && remaining < (character.jp ?? 0) && changed) {
       window.alert("A módosításokhoz nincs elég Jp.");
       return false;
     }
@@ -144,7 +155,7 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
       const [levels, paid, byLevel, estimated, training, notes, foundations, sunk] = serializeSkills(rows);
       const nextMaximum = maxHealth({ ...original, skills: levels,
         skillEffectBaseline: original.skillEffectBaseline ?? original.skills ?? {} });
-      if (nextMaximum < maxHealth(character) && character.currentFp > nextMaximum) {
+      if (!kmMode && nextMaximum < maxHealth(character) && character.currentFp > nextMaximum) {
         window.alert("Előbb csökkentsd az aktuális életerőt az új maximumra.");
         return false;
       }
@@ -154,8 +165,17 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
           record.relearn && original.skillFoundations?.[name] === "practice" && levels[name] &&
             !foundations[name] && !training[name]
             ? skillPrerequisiteMessage(levels, name, record.level, skillCharacter) : "").find(Boolean);
-      if (invalid) { window.alert(invalid); return false; }
-      onSave(character, levels, remaining, paid, byLevel, estimated, training, notes, foundations, sunk, original);
+      if (!kmMode && invalid) { window.alert(invalid); return false; }
+      const approvals = Object.fromEntries(Object.entries(rows).filter(([, row]) => row.approval).map(([name, row]) => [name, row.approval]));
+      const changes = kmMode ? Object.keys({ ...original.skills, ...levels }).flatMap(name => {
+        const before = original.skills?.[name] ?? 0;
+        const after = levels[name] ?? 0;
+        return before === after ? [] : [{ field: name, before, after }];
+      }) : [];
+      const approved = approveCharacterOverrides(original, changes);
+      if (!approved) return false;
+      onSave(character, levels, kmMode ? character.jp : remaining, paid, byLevel, estimated, training, notes, foundations, sunk,
+        Object.keys(approvals).length ? { ...approved, skillApprovals: { ...original.skillApprovals, ...approvals } } : approved);
     }
     cancel();
     return true;
@@ -232,7 +252,11 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
                 </th>
                 <td role="cell" data-label="Főérték">{attribute ?? "—"}</td>
                 <td role="cell" className="skill-reference-centered" data-label="Aktuális szint">
-                  {editing && name !== devotionSkill && !legacyTheoryNames.has(name) && !unknownWeaponBranches && !row.training && row.level > minimum ? (
+                  {editing && kmMode ? <input type="number" min="0" step="1" aria-label={`${name} szintje`} value={row.level}
+                    onChange={event => {
+                      const level = Number(event.target.value);
+                      if (Number.isSafeInteger(level) && level >= 0) update(name, previous => ({ ...previous, level, training: null }));
+                    }} /> : editing && name !== devotionSkill && !legacyTheoryNames.has(name) && !unknownWeaponBranches && !row.training && row.level > minimum && row.level <= 10 ? (
                     <select aria-label={`${name} szintcsökkentése`} value={row.level} onChange={(event) => {
                       const level = Number(event.target.value);
                       update(name, (previous) => ({ ...previous, level, prices: previous.prices.slice(0, level) }));
@@ -304,12 +328,12 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
       {!editing && Object.keys(rows).length > 0 &&
         <p>A következő szintnél a mentoros ár látható. A képzést a Szerkesztés módban indíthatod.</p>}
       {editing && <>
-        <ElhivatottsagValaszto level={rows[devotionSkill]?.level ?? 0} maximum={10}
+        {!kmMode && <ElhivatottsagValaszto level={rows[devotionSkill]?.level ?? 0} maximum={10}
           onChange={(level, approved) => {
             const error = devotionError(original, level, approved);
             if (error) { window.alert(error); return; }
             update(devotionSkill, (row) => changeDevotionInPlay(original, row, level, approved));
-          }} />
+          }} />}
         {quote && <form className="skill-reference-training" ref={trainingForm} tabIndex={-1} aria-label="Jártasság fejlesztése" key={candidate} onSubmit={startTraining}>
           <strong>{candidate} · {quote.level}. szint · {quote.cost} Jp</strong>
           {prerequisite && <p role="status">{prerequisite}</p>}
@@ -333,12 +357,13 @@ export default function Jartassagok({ character, onSave, ref, viewMemory }) {
               : "A Kalandmester a jártasság tanulási kódját, az előfeltételeket és a gyakorlás lehetőségét ellenőrizte."}
           </label>
           <button type="submit" disabled={!!prerequisite || quote.cost > remaining}>Fejlesztés indítása</button>
+          <button type="button" disabled={!!prerequisite || quote.cost > remaining} onClick={approveImmediate}>KM jóváhagyása (TESZT)</button>
           <button type="button" onClick={() => setCandidate("")}>Mégse</button>
         </form>}
         <label htmlFor="skill-search">Új jártasság keresése</label>
         <input id="skill-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
         {choices.length > 0 && <ul className="skills-results">
-          {choices.map((name) => <li key={name}><button type="button" onClick={() => chooseTraining(name)}>{name}</button></li>)}
+          {choices.map((name) => <li key={name}><button type="button" onClick={() => kmMode ? update(name, row => ({ ...row, level: 1 })) : chooseTraining(name)}>{name}</button></li>)}
         </ul>}
       </>}
     </section>

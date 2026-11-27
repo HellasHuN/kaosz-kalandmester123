@@ -14,11 +14,7 @@ const fixture = {
 };
 
 async function verify(page, width) {
-  let accept = true;
-  page.on('dialog', async (dialog) => {
-    await (accept ? dialog.accept() : dialog.dismiss());
-    accept = true;
-  });
+  page.on('dialog', dialog => dialog.accept());
   const button = name => page.getByRole('button', { name, exact: true });
   const magic = page.locator('.magic-panel');
   const header = magic.locator('.grimoire-banner');
@@ -35,7 +31,7 @@ async function verify(page, width) {
     const background = await header.evaluate(element => getComputedStyle(element).backgroundImage);
     assert.ok(background.includes(file));
     const asset = background.match(/url\("([^"]+)"\)/)[1];
-    assert.ok((await page.request.get(asset)).ok(), 'The header artwork is served by the build');
+    assert.ok((await page.request.get(new URL(asset, page.url()).href)).ok(), 'The header artwork is served by the build');
   };
   const openDraft = async () => {
     await button('Karakterbetöltés').click();
@@ -60,10 +56,8 @@ async function verify(page, width) {
   assert.equal(await header.getAttribute('data-specialization-codex'), null);
   await photo('altalanos');
   await button('Jártasságok').click();
-  accept = false;
   await codex.selectOption('Skarlát');
-  assert.equal(await codex.inputValue(), '');
-  await codex.selectOption('Skarlát');
+  await button('KM jóváhagyása (TESZT)').click();
   await button('Mágia').click();
   await assertArt('Skarlát', 'langtenger.webp');
   await photo('skarlat');
@@ -83,11 +77,13 @@ async function verify(page, width) {
   assert.equal(await codex.inputValue(), 'Skarlát');
   await button('Mentett karakterek').click();
   await button('Játékba helyezés').click();
+  await button('Főmenü').click();
+  await button('Kalandmester').click();
   await button('Karakterlap megnyitása').click();
   await button('Mágia').click();
   await assertArt('Skarlát', 'langtenger.webp');
   await button('Szerkesztés').click();
-  await magic.getByRole('checkbox', { name: 'Kalandmesteri nézet (helyi)' }).check();
+  await magic.getByRole('checkbox', { name: 'KM-katalógus' }).check();
   await openSpell('Vízpermet');
   await magic.getByText(/kódexen kívüli formulához külön KM-engedély/).first().waitFor();
   await button('Formula megadása (KM)').click();
@@ -101,6 +97,8 @@ async function verify(page, width) {
   await magic.getByLabel(/Kézi k100/).fill('1');
   await button('Kézi dobás elbírálása').click();
   await magic.getByRole('status').filter({ hasText: /1 \/ 100/ }).waitFor();
+  await button('Új próba').click();
+  await page.evaluate(() => { Math.random = () => 0.2; });
   await button('Digitális k100').click();
   await magic.getByRole('status').filter({ hasText: /\/ 100/ }).waitFor();
   await magic.getByRole('spinbutton', { name: /^Aktuális aktív Ep/ }).fill('0');
@@ -109,13 +107,13 @@ async function verify(page, width) {
   await button('Véglegesítés').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('kaosz-karakterek'))[0].magic.academicExceptions['official:vizpermet']?.bonus === true);
   await page.reload();
-  await button('Karakterbetöltés').click();
+  await button('Kalandmester').click();
   await button('Karakterlap megnyitása').click();
   await button('Mágia').click();
   await openSpell('Vízpermet');
   await magic.getByText(/100% · Szakosodás/).waitFor();
   await button('Szerkesztés').click();
-  await magic.getByRole('checkbox', { name: 'Kalandmesteri nézet (helyi)' }).check();
+  await magic.getByRole('checkbox', { name: 'KM-katalógus' }).check();
   await openSpell('Vízpermet');
   await bonus.uncheck();
   await magic.getByText('Smaragd célszám: 96%', { exact: true }).waitFor();
@@ -126,7 +124,6 @@ async function verify(page, width) {
     .some(entry => entry.spellId === 'official:vizpermet'));
   await button('Szerkesztés').click();
   await codex.selectOption('Azúr');
-  await magic.getByRole('checkbox', { name: /jóváhagyta a szakosodás módosítását/ }).check();
   await button('Véglegesítés').click();
   await assertArt('Azúr', 'orveny.webp');
   await photo('azur');
