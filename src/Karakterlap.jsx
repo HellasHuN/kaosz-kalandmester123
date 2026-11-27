@@ -1,12 +1,8 @@
-import { Backpack, BookOpen, ScrollText, Sparkles } from "lucide-react";
-import { ancestryTheme } from "./teszt/ancestryTheme.js";
 import React from "react";
 import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
 import Magia from "./Magia";
-import GeneralPage, { GeneralEditActions, GeneralNavigation, IllustratedHeader } from "./page1/GeneralPage.jsx";
-
-const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
+import GeneralPage, { CharacterWorkspace, GeneralEditActions } from "./page1/GeneralPage.jsx";
 
 function Karakterlap({
   character, stage, initialEditing = false, initialPage = 1, mode = "player", onSettings, onChat, unread = 0, onSaveSkills, onSaveEquipment, onSaveMagic, onStartCharacterEdit,
@@ -50,58 +46,26 @@ function Karakterlap({
     setEditing(false);
   }
 
-  if (activePage !== 4) {
-    const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["magic", "Mágia", 4], ["equipment", "Felszerelés", 3]]
-      .map(([id, label, page]) => ({ id, label, current: page === activePage, onClick: () => openPage(page) }));
-    links.push({ id: "chat", label: "Chat", onClick: onChat });
-    const actions = <GeneralEditActions editing={editing} onEdit={startEditing} onSave={finalizeEditing} onCancel={cancelEditing} />;
-    if (activePage === 2) return <article className="general-sheet skills-sheet" data-mode={mode}>
-      <IllustratedHeader character={character} subtitle="Jártasságok" onCodex={() => openPage(4)}
-        onChat={onChat} onSettings={onSettings} unread={unread} />
-      {actions}
-      <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />
-      <GeneralNavigation links={links} />
-    </article>;
-    if (activePage === 3) return <article className="general-sheet equipment-sheet" data-mode={mode}>
-      <IllustratedHeader character={character} subtitle="Felszerelés" onCodex={() => openPage(4)}
-        onChat={onChat} onSettings={onSettings} unread={unread} />
-      {actions}
-      <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />
-      <GeneralNavigation links={links} />
-    </article>;
-    return <GeneralPage character={character} identity={editing ? { ...character, ...characterEditor.identity } : character}
-      stage={stage} mode={mode} edit={editing ? characterEditor : null} onChangeHealth={amount => onChangeHealth(amount, editing)}
-      header={{ onCodex: () => openPage(4), onChat, onSettings, unread }} links={links}
-      actions={actions} />;
-  }
+  const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["magic", "Mágia", 4], ["equipment", "Felszerelés", 3]]
+    .map(([id, label, page]) => ({ id, label, current: page === activePage, onClick: () => openPage(page) }));
+  links.push({ id: "chat", label: "Chat", onClick: onChat });
+  const actions = <GeneralEditActions editing={editing} onEdit={startEditing} onSave={finalizeEditing} onCancel={cancelEditing} />;
+  const header = { onCodex: () => openPage(4), onChat, onSettings, unread };
 
-  return (
-    <div className="themed-sheet"
-      style={ancestryTheme(character.race, character.subrace)}>
-    <header className="character-cover">
-      <div className="character-cover-art" aria-hidden="true" />
-      <div className="character-cover-caption"><p>{[character.race, character.subrace].filter(Boolean).join(" · ")}</p><h1>{character.name}</h1></div>
-    </header>
-    <div className="character-sheet-toolbar">
-      <nav className="karakterlap-nav" aria-label="Karakterlap oldalai">
-        {["Karakter", "Jártasságok", "Felszerelés", "Mágia"].map((label, index) => {
-          const page = index + 1;
-          const Icon = pageIcons[index];
-          return <button key={page} type="button" aria-current={activePage === page ? "page" : undefined}
-            onClick={() => openPage(page)}><Icon aria-hidden="true" size={19} />{label}</button>;
-        })}
-      </nav>
-      <div className="character-sheet-actions">
-        <button type="button" disabled={editing} onClick={startEditing}>Szerkesztés</button>
-        <button type="button" disabled={!editing} onClick={finalizeEditing}>Véglegesítés</button>
-        {editing && <button type="button" onClick={cancelEditing}>Mégse</button>}
-      </div>
-    </div>
-    {activePage === 4 && (
-      <Magia ref={editor} character={character} onSave={onSaveMagic} />
-    )}
-    </div>
-  );
+  if (activePage === 1) return <GeneralPage character={character}
+    identity={editing ? { ...character, ...characterEditor.identity } : character}
+    stage={stage} mode={mode} edit={editing ? characterEditor : null} onChangeHealth={amount => onChangeHealth(amount, editing)}
+    header={header} links={links} actions={actions} />;
+
+  const [subtitle, className, content] = {
+    2: ["Jártasságok", "skills-sheet", <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />],
+    3: ["Felszerelés", "equipment-sheet", <Felszereles ref={editor} character={character} onSave={onSaveEquipment} />],
+    4: ["Mágia", "magic-sheet", <Magia ref={editor} character={character} onSave={onSaveMagic} />],
+  }[activePage];
+  return <CharacterWorkspace character={character} subtitle={subtitle} mode={mode}
+    className={className} header={header} links={links} actions={actions}>
+    {activePage === 4 ? <div className="character-codex">{content}</div> : content}
+  </CharacterWorkspace>;
 }
 
 export default Karakterlap;

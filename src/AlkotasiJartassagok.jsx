@@ -65,8 +65,8 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
   }
 
   return (
-    <div className="skills-reference-page creation-skills">
-      <section className="skills-reference" aria-labelledby="creation-skills-title">
+    <div className="creation-skills">
+      <section className="skills-reference general-frame" aria-labelledby="creation-skills-title">
         <h2 id="creation-skills-title">Jártasságok</h2>
         <p className="creation-skill-balance" aria-live="polite">Elkölthető Jp <strong>{remaining ?? "—"}</strong></p>
         {remaining == null && <p>Add meg a karakter életkorát és a hozzá tartozó pontkeretet.</p>}
@@ -95,9 +95,9 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
         </section>}
         {message && <p role="status">{message}</p>}
         <div className="skills-reference-scroll">
-          <table>
-            <thead><tr><th>Jártasság</th><th>Szint</th><th>Kifizetett Jp</th></tr></thead>
-            <tbody>
+          <table role="table">
+            <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Jártasság</th><th scope="col" role="columnheader">Szint</th><th scope="col" role="columnheader">Kifizetett Jp</th></tr></thead>
+            <tbody role="rowgroup">
               {acquired.map(([name, level]) => {
                 const editable = creationSkillNames.includes(name) && !character.skillTraining?.[name];
                 const item = specialization(name);
@@ -108,8 +108,8 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                       racial?.weaponType !== "Közelharci fegyver" ? racial?.weaponType : item?.group;
                 const refinements = genericSpecializations.has(name) ? specializationRefinementOptions(character, name) : [];
                 return (
-                <tr key={name}>
-                  <th scope="row">{name}{scope && <small> ({scope})</small>}
+                <tr role="row" key={name}>
+                  <th scope="row" role="rowheader">{name}{scope && <small> ({scope})</small>}
                     {relatedAttribute(name) && <small>{relatedAttribute(name)}</small>}
                     {legacyTheoryNames.has(name) && <small>Korábbi Mágiaelmélet-rekord</small>}
                     {name === academicUse && <AkademikusKodexValaszto specialization={character.magic?.academicSpecialization}
@@ -123,18 +123,18 @@ export default function AlkotasiJartassagok({ character, budget, costs, grants, 
                       {refinements.map((key) => <option key={key}>{key}</option>)}
                     </select>}
                   </th>
-                  <td>{editable ? <><select aria-label={`${name} szintje`} value={level}
+                  <td role="cell" data-label="Szint">{editable ? <><select aria-label={`${name} szintje`} value={level}
                     onChange={(event) => change(name, Number(event.target.value))}>
                     {levelsFor(name, level).map((option) => <option key={option}>{option}</option>)}
                   </select></> : level}</td>
-                  <td>{costs.skillJpPaid[name] ?? "—"}{costs.estimatedSkillJp.includes(name) && <small>Hiányos előzmény</small>}
+                  <td role="cell" data-label="Kifizetett Jp">{costs.skillJpPaid[name] ?? "—"}{costs.estimatedSkillJp.includes(name) && <small>Hiányos előzmény</small>}
                     {!grants[name] && editable && <button type="button" aria-label={`${name} törlése`} onClick={() => change(name, 0)}>×</button>}
                   </td>
                 </tr>
               ); })}
-              {racialWeapon && <tr><th scope="row">{racialWeapon.name}<small>Rátermettség · Faji szakosodás</small></th>
-                <td>Támadás {racialWeapon.attack} · Védekezés {racialWeapon.defense}</td><td>{costs.specializationJp}</td></tr>}
-              {!racialWeapon && !acquired.length && <tr><td colSpan={3}>Nincs felvett jártasság.</td></tr>}
+              {racialWeapon && <tr role="row"><th scope="row" role="rowheader">{racialWeapon.name}<small>Rátermettség · Faji szakosodás</small></th>
+                <td role="cell" data-label="Szint">Támadás {racialWeapon.attack} · Védekezés {racialWeapon.defense}</td><td role="cell" data-label="Kifizetett Jp">{costs.specializationJp}</td></tr>}
+              {!racialWeapon && !acquired.length && <tr role="row"><td role="cell" colSpan={3}>Nincs felvett jártasság.</td></tr>}
             </tbody>
           </table>
         </div>

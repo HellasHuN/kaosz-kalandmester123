@@ -1,5 +1,5 @@
-.test-app .workspace-screen:has(.general-sheet:not([data-mode="creation"])) > .workspace-nav :is(.workspace-settings,.workspace-home,.workspace-saved),
-.test-app .workspace-screen:has(.general-sheet:not([data-mode="creation"])) > .workspace-nav:not(:has(> button:not(.workspace-settings,.workspace-home,.workspace-saved))) { display:none; }
+.test-app .workspace-screen:has(.general-sheet:is([data-mode="gm"],[data-mode="player"])) > .workspace-nav :is(.workspace-settings,.workspace-home,.workspace-saved),
+.test-app .workspace-screen:has(.general-sheet:is([data-mode="gm"],[data-mode="player"])) > .workspace-nav:not(:has(> button:not(.workspace-settings,.workspace-home,.workspace-saved))) { display:none; }
 
 .general-sheet {
   --ornament: url("./assets/panel-engraving.webp");
@@ -19,16 +19,16 @@
   box-shadow:0 .4rem 1.6rem #000a;
   text-shadow:0 1px 2px #000;
 }
-.general-sheet :is(h1,h2,h3,p,dl,ol) { margin:0; }
-.general-sheet svg { width:1.15em; height:1.15em; flex:none; color:var(--gold); vertical-align:middle; }
-.general-sheet :is(.general-frame,.general-hero,.general-attribute-title,.general-components,button) {
+.general-sheet :is(h1,h2,h3,p,dl,ol):where(:not(.character-codex *)) { margin:0; }
+.general-sheet svg:where(:not(.character-codex *)) { width:1.15em; height:1.15em; flex:none; color:var(--gold); vertical-align:middle; }
+.general-sheet :is(.general-frame,.general-hero,.general-attribute-title,.general-components,button):where(:not(.character-codex *)) {
   border: 1px solid #c28946;
   border-image: var(--ornament) 39 / 12px stretch;
   border-radius:0;
 }
-.general-sheet button { border-image:var(--small-ornament) 27 / 8px stretch; }
+.general-sheet button:where(:not(.character-codex *)) { border-image:var(--small-ornament) 27 / 8px stretch; }
 .general-sheet .general-frame { background:var(--enamel); padding:.32rem; min-width:0; }
-.test-app .general-sheet button {
+.test-app .general-sheet button:where(:not(.character-codex *)) {
   min-width: 44px;
   min-height:44px;
   padding:.18rem .35rem;
@@ -38,9 +38,9 @@
   font:inherit;
   cursor:pointer;
 }
-.general-sheet button:disabled { opacity:.5; cursor:default; }
-.general-sheet :is(button,summary,input,select,textarea):focus-visible { outline:2px solid #fff2b1; outline-offset:2px; }
-.general-sheet :is(input:not([type="checkbox"]),select,textarea) {
+.general-sheet button:disabled:where(:not(.character-codex *)) { opacity:.5; cursor:default; }
+.general-sheet :is(button,summary,input,select,textarea):focus-visible:where(:not(.character-codex *)) { outline:2px solid #fff2b1; outline-offset:2px; }
+.general-sheet :is(input:not([type="checkbox"]),select,textarea):where(:not(.character-codex *)) {
   color:#fff0d2;
   width:100%;
   min-width:0;
@@ -49,8 +49,8 @@
   border:1px solid #886c47;
   background:#09131c;
 }
-.general-sheet label { color:#ffe8bf; }
-.general-sheet summary { cursor:pointer; min-height:44px; align-content:center; color:#ffe0a2; }
+.general-sheet label:where(:not(.character-codex *)) { color:#ffe8bf; }
+.general-sheet summary:where(:not(.character-codex *)) { cursor:pointer; min-height:44px; align-content:center; color:#ffe0a2; }
 
 .general-hero {
   position:relative;
@@ -243,7 +243,7 @@
   border:0;
   background:none;
 }
-.test-app .creation-workspace .general-sheet button:not(.skills-remove) {
+.test-app .creation-workspace .general-sheet button:not(.skills-remove):where(:not(.character-codex *)) {
   border-image:var(--small-ornament) 27 / 8px stretch;
   background:radial-gradient(ellipse at 49% -5%,#b5813e72,transparent 60%),var(--enamel);
 }

@@ -84,7 +84,7 @@ async function verify(page, width) {
   assert.equal((await read()).equipment.items[0].quantity, 2);
   assert.equal((await read()).equipment.notes, fixture.equipment.notes);
   const nav = page.getByRole("navigation", { name: "Karakterlap oldalai" });
-  for (const [tab, heading] of [["Jártasságok", "Jártasságok"], ["Mágia", "Mágia és varázslatok"], ["Karakter", fixture.name]]) {
+  for (const [tab, heading] of [["Jártasságok", "Jártasságok"], ["Mágia", "Mágia és varázslatok"], ["Általános", fixture.name]]) {
     await nav.getByRole("button", { name: tab, exact: true }).click();
     await page.getByRole("heading", { name: heading }).first().waitFor();
     assert.ok(await fit());

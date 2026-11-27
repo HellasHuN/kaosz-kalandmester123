@@ -85,7 +85,7 @@ async function verify(page, width) {
       }));
     }
   }
-  await navigation.getByRole("button", { name: "Karakter", exact: true }).click();
+  await navigation.getByRole("button", { name: "Általános", exact: true }).click();
   await body.waitFor();
   await button("Életerő csökkentése").click();
   assert.equal(await fp.innerText(), "41");

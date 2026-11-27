@@ -1,5 +1,6 @@
-import { ancestryTheme } from "./teszt/ancestryTheme.js";
-import GeneralPage from "./page1/GeneralPage.jsx";
+import { pageAncestryTheme } from "./teszt/ancestryTheme.js";
+import GeneralPage, { CharacterWorkspace, GeneralNavigation } from "./page1/GeneralPage.jsx";
+import "./CharacterInterfaces.css";
 import { profileError, readProfile } from "./characterProfile.js";
 import { availableMagicEp, magicLimits, readMagic, unresolvedSacredReservations } from "./magiaSzabalyok.js";
 import MainMenu from "./teszt/MainMenu.jsx";
@@ -160,7 +161,7 @@ function CreationSection({ Editor, character, onSave }) {
         <button type="button" onClick={() => { editor.current.cancel(); setEditing(false); }}>Mégse</button>
       </>}
     </div>
-    <Editor ref={editor} character={character} onSave={(_, value) => onSave(value)} />
+    <div className="character-codex"><Editor ref={editor} character={character} onSave={(_, value) => onSave(value)} /></div>
   </>;
 }
 
@@ -1456,11 +1457,9 @@ setAncestry((previous) => ({
           )}
     </div>;
     return <GeneralPage mode="creation"
-      identity={{ name, race, subrace, age, gender }}
-      header={{ actions: selectedCharacterId !== null && <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> }}
-      links={creationEditable ? [["details", "Karakteradatok"], ["skills", "Jártasságok"], ["equipment", "Felszerelés"], ["magic", "Mágia"]].map(
-        ([id, label]) => ({ id, label, current: creationTab === id, onClick: () => openCreationTab(id) })
-      ) : undefined}
+      identity={creationIdentity}
+      header={creationHeader}
+      links={creationEditable ? creationLinks : undefined}
       character={{ ...creationCharacter, name, jp: creationBudget == null ? undefined : creationBudget - creationCosts.total }}
       stage={stage} extra={extra} budget={budget} actions={race && actions}
       onChangeHealth={race && calculatedAgeLimits ? (amount) => {
@@ -1485,16 +1484,20 @@ setAncestry((previous) => ({
       <button className="save" onClick={saveCharacter}>KARAKTER MENTÉSE</button>
     </div>
   );
-  const creationTabs = (
-    <nav className="workspace-nav" aria-label="A karakteralkotás részei">
-      <button type="button" aria-pressed={creationTab === "details"} onClick={() => openCreationTab("details")}>Karakteradatok</button>
-      <button type="button" aria-pressed={creationTab === "skills"} onClick={() => openCreationTab("skills")}>Jártasságok</button>
-      <button type="button" aria-pressed={creationTab === "equipment"} onClick={() => openCreationTab("equipment")}>Felszerelés</button>
-      <button type="button" aria-pressed={creationTab === "magic"} onClick={() => openCreationTab("magic")}>Mágia</button>
-    </nav>
-  );
+  const creationLinks = [["details", "Karakteradatok"], ["skills", "Jártasságok"], ["equipment", "Felszerelés"], ["magic", "Mágia"]]
+    .map(([id, label]) => ({ id, label, current: creationTab === id, onClick: () => openCreationTab(id) }));
+  const creationIdentity = { name, race, subrace, age, gender };
+  const creationHeader = { actions: selectedCharacterId !== null &&
+    <button type="button" onClick={() => navigate("alkotas", null)}>Új karakter</button> };
   const inPlayerView = page === "karakterlap" || (page === "test-adventure" && testMode === "player");
   const selectingForPlay = page === "jatek";
+  const selectingCharacter = page === "karakterek" || selectingForPlay;
+  const selectionLinks = [
+    { id: "home", label: "Vissza a főmenübe", onClick: returnHome },
+    { id: "settings", label: "Beállítások", onClick: () => navigate("test-settings", null) },
+    ...(testMode ? [{ id: "skills", label: "Kaland", onClick: () => navigate("test-adventure", null) }] : []),
+    ...(selectingForPlay ? [{ id: "details", label: "Mentett karakterek", onClick: () => navigate("karakterek", null) }] : []),
+  ];
   const playingCharacters = savedCharacters.filter((character) => character.playStatus === "playing");
 
   return (
@@ -1509,7 +1512,7 @@ setAncestry((previous) => ({
             onSheet={openPlayerCharacter} onCodex={(character) => openPlayerCharacter(character, 4)} onSettings={() => navigate("test-settings", null)} onChat={openMenuChat}
             onPlay={() => navigate("jatek", null)} onSaved={() => navigate("karakterek", null)}
             onGM={() => selectTestMode("km")} />
-        ) : (
+        ) : !selectingCharacter && (
           <nav className="workspace-nav" aria-label="Visszalépés">
             {!inPlayerView && page !== "test-settings" &&
               <button className="workspace-home" type="button" onClick={returnHome}>Vissza a főmenübe</button>}
@@ -1532,24 +1535,10 @@ setAncestry((previous) => ({
             adventure={adventure} onChange={updateAdventure} onSelectMode={selectTestMode} onOpenCharacter={openTestCharacter} />
         </Suspense>}
         {page === "alkotas" && (
-        <div className="creation-workspace" style={ancestryTheme(race, subrace)}>
-          {creationTab !== "details" && <header className="character-cover creation-cover">
-            <div className="character-cover-art" aria-hidden="true" />
-            <div className="character-cover-caption">
-              <h2>Karakteralkotás</h2>
-              {race && <p>{[race, subrace].filter(Boolean).join(" · ")}</p>}
-            </div>
-          {selectedCharacterId !== null && (
-            <button className="save" onClick={() => navigate("alkotas", null)}>
-              Új karakter
-            </button>
-          )}
-
-        </header>}
-
-        {creationEditable && creationTab !== "details" && creationTabs}
-        {creationEditable && creationTab === "skills"
-          ? <><AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
+          creationEditable && creationTab !== "details" ?
+            <CharacterWorkspace character={creationIdentity} subtitle={creationLinks.find(link => link.current)?.label}
+              mode="creation" className="character-creation" header={creationHeader} links={creationLinks}>
+              {creationTab === "skills" ? <AlkotasiJartassagok character={creationCharacter} budget={creationBudget} costs={creationCosts} grants={creationGrants} racialGrants={racialSkills}
             trainingGrants={trainingGrants} onPackageChange={changeTrainingPackage}
             original={creationOriginal} onAcademicCodex={(codex) => {
               const academicSpecialization = selectAcademicCodex(creationCharacter.magic?.academicSpecialization, codex);
@@ -1557,15 +1546,14 @@ setAncestry((previous) => ({
                   !window.confirm("A Kalandmester jóváhagyta az akadémikus szakosodás módosítását?")) return;
               setCreationExtras((previous) => ({ ...previous, magic: { ...creationCharacter.magic, academicSpecialization } }));
             }} onChange={changeCreationSkill} onClarify={clarifyCreationSkill} />
-          {creationActions}</>
-          : creationEditable && creationTab === "equipment"
-            ? <><AlkotasiFelszereles equipment={creationCharacter.equipment}
-              onChange={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />{creationActions}</>
-          : creationEditable && creationTab === "magic"
-            ? <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
-              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} />{creationActions}</Suspense>
-          : renderCharacterFields(creationActions)}
-        </div>)}
+                : creationTab === "equipment" ? <AlkotasiFelszereles equipment={creationCharacter.equipment}
+              onChange={(equipment) => setCreationExtras((previous) => ({ ...previous, equipment }))} />
+                : <Suspense fallback={<p role="status">Varázskönyv betöltése…</p>}><CreationSection key="magic" Editor={Magia} character={creationCharacter}
+              onSave={(magic) => setCreationExtras((previous) => ({ ...previous, magic }))} /></Suspense>}
+              {creationActions}
+            </CharacterWorkspace>
+            : renderCharacterFields(creationActions)
+        )}
         {page === "karakterlap" && (
           <Suspense fallback={<p role="status">Karakterlap betöltése…</p>}><Karakterlap key={selectedCharacterId} initialEditing={sheetEditingOnOpen} initialPage={sheetPageOnOpen}
             character={selectedCharacter}
@@ -1611,19 +1599,23 @@ setAncestry((previous) => ({
             confirmLeaving={confirmLeaving}
           /></Suspense>
         )}
-        {(page === "karakterek" || selectingForPlay) && (
-          <section className="panel" aria-labelledby="saved-characters-title">
-            <h2 id="saved-characters-title">{selectingForPlay ? "Válassz karaktert a játékhoz" : "Karakterbetöltés"}</h2>
+        {selectingCharacter && (
+          <section className="general-sheet character-library" data-mode="selection" aria-labelledby="saved-characters-title">
+            <h2 id="saved-characters-title" className="character-section-title">{selectingForPlay ? "Válassz karaktert a játékhoz" : "Karakterbetöltés"}</h2>
             <p>{selectingForPlay ? "A játékba helyezett karakterek karakterlapja innen nyitható meg."
               : "A tervezetek a karakteralkotásban szerkeszthetők. A már játékba helyezett karakterek a karakterlapon kezelhetők."}</p>
             {activationFeedback && <p role={activationFeedback.error ? "alert" : "status"}>{activationFeedback.text}</p>}
             {savedCharacters.length === 0 && <p>Nincs mentett karakter.</p>}
-            {savedCharacters.map((character) => (
-              <article key={character.id} className="attribute">
+            <div className="character-library-grid">{savedCharacters.map((character) => (
+              <article key={character.id} className="general-frame character-library-card"
+                style={pageAncestryTheme(character.race, character.subrace, character.gender)}>
+                <div className="character-library-portrait" aria-hidden="true" />
+                <div className="character-library-info">
                 <h3>{character.name}</h3>
-                <p>{[character.race, character.age != null && `${character.age} éves`].filter(Boolean).join(" · ")}</p>
+                <p>{[character.race, character.subrace, character.age != null && `${character.age} éves`].filter(Boolean).join(" · ")}</p>
                 <p>Állapot: <strong>{character.playStatus === "playing" ? "Játékban"
                   : character.playStatus === "draft" ? "Tervezet" : "Régi mentés · besorolásra vár"}</strong></p>
+                <div className="character-library-actions">
                 {character.playStatus === "draft" && <>
                   {!selectingForPlay && <button className="save" type="button" onClick={() => navigate("alkotas", character)}>Karakter szerkesztése</button>}
                   <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Játékba helyezés</button>
@@ -1640,8 +1632,11 @@ setAncestry((previous) => ({
                   <button className="save" type="button" onClick={() => setPlayStatus(character, "draft")}>Még nem játszott</button>
                   <button className="save" type="button" onClick={() => setPlayStatus(character, "playing")}>Már játékban volt</button>
                 </>}
+                </div>
+                </div>
               </article>
-            ))}
+            ))}</div>
+            <GeneralNavigation links={selectionLinks} label="Visszalépés" />
           </section>
         )}
 {deletingCharacter && (

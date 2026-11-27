@@ -87,7 +87,7 @@ async function verify(page) {
   await magic.locator('.grimoire-form-description').getByText(/Szükséges adottság: Spontán mágia/).waitFor();
   await activeEp.fill('30');
   acceptDialog = false;
-  await button('Karakter').click();
+  await button('Általános').click();
   await assertResources(30);
   await button('Mégse').click();
   await assertResources(35);

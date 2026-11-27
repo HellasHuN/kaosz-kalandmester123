@@ -1,5 +1,5 @@
 import {
-  Award, Backpack, Bell, BookOpen, Crosshair, Eye, Feather, Hand, Hourglass, MessageCircle,
+  Award, Backpack, Bell, BookOpen, Crosshair, Eye, Feather, Hand, House, Hourglass, MessageCircle,
   Pencil, ScanEye, Settings, Shield, ShieldCheck, Skull, Sparkles, Sun, Swords, UserRound,
 } from "lucide-react";
 import { attributeAdjustmentLimit, attributes, characterAdjustments, characterStats, effectiveAttribute } from "../karakterFoeertekek.js";
@@ -11,7 +11,7 @@ import "./general-page.css";
 
 const missing = "—";
 const componentIcons = [[Hand, ShieldCheck], [Feather, Crosshair], [BookOpen, Sun], [Sparkles, Shield], [Eye, ScanEye]];
-const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, equipment: Backpack, chat: MessageCircle };
+const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, equipment: Backpack, chat: MessageCircle, home: House, settings: Settings };
 
 export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread, subtitle = "Általános" }) {
   const { race, subrace, gender, age, name } = character;
@@ -149,14 +149,24 @@ function TraitPanel({ label, items, Icon, tone }) {
   </details>;
 }
 
-export function GeneralNavigation({ links, creation = false }) {
-  return <nav className="general-navigation" aria-label={creation ? "A karakteralkotás részei" : "Karakterlap oldalai"}>
-    {links.map(({ id, label, current, onClick }) => {
+export function GeneralNavigation({ links, creation = false, label = creation ? "A karakteralkotás részei" : "Karakterlap oldalai" }) {
+  return <nav className="general-navigation" aria-label={label}>
+    {links.map(({ id, label: linkLabel, current, onClick }) => {
       const Icon = navigationIcons[id];
       return <button key={id} type="button" aria-current={!creation && current ? "page" : undefined}
-        aria-pressed={creation ? current : undefined} onClick={onClick}><Icon /><span>{label}</span></button>;
+        aria-pressed={creation ? current : undefined} onClick={onClick}><Icon /><span>{linkLabel}</span></button>;
     })}
   </nav>;
+}
+
+export function CharacterWorkspace({ character, subtitle, mode, className = "", header, actions, links, children }) {
+  const creation = mode === "creation";
+  return <article className={`general-sheet ${className}`} data-mode={mode}>
+    <IllustratedHeader character={character} subtitle={subtitle} creation={creation} {...header} />
+    {actions}
+    {children}
+    {links && <GeneralNavigation links={links} creation={creation} />}
+  </article>;
 }
 
 export function GeneralEditActions({ editing, onEdit, onSave, onCancel }) {

@@ -71,8 +71,8 @@ export default function AlkotasiFelszereles({ equipment, onChange }) {
     setMessage("");
   }
 
-  return <div className="skills-reference-page creation-equipment">
-    <section className="skills-reference" aria-labelledby={headingId}>
+  return <div className="creation-equipment">
+    <section className="skills-reference general-frame" aria-labelledby={headingId}>
       <h2 id={headingId}>Felszerelés</h2>
       <label htmlFor={searchId}>Új tárgy keresése név vagy típus alapján</label>
       <input id={searchId} type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -95,18 +95,18 @@ export default function AlkotasiFelszereles({ equipment, onChange }) {
       </section>}
       <p role="status" hidden={!message}>{message}</p>
       <div className="skills-reference-scroll">
-        <table>
-          <thead><tr><th scope="col">Tárgy</th><th scope="col">Mennyiség és tulajdonságok</th></tr></thead>
-          <tbody>
+        <table role="table">
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Tárgy</th><th scope="col" role="columnheader">Mennyiség és tulajdonságok</th></tr></thead>
+          <tbody role="rowgroup">
             {current.items.map((entry, index) => {
               const item = catalog.get(entry.catalogId) ?? { name: entry.catalogId };
-              return <tr key={`${entry.id}-${index}`}>
-                <th scope="row">{item.name}
+              return <tr role="row" key={`${entry.id}-${index}`}>
+                <th scope="row" role="rowheader">{item.name}
                   <small>{felszerelesTipusok[item.kind] ?? "Régi katalógustétel"}</small>
                   {item.price && <small>Könyv szerinti ár · {item.price}</small>}
                   {item.stats && <small>{equipmentDetails(item, entry)}</small>}
                 </th>
-                <td>
+                <td role="cell" data-label="Mennyiség és tulajdonságok">
                   <EquipmentFields item={item} entry={entry}
                     onQuantity={(quantity) => {
                       if (validQuantity(quantity)) update(index, { ...entry, quantity: Number(quantity) });
@@ -125,7 +125,7 @@ export default function AlkotasiFelszereles({ equipment, onChange }) {
                 </td>
               </tr>;
             })}
-            {!current.items.length && <tr><td colSpan={2}>Nincs felvett felszerelés.</td></tr>}
+            {!current.items.length && <tr role="row"><td role="cell" colSpan={2}>Nincs felvett felszerelés.</td></tr>}
           </tbody>
         </table>
       </div>

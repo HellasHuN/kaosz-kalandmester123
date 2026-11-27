@@ -1,0 +1,122 @@
+.character-codex { min-width: 0; }
+.magic-sheet .character-codex .magic-panel { overflow: hidden; }
+.general-sheet[data-mode="creation"] .general-navigation button[aria-pressed="true"] {
+  background: radial-gradient(ellipse at 50% 5%, #b74715, #310a08 73%);
+}
+.general-sheet[data-mode="creation"] .creation-panel {
+  min-width: 0;
+  color: inherit;
+  background: var(--enamel);
+  border-image: var(--ornament) 39 / 9px stretch;
+}
+.general-sheet[data-mode="creation"] .creation-panel :is(h3,h4) { color: var(--gold); }
+.character-section-title,
+.character-creation .skills-reference > h2 {
+  width: min(100%, 36rem);
+  margin: 0 auto .45rem;
+  padding: .65rem .45rem;
+  border: 0;
+  border-radius: 0;
+  color: #ffe4a3;
+  background: url("./page1/assets/title-engraving.webp") center / 100% 100% no-repeat;
+  box-shadow: none;
+  font: 700 clamp(1rem, 4vw, 1.8rem)/1.15 Georgia, serif;
+  text-align: center;
+}
+.character-creation .skills-reference {
+  text-align: left;
+  color: inherit;
+  padding: clamp(.55rem, 2vw, 1rem);
+}
+.character-creation .skills-reference::before,
+.character-creation .skills-reference::after,
+.character-creation .skills-reference h2::before,
+.character-creation .skills-reference h2::after { content: none; }
+.character-creation .skills-reference :is(input:not([type="checkbox"]), select, textarea) {
+  min-width: 0;
+  min-height: 44px;
+  color: #fff0d2;
+  background: #09131c;
+  color-scheme: dark;
+}
+.character-creation .skills-reference label { color: #ffe8bf; }
+.character-creation .skills-reference .creation-skill-pending { background: var(--enamel); color: inherit; }
+.character-creation .skills-reference .skills-reference-scroll { border: 1px solid #8f6139; border-radius: 0; }
+.character-creation .skills-reference thead th { background: linear-gradient(#661a10, #290907); }
+.character-creation .skills-reference tbody th { color: var(--gold); }
+.character-creation .skills-reference tbody small { color: #e8cba4; }
+.character-creation .skills-reference .skills-results button { color: #fff0d2; }
+.character-creation .skills-reference details { padding: .35rem; border-top: 1px solid #8f6139; }
+.character-library { padding: clamp(.6rem, 2vw, 1.15rem); }
+.character-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+}
+.character-library .character-library-card {
+  display: grid;
+  grid-template-columns: minmax(3.25rem, .33fr) minmax(0, 1fr);
+  gap: .5rem;
+  padding: .5rem;
+  text-align: left;
+}
+.character-library-portrait {
+  min-height: 6rem;
+  border: 1px solid #9e6f42;
+  background: var(--ancestry-portrait) center top / cover no-repeat, var(--sheet-shade);
+}
+.character-library-info { min-width: 0; overflow-wrap: anywhere; }
+.character-library-info h3 { color: var(--gold); }
+.character-library-info p { margin-block: .25rem; }
+.character-library-actions { display: flex; flex-wrap: wrap; gap: .3rem; }
+.character-library-actions button { max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 42rem) {
+  .character-library-grid { grid-template-columns: minmax(0, 1fr); }
+  .character-creation .skills-reference .skills-reference-scroll { overflow: visible; border: 0; }
+  .character-creation .skills-reference :is(table,tbody) { display: block; }
+  .character-creation .skills-reference thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .character-creation .skills-reference tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+    margin-bottom: .42rem;
+    border: 1px solid #9c683c;
+    background: var(--enamel);
+  }
+  .character-creation .skills-reference tbody :is(th,td):nth-child(n) {
+    width: auto;
+    min-width: 0;
+    padding: .4rem;
+    border: 0;
+  }
+  .character-creation .skills-reference tbody :is(th,[colspan]),
+  .character-creation .creation-equipment td { grid-column: 1 / -1; }
+  .character-creation .skills-reference tbody th { background: linear-gradient(90deg,#501a11,#21130f); }
+  .character-creation td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: #e8c39a;
+    font-size: .78rem;
+  }
+}
+
+.character-creation .skills-reference td select { min-width: min(100%, 4.5rem); }
+.test-app .workspace-screen:has(> .general-sheet[data-mode="creation"]) > .workspace-nav {
+  width: min(100%, 54rem);
+  margin-inline: auto;
+}
+.test-app .workspace-screen:has(> .general-sheet[data-mode="creation"]) > .workspace-nav button {
+  min-height: 44px;
+  color: #fff0c7;
+  font-family: Georgia, serif;
+  border: 1px solid #9e6d38;
+  border-image: url("./page1/assets/cornerwork.svg") 27 / 8px stretch;
+  border-radius: 0;
+  background: radial-gradient(ellipse at 49% -5%,#b5813e72,transparent 60%), #13151a;
+}
