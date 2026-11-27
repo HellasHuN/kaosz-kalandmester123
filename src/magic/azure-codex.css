@@ -1,0 +1,82 @@
+.magic-panel :is(.azure-codex,.azure-codex-dialog) {
+  --neutral-frame: url("./azure-assets/panel-engraving.webp");
+  --neutral-title: url("./azure-assets/title-engraving.webp");
+  --neutral-ink: #102d4b;
+  --neutral-paper: url("../assets/pergamen-rostok.png"), radial-gradient(ellipse,#ecf7fb,#a7ccde);
+  background: url("./azure-assets/whirlpool-vault.webp") center top / 100% auto no-repeat,
+    url("../assets/sheet/obsidian.webp"), #09172c;
+}
+.magic-panel .azure-codex .codex-neutral-hero {
+  min-height: clamp(8rem,21vw,16rem);
+  align-content: end;
+  background: linear-gradient(transparent,#06172dce);
+  color: #d5f5ff;
+}
+.azure-codex .codex-neutral-hero svg {
+  color: #d8f7ff;
+  filter: drop-shadow(0 0 .5rem #36b9fd);
+}
+.magic-panel :is(.azure-codex,.azure-codex-dialog) button {
+  background: linear-gradient(#21405b,#0d1c31);
+}
+.magic-panel .azure-codex button[aria-current="page"],
+.magic-panel .azure-codex .independent-cast-button,
+.magic-panel .azure-codex-dialog .spell-roll button:not(:disabled) {
+  background: linear-gradient(#20658e,#16364f);
+  box-shadow: inset 0 0 .45rem #4fc6fc77;
+}
+.azure-codex .codex-neutral-resources > div,
+.azure-codex-dialog .codex-neutral-resources > div { background: radial-gradient(ellipse at top,#294d70,#0c1b32 78%); }
+.azure-codex .codex-neutral-paper:not(.codex-neutral-detail) {
+  background: linear-gradient(135deg,#19354e,#0a182b);
+  color: #e0f4ff;
+  margin-block: .45rem;
+}
+.magic-panel .azure-codex .codex-neutral-paper:not(.codex-neutral-detail) label { color: #e0f4ff; }
+.magic-panel .azure-codex .codex-neutral-index button {
+  color: #e0f4ff;
+  background: linear-gradient(120deg,#1a3c59,#0d2036);
+}
+.azure-codex .codex-neutral-index button .codex-neutral-status { background: #294d70; }
+.azure-codex .codex-neutral-index button .codex-neutral-status[data-known="true"] { background: #296489; }
+.azure-codex .scarlet-list-cost { color: #b8ddf4; }
+.magic-panel .azure-codex-dialog .independent-cast-body { background: var(--neutral-paper); color: var(--neutral-ink); }
+.magic-panel .azure-codex .codex-neutral-adjudication label { color: #e0f4ff; }
+.azure-variants { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .35rem; }
+.magic-panel .azure-variants button[aria-pressed="true"] { background: linear-gradient(#20658e,#16364f); }
+.magic-panel .azure-codex .codex-neutral-detail header img {
+  object-fit: cover;
+  max-width: 40rem;
+}
+.magic-panel .azure-codex .spell-values > :is(dt,dd) {
+  color: var(--neutral-ink);
+  border-bottom: 1px solid #47729155;
+  padding-block: .25rem;
+}
+.magic-panel .azure-codex .spell-values dt { font-weight: bold; }
+.magic-panel .azure-codex button,
+.magic-panel .azure-codex-dialog button { border-image: var(--neutral-frame) 39 / 8px stretch; }
+
+.magic-panel .independent-cast-dialog.azure-codex-dialog {
+  border-color: #a7c8df;
+  box-shadow: 0 0 1.2rem #4fc6fc77, 0 1rem 4rem #000a;
+}
+.azure-codex-dialog::backdrop { background: #041020d9; }
+.magic-panel .independent-cast-dialog.azure-codex-dialog > header {
+  background: linear-gradient(#214563,#0c1b32);
+  border-color: #9fc8df;
+}
+.magic-panel .independent-cast-dialog.azure-codex-dialog button:not(.skills-remove),
+.magic-panel .azure-codex button.independent-cast-button:not(:disabled) {
+  color: #edfaff;
+  background: linear-gradient(#21405b,#0d1c31);
+  border-color: #a7c8df;
+  box-shadow: inset 0 0 .55rem #63c8ff45;
+}
+.magic-panel .azure-codex-dialog .azure-variants button[aria-pressed="true"],
+.magic-panel .azure-codex-dialog .spell-roll button:not(:disabled) {
+  background: linear-gradient(#20658e,#16364f);
+}
+.magic-panel .azure-codex-dialog .independent-cost { color: #153e60; border-color: #7ba3be; }
+.magic-panel .azure-codex-dialog .spell-roll { background: #edf9ffb0; }
+.magic-panel .azure-codex .codex-neutral-detail > header { grid-template-columns: minmax(0,1fr); }

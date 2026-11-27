@@ -78,8 +78,8 @@ function spellArtwork(spell) {
 
 function SpellDetails({ spell, character, magic, form, gm, editing, onChange, onCast, independent = false, scarlet = false, azure = false }) {
   const illustrated = independent || scarlet || azure;
-  const playerCasting = independent || scarlet;
-  const trackFailure = form === "academic" && [independentCodex, scarletCodex].includes(spell.codex) && Boolean(onCast);
+  const playerCasting = illustrated;
+  const trackFailure = form === "academic" && (azure || [independentCodex, scarletCodex].includes(spell.codex)) && Boolean(onCast);
   const castDialog = useRef(null);
   const entry = magic.acquisitions.find((item) => item.spellId === spell.id && item.form === form);
   const [units, setUnits] = useState(entry?.units ?? "");
@@ -180,7 +180,13 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
             <input type="number" min={spell.ep.min} max={spell.ep.max} step={spell.ep.step ?? 1} value={approvedEp}
               onChange={event => setApprovedEp(event.target.value)} />
           </label>}
-          {(azure || (!illustrated && form === "academic")) && spell.ep?.kind === "epChoice" && <label>Varázslat változata
+          {azure && spell.ep?.kind === "epChoice" && <div className="azure-variants" role="group" aria-label="Varázslat változata">
+            {spell.ep.choices.map(choice => <button key={choice.amount} type="button"
+              aria-pressed={context.approvedEp === choice.amount} onClick={() => setApprovedEp(String(choice.amount))}>
+              {choice.label} · {choice.amount} Ep
+            </button>)}
+          </div>}
+          {!illustrated && form === "academic" && spell.ep?.kind === "epChoice" && <label>Varázslat változata
             <select value={approvedEp} onChange={event => setApprovedEp(event.target.value)}>
               <option value="">Válassz változatot</option>
               {spell.ep.choices.map(choice => <option key={choice.amount} value={choice.amount}>
@@ -227,7 +233,9 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
           {gm && (form === "free" || form === "wild") && <p>A végleges hatást a Mesélő bírálja el.</p>}
           {(gm || playerCasting) && <label className="magic-checkbox">
             <input type="checkbox" checked={conditionsConfirmed} disabled={!playerCasting && !editing} onChange={(event) => setConfirmed(event.target.checked)} />
-            A helyzeti feltételek és az esetleges külön erőforrások ellenőrizve
+            {azure && spell.id === "official:esoidezes"
+              ? "Nyílt terület és komponensek ellenőrizve"
+              : "A helyzeti feltételek és az esetleges külön erőforrások ellenőrizve"}
           </label>}
         </>
       )}
@@ -375,11 +383,11 @@ function SpellDetails({ spell, character, magic, form, gm, editing, onChange, on
         <p className="independent-condition">{access.recorded ? "Ismert formula" : "Még nincs megtanulva"} · {states[result.state]}</p>
         {result.reasons.length > 0 && <p>{result.reasons.join(" ")}</p>}
         {spell.ep?.kind === "variable" && <p>KM ellenőrzése szükséges a pontos Ep-igényhez és a külön feltételekhez.</p>}
-        {azure && cost.difficulty == null && <p>KM ellenőrzése szükséges a próba pontos nehézségéhez.</p>}
+        {azure && cost.difficulty == null && !Number.isFinite(spell.difficulty) && <p>KM ellenőrzése szükséges a próba pontos nehézségéhez.</p>}
         {playerCasting && !onCast && <p>A varázslás játékba helyezett, menthető karakterrel érhető el.</p>}
         <button className="independent-cast-button" type="button" disabled={!access.allowed || !access.recorded || (playerCasting && !onCast)}
           onClick={() => castDialog.current.showModal()}>Varázslás</button>
-        <dialog className={`independent-cast-dialog${independent ? " codex-neutral-dialog" : ""}${scarlet ? " codex-neutral-dialog scarlet-codex-dialog" : azure ? " azure-cast-dialog" : ""}`} ref={castDialog} aria-labelledby="independent-cast-title">
+        <dialog className={`independent-cast-dialog${independent ? " codex-neutral-dialog" : ""}${scarlet ? " codex-neutral-dialog scarlet-codex-dialog" : azure ? " codex-neutral-dialog azure-codex-dialog" : ""}`} ref={castDialog} aria-labelledby="independent-cast-title">
           <header><h4 id="independent-cast-title">Varázslás · {spell.name}</h4>
             <button type="button" onClick={() => castDialog.current.close()} aria-label="Varázslási ablak bezárása">×</button>
           </header>
@@ -632,7 +640,7 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
         <h2 className="grimoire-title"><BookOpen aria-hidden="true" size={29} /> Mágia és varázslatok</h2>
         <p><EssenceIcon aria-hidden="true" size={22} /><span>Felszabadítható esszencia</span><strong>{limits.release} Ep</strong></p>
       </header>
-      {!independent && !scarlet && <label className="magic-checkbox">
+      {!illustrated && <label className="magic-checkbox">
         <input type="checkbox" checked={gm} onChange={(event) => {
           if (!canChangeView()) return;
           setGm(event.target.checked);
@@ -773,46 +781,35 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
           {!independent && !scarlet && <button type="button" aria-pressed={azure} onClick={() => openIllustration(azureCodex)}>Azúr Kódex</button>}
           {illustrated && <button type="button" onClick={() => openIllustration("")}>Teljes katalógus</button>}
         </nav>}
-      {!independent && !scarlet && <div className={illustrated ? "independent-filters" : "grimoire-filters"}>
+      {!illustrated && <div className="grimoire-filters">
         <label>Varázslatok és rigmusok keresése
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input type="search" value={query} onChange={event => setQuery(event.target.value)} />
         </label>
-        {(illustrated || selectedForm !== "practical") && <label>Kódex
-          <select value={illustrated ? illustratedCodex : codex} onChange={(event) => {
-            const value = event.target.value;
-            if (!illustrated) setCodex(value);
-            else if ([independentCodex, scarletCodex, azureCodex].includes(value)) openIllustration(value);
-            else if (canChangeView()) {
-              setIllustratedCodex("");
-              setChosenForm("academic");
-              clearFilters();
-              setCodex(value);
-            }
-          }}>
+        {selectedForm !== "practical" && <label>Kódex
+          <select value={codex} onChange={event => setCodex(event.target.value)}>
             <option value="">Minden kódex</option>
-            {codices.map((value) => <option key={value}>{value}</option>)}
+            {codices.map(value => <option key={value}>{value}</option>)}
           </select>
         </label>}
         <label>Varázslattípus
           <select value={spellType} onChange={event => setSpellType(event.target.value)}>
             <option value="">Minden típus</option>
-            {(azure ? azureTypes : scarlet ? scarletTypes : independent ? independentTypes : formTypes)
-              .map(type => <option key={type}>{type}</option>)}
+            {formTypes.map(type => <option key={type}>{type}</option>)}
           </select>
         </label>
-        {(illustrated || codex || search || spellType) && (
-          <button type="button" onClick={() => illustrated ? openIllustration("") : clearFilters()}>
+        {(codex || search || spellType) && (
+          <button type="button" onClick={clearFilters}>
             Megjelenítési szűrők törlése
           </button>
         )}
       </div>}
-      {(independent || scarlet) && (() => {
-        const catalog = scarlet ? scarletSpells : independentSpells;
+      {illustrated && (() => {
+        const catalog = azure ? azureSpells : scarlet ? scarletSpells : independentSpells;
         const all = catalog.map(spell => ({ spell, access: spellAccess(character, magic, spell, "academic") }));
         const selected = all.find(({ spell }) => spell.id === selectedSpell);
         const rows = all.filter(({ spell, access }) => (!spellType || spell.type === spellType) &&
           spell.name.toLocaleLowerCase("hu").includes(search) && (!knownOnly || access.recorded));
-        return <IndependentCodex scarlet={scarlet} catalog={all} costLabel={costLabel} activeEp={magic.activeEp} availableEp={freeEp} release={limits.release}
+        return <IndependentCodex scarlet={scarlet} azure={azure} catalog={all} costLabel={costLabel} activeEp={magic.activeEp} availableEp={freeEp} release={limits.release}
           known={all.filter(({ access }) => access.recorded)}
           log={(magic.castingLog ?? []).filter(entry => catalog.some(spell => entry.spellId === spell.id || entry.spellName === spell.name))}
           onAdjudicate={kmMode && editing && onCast ? (id, epLoss, consequence) => {
@@ -826,21 +823,17 @@ export default function Magia({ character, onSave, ref, kmMode = false, onCast }
             <label>Varázslat keresése<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
             <label>Varázslattípus<select value={spellType} onChange={event => setSpellType(event.target.value)}>
               <option value="">Minden típus</option>
-              {(scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
+              {(azure ? azureTypes : scarlet ? scarletTypes : independentTypes).map(type => <option key={type}>{type}</option>)}
             </select></label>
             <label className="magic-checkbox"><input type="checkbox" checked={knownOnly} onChange={event => setKnownOnly(event.target.checked)} /> Csak ismert formulák</label>
           </div>}>
-          {selected && <SpellDetails key={selected.spell.id} spell={selected.spell} form="academic" independent={independent} scarlet={scarlet}
+          {selected && <SpellDetails key={selected.spell.id} spell={selected.spell} form="academic" independent={independent} scarlet={scarlet} azure={azure}
             character={character} magic={magic} gm={kmMode} editing={editing} onChange={setDraft} onCast={onCast} />}
         </IndependentCodex>;
       })()}
-      {!independent && !scarlet && showAcademic && <section className={`grimoire-section${azure ? " independent-grimoire azure-grimoire" : ""}`}
-        data-form="academic" data-fire={illustrated && specialization?.codex === "Skarlát"} aria-labelledby="academic-magic-heading">
-        <GrimoireHeading id="academic-magic-heading" icon={azure ? getCodexIcon(azureCodex) : BookOpen}>
-          {azure ? "Azúr Kódex" : "Akadémikus mágia"}</GrimoireHeading>
-        {azure ? renderSpellList(azureSpells.map(spell => ({
-          spell, form: "academic", access: spellAccess(character, magic, spell, "academic"),
-        })), { azure }) : renderSpellList(generalRows)}
+      {!illustrated && showAcademic && <section className="grimoire-section" data-form="academic" aria-labelledby="academic-magic-heading">
+        <GrimoireHeading id="academic-magic-heading" icon={BookOpen}>Akadémikus mágia</GrimoireHeading>
+        {renderSpellList(generalRows)}
       </section>}
       {!illustrated && showSacred && (
         <section className="grimoire-section" data-form="sacred" aria-labelledby="sacred-magic-heading">

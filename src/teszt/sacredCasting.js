@@ -45,7 +45,7 @@ export function logAcademicFailure(character, magic, spell, context, { id, roll,
 }
 
 export function recordAcademicPendingFailure(character, magic, spell, context, { id, roll, recordedAt }) {
-  if (!["Kódexfüggetlen", "Skarlát"].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
+  if (!["Kódexfüggetlen", "Skarlát", "Azúr"].includes(spell.codex) || magic.castingLog?.some(entry => entry.id === id) ||
       spellReadiness(character, magic, spell, "academic", context).state !== "ready") return magic;
   const { difficulty } = spellCost(spell, "academic", context);
   const { target } = academicMagicTrial(character, magic, spell, difficulty);
