@@ -20,6 +20,8 @@ const blank = { level: 0, prices: [], note: "", estimated: false, training: null
 export default function Jartassagok({ character, onSave, ref }) {
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState("");
+  const [listQuery, setListQuery] = useState("");
+  const [status, setStatus] = useState("all");
   const [candidate, setCandidate] = useState("");
   const [method, setMethod] = useState("mentor");
   const [clarifiedCharacter, setClarifiedCharacter] = useState(null);
@@ -51,6 +53,14 @@ export default function Jartassagok({ character, onSave, ref }) {
     !(rows.Művészet?.level && name === artSkillName(character.racialSpecializations?.artGenre) &&
       character.race === "Elf" && character.subrace === "Erdei elf") &&
     search && name.toLocaleLowerCase("hu").includes(search));
+
+  const listSearch = listQuery.trim().toLocaleLowerCase("hu");
+  const visibleRows = Object.entries(rows).filter(([name, row]) =>
+    (row.level || row.training || row.note) &&
+    name.toLocaleLowerCase("hu").includes(listSearch) &&
+    (status === "all" || (status === "training" ? row.training : row.level)));
+  const showRacial = racialWeapon && status !== "training" &&
+    racialWeapon.name.toLocaleLowerCase("hu").includes(listSearch);
 
   function setTableScroll(value) {
     const target = table.current;
@@ -151,8 +161,24 @@ export default function Jartassagok({ character, onSave, ref }) {
   useImperativeHandle(ref, () => ({ start: () => setDraft(saved), save, cancel }));
 
   return (
-    <section className="skills-reference" data-unsaved={changed || Boolean(candidate)}>
+    <section className="skills-reference general-frame" data-unsaved={changed || Boolean(candidate)}>
       <h2>Jártasságok</h2>
+      <div className="skill-sheet-summary">
+        <p className="skill-reference-budget" aria-live="polite">Elkölthető Jp <strong>{remaining}</strong></p>
+        <span>{editing ? "Szerkesztés" : "Megtekintés"}</span>
+      </div>
+      <div className="skill-sheet-filters">
+        <label>Jártasság keresése
+          <input type="search" value={listQuery} onChange={event => setListQuery(event.target.value)} />
+        </label>
+        <label>Állapot
+          <select value={status} onChange={event => setStatus(event.target.value)}>
+            <option value="all">Összes</option>
+            <option value="learned">Ismert</option>
+            <option value="training">Folyamatban</option>
+          </select>
+        </label>
+      </div>
       <div className="skills-reference-table-frame">
       <div className="skills-reference-scroll" ref={table} tabIndex={0} aria-label="Jártasságtáblázat görgetése"
         onScroll={(event) => {
@@ -160,14 +186,14 @@ export default function Jartassagok({ character, onSave, ref }) {
           setScroll(target.scrollHeight > target.clientHeight
             ? target.scrollTop * 100 / (target.scrollHeight - target.clientHeight) : 0);
         }}>
-        <table>
+        <table role="table">
           <colgroup><col /><col /><col /><col /><col /></colgroup>
-          <thead><tr>
-            <th scope="col">Jártasság</th><th scope="col">Kapcsolódó főérték</th><th scope="col">Aktuális szint</th>
-            <th scope="col">Fejlesztés (következő szint)</th><th scope="col">Megjegyzés</th>
+          <thead role="rowgroup"><tr role="row">
+            <th scope="col" role="columnheader">Jártasság</th><th scope="col" role="columnheader">Kapcsolódó főérték</th><th scope="col" role="columnheader">Aktuális szint</th>
+            <th scope="col" role="columnheader">Fejlesztés (következő szint)</th><th scope="col" role="columnheader">Megjegyzés</th>
           </tr></thead>
-          <tbody>
-            {Object.entries(rows).filter(([, row]) => row.level || row.training || row.note).map(([name, row]) => {
+          <tbody role="rowgroup">
+            {visibleRows.map(([name, row]) => {
               const attribute = relatedAttribute(name);
               const devotionNotice = row.level && devotionPrerequisiteMessage(acquired, name, row.level, skillCharacter);
               const pendingPrerequisite = row.training && skillPrerequisiteMessage(acquired, name, row.training.level, skillCharacter);
@@ -186,8 +212,8 @@ export default function Jartassagok({ character, onSave, ref }) {
                 specialization(key)?.foundation === name && (value.level || value.training));
               const refinements = editing && genericSpecializations.has(name)
                 ? specializationRefinementOptions(original, name).filter((key) => !Object.hasOwn(rows, key)) : [];
-              return <tr key={name}>
-                <th scope="row">
+              return <tr key={name} role="row">
+                <th scope="row" role="rowheader">
                   <span className="skill-reference-icon" aria-hidden="true" style={{ "--skill-icon": icons[attribute] ?? 8 }} />
                   {name}
                   {devotionNotice ? <small> · {devotionNotice}</small> : null}
@@ -201,8 +227,8 @@ export default function Jartassagok({ character, onSave, ref }) {
                     {refinements.map((key) => <option key={key}>{key}</option>)}
                   </select>}
                 </th>
-                <td>{attribute ?? "—"}</td>
-                <td className="skill-reference-centered">
+                <td role="cell" data-label="Főérték">{attribute ?? "—"}</td>
+                <td role="cell" className="skill-reference-centered" data-label="Aktuális szint">
                   {editing && name !== devotionSkill && !legacyTheoryNames.has(name) && !unknownWeaponBranches && !row.training && row.level > minimum ? (
                     <select aria-label={`${name} szintcsökkentése`} value={row.level} onChange={(event) => {
                       const level = Number(event.target.value);
@@ -212,9 +238,13 @@ export default function Jartassagok({ character, onSave, ref }) {
                     </select>
                   ) : <span className="skill-reference-level">{row.level || "—"}</span>}
                 </td>
-                <td className="skill-reference-centered">
+                <td role="cell" className="skill-reference-centered" data-label="Fejlesztés">
                   {row.training ? <>
                     <span className="skill-reference-progress"><span aria-hidden="true">⌛</span> Folyamatban → {row.training.level}</span>
+                    <details className="skill-sheet-detail">
+                      <summary>Képzési adatok</summary>
+                      <p>{row.training.cost} Jp{row.training.mentor != null && ` · Mentor: ${row.training.mentor}. szint`}</p>
+                    </details>
                     {pendingPrerequisite && <small> · {pendingPrerequisite}</small>}
                     {editing && saved[name]?.training !== row.training && <p>Véglegesítsd a karakterlapot a jóváhagyás előtt.</p>}
                     {editing && saved[name]?.training === row.training &&
@@ -222,6 +252,11 @@ export default function Jartassagok({ character, onSave, ref }) {
                     {editing && <button type="button" onClick={() => withdrawTraining(name)}>Fejlesztés visszavonása</button>}
                   </> : next ? <>
                     <span>{next.relearn ? "Mentoros újratanulás" : `${next.level}. szint`} · {next.cost} Jp</span>
+                    <details className="skill-sheet-detail">
+                      <summary>Feltételek</summary>
+                      <p>Mentor: legalább {next.mentorLevel}. szint</p>
+                      {maximum && <p>Legmagasabb szint: {maximum}</p>}
+                    </details>
                     {nextPrerequisite && <p>{nextPrerequisite}</p>}
                     {next.cost > remaining && <p>A mentoros képzéshez nincs elég Jp.</p>}
                     {editing && <button type="button" onClick={() => chooseTraining(name)}>
@@ -229,7 +264,7 @@ export default function Jartassagok({ character, onSave, ref }) {
                     </button>}
                   </> : <span>{unavailable}</span>}
                 </td>
-                <td>{editing ? <>
+                <td role="cell" data-label="Megjegyzés">{editing ? <>
                   <input aria-label={`${name} megjegyzése`} maxLength={120} value={row.note}
                     onChange={(event) => {
                       const note = event.target.value;
@@ -247,10 +282,12 @@ export default function Jartassagok({ character, onSave, ref }) {
                 </> : row.note || "—"}</td>
               </tr>;
             })}
-            {racialWeapon && <tr><th scope="row">{racialWeapon.name}</th><td>Rátermettség</td>
-              <td>Támadás {racialWeapon.attack} · Védekezés {racialWeapon.defense}</td><td>—</td>
-              <td>{original.racialSpecializationJp ?? "—"} Jp · Faji szakosodás</td></tr>}
-            {!racialWeapon && !Object.values(rows).some((row) => row.level || row.training || row.note) && <tr><td colSpan={5}>Nincs rögzített jártasság.</td></tr>}
+            {showRacial && <tr role="row"><th scope="row" role="rowheader">{racialWeapon.name}</th><td role="cell" data-label="Főérték">Rátermettség</td>
+              <td role="cell" data-label="Aktuális szint">Támadás {racialWeapon.attack} · Védekezés {racialWeapon.defense}</td>
+              <td role="cell" data-label="Fejlesztés">—</td><td role="cell" data-label="Megjegyzés">{original.racialSpecializationJp ?? "—"} Jp · Faji szakosodás</td></tr>}
+            {!showRacial && visibleRows.length === 0 && <tr role="row"><td role="cell" colSpan={5}>
+              {listSearch || status !== "all" ? "Nincs találat a szűrésre." : "Nincs rögzített jártasság."}
+            </td></tr>}
           </tbody>
         </table>
       </div>
@@ -263,7 +300,6 @@ export default function Jartassagok({ character, onSave, ref }) {
       </div>
       {!editing && Object.keys(rows).length > 0 &&
         <p>A következő szintnél a mentoros ár látható. A képzést a Szerkesztés módban indíthatod.</p>}
-      <p className="skill-reference-budget" aria-live="polite">Elkölthető Jp <strong>{remaining}</strong></p>
       {editing && <>
         <ElhivatottsagValaszto level={rows[devotionSkill]?.level ?? 0} maximum={10}
           onChange={(level, approved) => {

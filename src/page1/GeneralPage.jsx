@@ -13,7 +13,7 @@ const missing = "—";
 const componentIcons = [[Hand, ShieldCheck], [Feather, Crosshair], [BookOpen, Sun], [Sparkles, Shield], [Eye, ScanEye]];
 const navigationIcons = { details: UserRound, skills: Swords, magic: BookOpen, equipment: Backpack, chat: MessageCircle };
 
-export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread }) {
+export function IllustratedHeader({ character, creation, actions, onCodex, onChat, onSettings, unread, subtitle = "Általános" }) {
   const { race, subrace, gender, age, name } = character;
   const illustratedHuman = race === "Ember" && !subrace && gender === "Férfi";
   return <header className="general-hero" data-illustrated-human={illustratedHuman}
@@ -21,7 +21,7 @@ export function IllustratedHeader({ character, creation, actions, onCodex, onCha
     {!illustratedHuman && <div className="general-hero-portrait" aria-hidden="true" />}
     <div className="general-ribbon">
       <h2>{creation ? "Karakteralkotás" : "Karakterlap"}</h2>
-      <span>Általános</span>
+      <span>{subtitle}</span>
     </div>
     <div className="general-identity">
       <h1>{name || "Új karakter"}</h1>

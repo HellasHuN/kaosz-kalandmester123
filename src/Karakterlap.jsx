@@ -5,7 +5,7 @@ import Felszereles from "./Felszereles";
 import Jartassagok from "./Jartassagok";
 import Magia from "./Magia";
 import { ArmorDiagram } from "./ArmorDiagram.jsx";
-import GeneralPage, { GeneralEditActions } from "./page1/GeneralPage.jsx";
+import GeneralPage, { GeneralEditActions, GeneralNavigation, IllustratedHeader } from "./page1/GeneralPage.jsx";
 
 const pageIcons = [ScrollText, BookOpen, Backpack, Sparkles];
 
@@ -51,18 +51,26 @@ function Karakterlap({
     setEditing(false);
   }
 
-  if (activePage === 1) {
+  if (activePage === 1 || activePage === 2) {
     const links = [["details", "Általános", 1], ["skills", "Jártasságok", 2], ["magic", "Mágia", 4], ["equipment", "Felszerelés", 3]]
-      .map(([id, label, page]) => ({ id, label, current: page === 1, onClick: () => openPage(page) }));
+      .map(([id, label, page]) => ({ id, label, current: page === activePage, onClick: () => openPage(page) }));
     links.push({ id: "chat", label: "Chat", onClick: onChat });
+    const actions = <GeneralEditActions editing={editing} onEdit={startEditing} onSave={finalizeEditing} onCancel={cancelEditing} />;
+    if (activePage === 2) return <article className="general-sheet skills-sheet" data-mode={mode}>
+      <IllustratedHeader character={character} subtitle="Jártasságok" onCodex={() => openPage(4)}
+        onChat={onChat} onSettings={onSettings} unread={unread} />
+      {actions}
+      <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />
+      <GeneralNavigation links={links} />
+    </article>;
     return <GeneralPage character={character} identity={editing ? { ...character, ...characterEditor.identity } : character}
       stage={stage} mode={mode} edit={editing ? characterEditor : null} onChangeHealth={amount => onChangeHealth(amount, editing)}
       header={{ onCodex: () => openPage(4), onChat, onSettings, unread }} links={links}
-      actions={<GeneralEditActions editing={editing} onEdit={startEditing} onSave={finalizeEditing} onCancel={cancelEditing} />} />;
+      actions={actions} />;
   }
 
   return (
-    <div className={`themed-sheet${activePage === 2 ? " skills-reference-page" : ""}`}
+    <div className="themed-sheet"
       style={ancestryTheme(character.race, character.subrace)}>
     <header className="character-cover">
       <div className="character-cover-art" aria-hidden="true" />
@@ -83,7 +91,6 @@ function Karakterlap({
         {editing && <button type="button" onClick={cancelEditing}>Mégse</button>}
       </div>
     </div>
-    {activePage === 2 && <Jartassagok ref={editor} character={character} onSave={onSaveSkills} />}
     {activePage === 3 && (
       <div className="equipment-sheet">
         <ArmorDiagram character={character} />
